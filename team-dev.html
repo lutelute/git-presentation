@@ -48,6 +48,11 @@ ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1p
 ul.feature-list li::before{content:'▸ ';color:#00d2ff}
 .step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
 .step.visible{opacity:1;transform:translateX(0)}
+.anim-controls{position:fixed;bottom:3rem;right:1.5rem;display:none;gap:.5rem;z-index:200}
+.anim-controls.show{display:flex}
+.anim-btn{background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s;font-family:inherit}
+.anim-btn:hover{background:#2a2a4a;border-color:#00d2ff}
+.anim-btn.paused{color:#ffcb6b;border-color:#ffcb6b}
 </style>
 </head>
 <body>
@@ -560,19 +565,163 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   </div>
 </div>
 
-<div class="progress">1 / 13</div>
+<!-- Appendix: Command Reference -->
+<div class="slide">
+  <h2>Appendix: コマンドリファレンス</h2>
+  <div style="max-width:900px;width:100%;max-height:75vh;overflow-y:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:.9rem">
+      <thead><tr style="border-bottom:2px solid #00d2ff">
+        <th style="text-align:left;padding:.5rem;color:#00d2ff;width:35%">コマンド</th>
+        <th style="text-align:left;padding:.5rem;color:#00d2ff">説明</th>
+      </tr></thead>
+      <tbody>
+        <tr style="border-bottom:1px solid #1a1a2e">
+          <td style="padding:.5rem"><code>git checkout -b &lt;branch&gt;</code></td>
+          <td style="padding:.5rem;color:#bbb">新しいブランチを作成して切り替え</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e;background:#1a1a2e22">
+          <td style="padding:.5rem"><code>git checkout main</code></td>
+          <td style="padding:.5rem;color:#bbb">mainブランチに切り替え</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e">
+          <td style="padding:.5rem"><code>git add</code></td>
+          <td style="padding:.5rem;color:#bbb">変更をステージングエリアに追加</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e;background:#1a1a2e22">
+          <td style="padding:.5rem"><code>git commit -m "msg"</code></td>
+          <td style="padding:.5rem;color:#bbb">ステージングした変更を履歴に記録</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e">
+          <td style="padding:.5rem"><code>git push -u origin &lt;branch&gt;</code></td>
+          <td style="padding:.5rem;color:#bbb">ブランチをリモートにプッシュ（上流設定付き）</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e;background:#1a1a2e22">
+          <td style="padding:.5rem"><code>git push</code></td>
+          <td style="padding:.5rem;color:#bbb">ローカルの変更をリモートにプッシュ</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e">
+          <td style="padding:.5rem"><code>git pull origin main</code></td>
+          <td style="padding:.5rem;color:#bbb">mainブランチの最新変更を取得・統合</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e;background:#1a1a2e22">
+          <td style="padding:.5rem"><code>git reset HEAD~1</code></td>
+          <td style="padding:.5rem;color:#bbb">直前のコミットを取り消し（変更は残る）</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e">
+          <td style="padding:.5rem"><code>gh pr create</code></td>
+          <td style="padding:.5rem;color:#bbb">プルリクエストを作成（GitHub CLI）</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e;background:#1a1a2e22">
+          <td style="padding:.5rem"><code>gh pr edit --add-reviewer</code></td>
+          <td style="padding:.5rem;color:#bbb">PRにレビュアーを追加</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e">
+          <td style="padding:.5rem"><code>gh pr merge --squash</code></td>
+          <td style="padding:.5rem;color:#bbb">PRをスカッシュマージ（コミットを1つにまとめて統合）</td>
+        </tr>
+        <tr style="border-bottom:1px solid #1a1a2e;background:#1a1a2e22">
+          <td style="padding:.5rem"><code>git push --force</code></td>
+          <td style="padding:.5rem;color:#bbb">強制プッシュ（履歴破壊の危険あり、非推奨）</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="anim-controls" id="anim-controls">
+  <button class="anim-btn" onclick="togglePause()" id="btn-pause" title="P キー">⏸ 一時停止</button>
+  <button class="anim-btn" onclick="skipAnim()" title="S キー">⏭ スキップ</button>
+</div>
+<div class="progress">1 / 14</div>
 <div class="nav-hint">&larr; &rarr; キーで移動</div>
 
 <script>
+/* === Animation Engine with Skip/Pause === */
+var _anim={timeouts:[],paused:false,lines:[],rendered:0,el:null,btnId:null,running:false};
+
+function _renderLine(l){
+  var div=document.createElement('div');
+  if(l.type==='prompt')div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+l.text+'</span>';
+  else if(l.type==='comment')div.innerHTML='<span class="info"># '+l.text+'</span>';
+  else div.innerHTML='<span class="'+(l.cls||'output')+'">'+l.text+'</span>';
+  _anim.el.appendChild(div);_anim.el.scrollTop=_anim.el.scrollHeight;
+}
+
+function _scheduleLines(startIdx){
+  var delay=0;
+  for(var i=startIdx;i<_anim.lines.length;i++){
+    delay+=_anim.lines[i].pause||500;
+    (function(idx,d){
+      var t=setTimeout(function(){
+        if(_anim.paused)return;
+        _renderLine(_anim.lines[idx]);
+        _anim.rendered=idx+1;
+      },d);
+      _anim.timeouts.push(t);
+    })(i,delay);
+  }
+  var t=setTimeout(function(){
+    if(_anim.paused)return;
+    _animDone();
+  },delay+500);
+  _anim.timeouts.push(t);
+}
+
+function _animDone(){
+  _anim.running=false;
+  if(_anim.btnId)document.getElementById(_anim.btnId).disabled=false;
+  document.getElementById('anim-controls').classList.remove('show');
+}
+
+function _cancelTimers(){
+  _anim.timeouts.forEach(clearTimeout);
+  _anim.timeouts=[];
+}
+
 function typeInTerminal(id,lines,btnId){
+  skipAnim();
+  _anim.el=document.getElementById(id);
+  _anim.el.innerHTML='';
+  _anim.btnId=btnId;
+  _anim.lines=lines;
+  _anim.rendered=0;
+  _anim.paused=false;
+  _anim.running=true;
   if(btnId)document.getElementById(btnId).disabled=true;
-  var el=document.getElementById(id);el.innerHTML='';var delay=0;
-  lines.forEach(function(l){delay+=l.pause||500;setTimeout(function(){var div=document.createElement('div');if(l.type==='prompt'){div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+l.text+'</span>'}else if(l.type==='comment'){div.innerHTML='<span class="info"># '+l.text+'</span>'}else{div.innerHTML='<span class="'+(l.cls||'output')+'">'+l.text+'</span>'}el.appendChild(div);el.scrollTop=el.scrollHeight},delay)});
-  setTimeout(function(){if(btnId)document.getElementById(btnId).disabled=false},delay+500);
+  document.getElementById('anim-controls').classList.add('show');
+  document.getElementById('btn-pause').textContent='⏸ 一時停止';
+  document.getElementById('btn-pause').classList.remove('paused');
+  _scheduleLines(0);
+}
+
+function skipAnim(){
+  if(!_anim.running)return;
+  _cancelTimers();
+  for(var i=_anim.rendered;i<_anim.lines.length;i++){
+    _renderLine(_anim.lines[i]);
+  }
+  _anim.rendered=_anim.lines.length;
+  _anim.paused=false;
+  _animDone();
+}
+
+function togglePause(){
+  if(!_anim.running)return;
+  if(_anim.paused){
+    _anim.paused=false;
+    document.getElementById('btn-pause').textContent='⏸ 一時停止';
+    document.getElementById('btn-pause').classList.remove('paused');
+    _scheduleLines(_anim.rendered);
+  }else{
+    _anim.paused=true;
+    _cancelTimers();
+    document.getElementById('btn-pause').textContent='▶ 再開';
+    document.getElementById('btn-pause').classList.add('paused');
+  }
 }
 var cur=0,slides=document.querySelectorAll('.slide');
 function go(i){if(i<0||i>=slides.length)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');document.querySelector('.progress').textContent=(cur+1)+' / '+slides.length}
-document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' ')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='g')go(0);else if(e.key==='G')go(slides.length-1)});
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' ')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='g')go(0);else if(e.key==='G')go(slides.length-1);else if(e.key==='s'){skipAnim()}else if(e.key==='p'){togglePause()}});
 </script>
 </body>
 </html>
