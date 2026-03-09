@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>初学者あるある編 — Gitで最初にハマるところ</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* Flow diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Highlight step */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* Checklist */
+.checklist{list-style:none;max-width:700px;width:100%}
+.checklist li{padding:.7rem .5rem;font-size:1.05rem;color:#555;border-bottom:1px solid #1a1a2e;transition:all .5s;transform:translateX(-10px)}
+.checklist li.checked{color:#7fdbca;transform:translateX(0)}
+.checklist li::before{content:'[ ] ';font-family:'Fira Code',monospace;color:#555;transition:color .5s}
+.checklist li.checked::before{content:'[x] ';color:#27c93f}
+
+/* Anim controls */
+.anim-controls{position:fixed;bottom:3rem;right:1.5rem;display:none;gap:.5rem;z-index:200}
+.anim-controls.show{display:flex}
+.anim-btn{background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s;font-family:inherit}
+.anim-btn:hover{background:#2a2a4a;border-color:#00d2ff}
+.anim-btn.paused{color:#ffcb6b;border-color:#ffcb6b}
+
+/* Bad example */
+.bad-example{background:#4d1f2822;border:1px solid #ff537044;border-radius:8px;padding:.8rem 1rem;font-family:'Fira Code',monospace;font-size:.9rem;color:#ff7b72;line-height:1.8}
+.good-example{background:#1a472122;border:1px solid #27c93f44;border-radius:8px;padding:.8rem 1rem;font-family:'Fira Code',monospace;font-size:.9rem;color:#7ee787;line-height:1.8}
+
+/* Cmd ref */
+.cmd-ref{display:grid;grid-template-columns:auto 1fr;gap:.3rem 1.2rem;font-size:.9rem;max-width:850px;width:100%}
+.cmd-ref code{white-space:nowrap}
+.cmd-ref .desc{color:#888}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label orange">BEGINNERS' TIPS</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">初学者あるある編</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1rem">Gitで最初にハマるところ</p>
+    <p style="font-size:1.1rem;color:#7fdbca;margin-bottom:2rem">大丈夫、みんな最初はこうだった</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;flex-wrap:wrap">
+      <span style="background:#f78c6c22;color:#f78c6c;padding:.3em .8em;border-radius:6px;font-size:.9rem">コミットの悩み</span>
+      <span style="background:#c792ea22;color:#c792ea;padding:.3em .8em;border-radius:6px;font-size:.9rem">メッセージの書き方</span>
+      <span style="background:#ff537022;color:#ff5370;padding:.3em .8em;border-radius:6px;font-size:.9rem">あるあるミス</span>
+      <span style="background:#7fdbca22;color:#7fdbca;padding:.3em .8em;border-radius:6px;font-size:.9rem">実践パターン</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">&rarr; キーで次へ</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: Outline ==================== -->
+<div class="slide" id="slide-outline">
+  <h2>この編の全体像</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem;font-size:1.1rem">ゴール: <span style="color:#00d2ff">Gitを使い始めたときの不安やモヤモヤを解消し、自信を持ってcommitできるようになる</span></p>
+  <div style="max-width:1050px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card step" data-step="0" style="border-left:3px solid #f78c6c">
+      <span class="label orange">Section 1</span>
+      <h3 style="font-size:1.05rem">コミットの悩み</h3>
+      <p style="font-size:.85rem;color:#888">いつcommitする？ / しすぎ vs しなさすぎ / 「とりあえず動いた」はOK？</p>
+      <p style="font-size:.82rem;color:#7fdbca;margin-top:.4rem">&rarr; commitの心理的ハードルを下げる</p>
+    </div>
+    <div class="card step" data-step="1" style="border-left:3px solid #c792ea">
+      <span class="label purple">Section 2</span>
+      <h3 style="font-size:1.05rem">コミットメッセージ</h3>
+      <p style="font-size:.85rem;color:#888">ダメな例 / 良い例 / テンプレート / 実践デモ</p>
+      <p style="font-size:.82rem;color:#7fdbca;margin-top:.4rem">&rarr; 未来の自分が読めるメッセージを書く</p>
+    </div>
+    <div class="card step" data-step="2" style="border-left:3px solid #ff5370">
+      <span class="label red">Section 3</span>
+      <h3 style="font-size:1.05rem">あるあるミス</h3>
+      <p style="font-size:.85rem;color:#888">add忘れ / node_modules / mainで直接作業 / 間違えてcommit</p>
+      <p style="font-size:.82rem;color:#7fdbca;margin-top:.4rem">&rarr; よくある失敗と対処法を知る</p>
+    </div>
+    <div class="card step" data-step="3" style="border-left:3px solid #7fdbca">
+      <span class="label green">Section 4</span>
+      <h3 style="font-size:1.05rem">実践パターン</h3>
+      <p style="font-size:.85rem;color:#888">pushの恐怖 / チェックリスト / コマンドリファレンス</p>
+      <p style="font-size:.82rem;color:#7fdbca;margin-top:.4rem">&rarr; 自信を持ってGitを使えるようになる</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: いつコミット？ ==================== -->
+<div class="slide" id="slide-when-commit">
+  <h2>いつコミットすればいい？</h2>
+  <div class="card" style="max-width:700px;margin-bottom:1.5rem;border-left:3px solid #f78c6c">
+    <h3 style="color:#f78c6c;font-size:1.1rem">初心者の悩み</h3>
+    <p style="font-size:1rem;color:#bbb">"全部終わってからcommit?" &mdash; "1行変えただけでcommit?" &mdash; "いつが正解？"</p>
+  </div>
+  <p style="text-align:center;color:#00d2ff;font-size:1.2rem;margin-bottom:1.5rem;font-weight:600">答え:「意味のある単位」でcommit</p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label red">ダメな例</p>
+      <div class="bad-example">
+        git commit -m "色々変更"<br>
+        <span style="color:#888;font-size:.8rem"># 500行変更、3機能追加、バグ2つ修正</span><br>
+        <span style="color:#888;font-size:.8rem"># &rarr; あとで何がいつ変わったか不明</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#27c93f44">
+      <p class="label green">良い例</p>
+      <div class="good-example">
+        git commit -m "feat: ログインフォーム追加"<br>
+        git commit -m "fix: バリデーションエラー修正"<br>
+        git commit -m "style: ヘッダーのCSS調整"<br>
+        <span style="color:#888;font-size:.8rem"># &rarr; 1commit = 1つの目的</span>
+      </div>
+    </div>
+  </div>
+  <div class="terminal" style="max-width:900px;margin-top:1.2rem">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>good commit pattern</span></div>
+    <div class="terminal-body" id="term-when" style="min-height:120px"></div>
+  </div>
+  <button onclick="runWhenDemo()" id="btn-when" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+</div>
+
+<!-- ==================== Slide 4: コミットメッセージ ==================== -->
+<div class="slide">
+  <h2>コミットメッセージの書き方</h2>
+  <div class="cols" style="max-width:1050px;margin-bottom:1.2rem">
+    <div class="card">
+      <p class="label red">こう書いてない？</p>
+      <div class="bad-example" style="line-height:2.2">
+        "update"<br>
+        "fix"<br>
+        "修正"<br>
+        "あああ"<br>
+        "test"<br>
+        "WIP"<br>
+        "asdf"<br>
+        <span style="color:#888;font-size:.8rem"># 3ヶ月後の自分「何これ...」</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#27c93f44">
+      <p class="label green">こう書こう</p>
+      <div class="good-example" style="line-height:2.2">
+        "feat: ログインフォームのバリデーションを追加"<br>
+        "fix: メール送信時のnullエラーを修正"<br>
+        "docs: READMEにセットアップ手順を追加"<br>
+        "style: ボタンのhoverアニメーションを調整"<br>
+        "refactor: ユーザー認証ロジックを分離"<br>
+        <span style="color:#888;font-size:.8rem"># 未来の自分への手紙</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="max-width:800px;text-align:center">
+    <p style="font-size:1rem;color:#bbb;margin-bottom:.8rem">テンプレート: <code>&lt;type&gt;: &lt;何を&gt;&lt;なぜ&gt;</code></p>
+    <div style="display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap">
+      <code style="color:#7ee787">feat</code>
+      <code style="color:#ff7b72">fix</code>
+      <code style="color:#00d2ff">docs</code>
+      <code style="color:#c792ea">style</code>
+      <code style="color:#ffcb6b">refactor</code>
+      <code style="color:#f78c6c">test</code>
+      <code style="color:#888">chore</code>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: コミットメッセージ実践デモ ==================== -->
+<div class="slide">
+  <h2>コミットメッセージ 実践デモ</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1rem;font-size:.95rem">悪い例 vs 良い例を <code>git log</code> で見比べてみよう</p>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>commit message comparison</span></div>
+    <div class="terminal-body" id="term-msg" style="min-height:220px"></div>
+  </div>
+  <button onclick="runMsgDemo()" id="btn-msg" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+</div>
+
+<!-- ==================== Slide 6: 変更してないのにcommitしたい ==================== -->
+<div class="slide">
+  <h2>変更してないのにcommitしたい</h2>
+  <div class="card" style="max-width:700px;margin-bottom:1rem;border-left:3px solid #ffcb6b">
+    <p style="color:#ffcb6b;font-weight:600;margin-bottom:.4rem">初心者あるある</p>
+    <p style="font-size:1rem">"commitできない...壊れた？" &rarr; いいえ、<strong style="color:#00d2ff">変更がないだけ</strong>です</p>
+  </div>
+  <p style="text-align:center;color:#888;margin-bottom:1rem;font-size:.95rem">Gitは「差分」を記録するツール。変更がなければ記録する必要がない。</p>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>nothing to commit</span></div>
+    <div class="terminal-body" id="term-nochange" style="min-height:180px"></div>
+  </div>
+  <button onclick="runNoChangeDemo()" id="btn-nochange" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+</div>
+
+<!-- ==================== Slide 7: git add忘れ ==================== -->
+<div class="slide">
+  <h2>git add を忘れる</h2>
+  <div class="card" style="max-width:700px;margin-bottom:1rem;border-left:3px solid #ff5370">
+    <p style="color:#ff5370;font-weight:600;margin-bottom:.4rem">初心者あるある No.1</p>
+    <p style="font-size:1rem">ファイルを編集 &rarr; <code>git commit</code> &rarr; "nothing to commit" &rarr; 「あれ？」</p>
+  </div>
+  <div class="flow" style="margin-bottom:1rem">
+    <div class="flow-box"><p style="font-size:.85rem;color:#ff5370">ファイル編集</p></div>
+    <div class="flow-arrow" style="color:#ff5370">&rarr;</div>
+    <div class="flow-box" style="border-color:#ff537066"><p style="font-size:.85rem;color:#ff5370">git commit<br><span style="font-size:.75rem;color:#888">忘れた!</span></p></div>
+    <div class="flow-arrow">&nbsp;&nbsp;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#7fdbca">ファイル編集</p></div>
+    <div class="flow-arrow" style="color:#7fdbca">&rarr;</div>
+    <div class="flow-box" style="border-color:#7fdbca66"><p style="font-size:.85rem;color:#7fdbca">git add</p></div>
+    <div class="flow-arrow" style="color:#7fdbca">&rarr;</div>
+    <div class="flow-box" style="border-color:#27c93f66"><p style="font-size:.85rem;color:#27c93f">git commit</p></div>
+  </div>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git add demo</span></div>
+    <div class="terminal-body" id="term-add" style="min-height:180px"></div>
+  </div>
+  <button onclick="runAddDemo()" id="btn-add" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+</div>
+
+<!-- ==================== Slide 8: コミットしすぎ vs しなさすぎ ==================== -->
+<div class="slide">
+  <h2>コミットしすぎ vs しなさすぎ</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;max-width:1050px;width:100%">
+    <div class="card" style="border-top:3px solid #ff5370">
+      <p class="label red">しすぎ</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:#ff7b72;line-height:2">
+        "add space"<br>
+        "remove space"<br>
+        "add space again"<br>
+        "typo"<br>
+        "fix typo"<br>
+        "fix typo again"<br>
+        "oops"
+      </div>
+      <p style="font-size:.8rem;color:#888;margin-top:.5rem">履歴がノイズだらけ。意味のある変更が埋もれる。</p>
+    </div>
+    <div class="card" style="border-top:3px solid #27c93f">
+      <p class="label green">ちょうどいい</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:#7ee787;line-height:2">
+        "feat: ユーザー登録画面を作成"<br>
+        "feat: バリデーション追加"<br>
+        "fix: メール形式チェック修正"<br>
+        "style: フォームのレイアウト調整"<br>
+        "test: 登録フォームのテスト追加"
+      </div>
+      <p style="font-size:.8rem;color:#27c93f;margin-top:.5rem">1commit = 1つの意味ある変更。履歴がきれい。</p>
+    </div>
+    <div class="card" style="border-top:3px solid #ffcb6b">
+      <p class="label yellow">しなさすぎ</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:#ffcb6b;line-height:2">
+        "1週間分の作業"<br>
+        <br>
+        <span style="color:#888">変更ファイル: 47個</span><br>
+        <span style="color:#888">追加: 2,340行</span><br>
+        <span style="color:#888">削除: 890行</span><br>
+        <br>
+        <span style="color:#888">何がいつ変わった？</span>
+      </div>
+      <p style="font-size:.8rem;color:#888;margin-top:.5rem">問題が起きてもどこで壊れたか特定できない。</p>
+    </div>
+  </div>
+  <p style="margin-top:1.2rem;color:#888;text-align:center;font-size:.95rem">目安: <strong style="color:#00d2ff">"このcommitで何をした？"を一文で説明できる</strong>ならちょうどいい粒度</p>
+</div>
+
+<!-- ==================== Slide 9: 間違えてcommitした ==================== -->
+<div class="slide">
+  <h2>間違えてcommitした！</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1rem;font-size:.95rem">慌てなくて大丈夫。状況に応じた対処法がある。</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;max-width:1050px;width:100%">
+    <div class="card step" data-step="0" style="border-top:3px solid #ffcb6b">
+      <p class="label yellow">パターン1</p>
+      <h3 style="font-size:1rem">メッセージを間違えた</h3>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:#7fdbca;line-height:1.8;margin-top:.5rem">
+        git commit --amend<br>
+        -m "正しいメッセージ"
+      </div>
+      <p style="font-size:.8rem;color:#ffcb6b;margin-top:.5rem">pushしてない場合のみ!</p>
+    </div>
+    <div class="card step" data-step="1" style="border-top:3px solid #f78c6c">
+      <p class="label orange">パターン2</p>
+      <h3 style="font-size:1rem">余計なファイルをcommit</h3>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:#7fdbca;line-height:1.8;margin-top:.5rem">
+        git reset HEAD~1
+      </div>
+      <p style="font-size:.8rem;color:#888;margin-top:.5rem">直前のcommitを取り消し。ファイルは残る。やり直せる。</p>
+    </div>
+    <div class="card step" data-step="2" style="border-top:3px solid #ff5370">
+      <p class="label red">パターン3</p>
+      <h3 style="font-size:1rem">もうpushしちゃった</h3>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;color:#7fdbca;line-height:1.8;margin-top:.5rem">
+        git revert HEAD
+      </div>
+      <p style="font-size:.8rem;color:#888;margin-top:.5rem">「打ち消しcommit」を作る。履歴を書き換えず安全。</p>
+    </div>
+  </div>
+  <div class="terminal" style="max-width:900px;margin-top:1rem">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>undo commits</span></div>
+    <div class="terminal-body" id="term-undo" style="min-height:160px"></div>
+  </div>
+  <button onclick="runUndoDemo()" id="btn-undo" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+</div>
+
+<!-- ==================== Slide 10: とりあえず動いた ==================== -->
+<div class="slide">
+  <h2>「とりあえず動いた」はcommitしていい？</h2>
+  <div style="text-align:center;margin-bottom:1.5rem">
+    <span style="font-size:3rem;color:#27c93f;font-weight:bold">YES!</span>
+    <p style="color:#7fdbca;font-size:1.1rem;margin-top:.5rem">むしろcommitすべき</p>
+  </div>
+  <div class="cols" style="max-width:900px">
+    <div class="card" style="text-align:center;border-color:#ff537044">
+      <p style="font-size:2rem;margin-bottom:.5rem">&#x274C;</p>
+      <h3 style="color:#ff5370;font-size:1rem">"完璧なコード"を待つ</h3>
+      <p style="font-size:.9rem;color:#888">&rarr; 永遠にcommitできない<br>&rarr; 途中で壊しても戻れない<br>&rarr; 全部失う可能性がある</p>
+    </div>
+    <div class="card" style="text-align:center;border-color:#27c93f44">
+      <p style="font-size:2rem;margin-bottom:.5rem">&#x2705;</p>
+      <h3 style="color:#27c93f;font-size:1rem">こまめにcommit</h3>
+      <p style="font-size:.9rem;color:#888">&rarr; いつでも戻れるセーブポイント<br>&rarr; 後からきれいにできる<br>&rarr; 安心して実験できる</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1.2rem;text-align:center;border-color:#7fdbca44">
+    <p style="font-size:1rem;color:#bbb">commitは「保存」。ゲームのセーブと同じ。</p>
+    <p style="font-size:.95rem;color:#7fdbca;margin-top:.5rem">WIP (Work In Progress) commitを活用しよう:<br><code>git commit -m "WIP: ログイン機能を実装中"</code></p>
+    <p style="font-size:.85rem;color:#888;margin-top:.3rem">後から <code>git commit --amend</code> できれいなメッセージに書き換えればOK</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: .gitignore忘れ ==================== -->
+<div class="slide">
+  <h2>.gitignoreを忘れてnode_modulesをcommit</h2>
+  <div class="card" style="max-width:700px;margin-bottom:1rem;border-left:3px solid #ff5370">
+    <p style="color:#ff5370;font-weight:600;margin-bottom:.4rem">パニック案件</p>
+    <p style="font-size:1rem"><code>git add .</code> &rarr; <strong style="color:#ff5370">1万ファイル</strong>がステージングされる &rarr; 「え？？」</p>
+  </div>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>.gitignore rescue</span></div>
+    <div class="terminal-body" id="term-gitignore" style="min-height:200px"></div>
+  </div>
+  <button onclick="runGitignoreDemo()" id="btn-gitignore" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+  <p style="margin-top:1rem;color:#7fdbca;font-size:.95rem;text-align:center">教訓: <strong>プロジェクト開始時に.gitignoreを最初に作る</strong></p>
+</div>
+
+<!-- ==================== Slide 12: mainで直接作業 ==================== -->
+<div class="slide">
+  <h2>mainブランチで直接作業しちゃった</h2>
+  <div class="card" style="max-width:700px;margin-bottom:1rem;border-left:3px solid #ffcb6b">
+    <p style="color:#ffcb6b;font-weight:600;margin-bottom:.4rem">初心者の心の声</p>
+    <p style="font-size:1rem">"ブランチ？面倒だからmainでいいや" &rarr; あとで困る</p>
+  </div>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>branch rescue</span></div>
+    <div class="terminal-body" id="term-branch" style="min-height:180px"></div>
+  </div>
+  <button onclick="runBranchDemo()" id="btn-branch" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.9rem">&#9654; デモを見る</button>
+  <div class="card" style="max-width:700px;margin-top:1rem;text-align:center">
+    <p style="font-size:.95rem;color:#bbb">ブランチを切るタイミング:</p>
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:.5rem;flex-wrap:wrap">
+      <code style="color:#7ee787">新しい機能</code>
+      <code style="color:#ff7b72">バグ修正</code>
+      <code style="color:#ffcb6b">実験・試行錯誤</code>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: pushが怖い ==================== -->
+<div class="slide">
+  <h2>pushが怖い</h2>
+  <div style="max-width:800px;width:100%">
+    <div class="card" style="margin-bottom:1.2rem;border-left:3px solid #ff5370">
+      <h3 style="color:#ff5370;font-size:1.1rem">初心者の恐怖</h3>
+      <p style="font-size:1rem">"pushしたら戻せない？" "壊したらどうしよう？" "チームに迷惑をかける？"</p>
+    </div>
+    <div class="card" style="margin-bottom:1.2rem;border-left:3px solid #27c93f">
+      <h3 style="color:#27c93f;font-size:1.1rem">現実</h3>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:.5rem .8rem;font-size:.95rem">
+        <span style="color:#27c93f">&#x2714;</span><span>pushしても <code>git revert</code> で戻せる</span>
+        <span style="color:#27c93f">&#x2714;</span><span>ブランチを使えばmainは壊れない</span>
+        <span style="color:#27c93f">&#x2714;</span><span>PR(プルリクエスト)でレビューしてからマージすればOK</span>
+        <span style="color:#27c93f">&#x2714;</span><span>個人リポジトリなら何をしても大丈夫</span>
+      </div>
+    </div>
+    <div class="card" style="border-left:3px solid #00d2ff;text-align:center">
+      <h3 style="color:#00d2ff;font-size:1.1rem">心理的ハードルを下げるコツ</h3>
+      <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:.5rem">
+        <div style="text-align:center">
+          <p style="font-size:1.5rem">&#x1F9EA;</p>
+          <p style="font-size:.85rem;color:#bbb">練習用リポジトリを<br>作って実験する</p>
+        </div>
+        <div style="text-align:center">
+          <p style="font-size:1.5rem">&#x1F33F;</p>
+          <p style="font-size:.85rem;color:#bbb">ブランチで作業<br>mainは安全</p>
+        </div>
+        <div style="text-align:center">
+          <p style="font-size:1.5rem">&#x1F91D;</p>
+          <p style="font-size:.85rem;color:#bbb">PRでレビュー<br>一人じゃない</p>
+        </div>
+        <div style="text-align:center">
+          <p style="font-size:1.5rem">&#x1F4AA;</p>
+          <p style="font-size:.85rem;color:#bbb">失敗は学び<br>怖がらなくて大丈夫</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 14: チェックリスト ==================== -->
+<div class="slide" id="slide-checklist">
+  <h2>初学者あるある チェックリスト</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem;font-size:.95rem">これを覚えておけば怖くない！</p>
+  <ul class="checklist" id="checklist">
+    <li>.gitignoreをプロジェクト開始時に作る</li>
+    <li>commitは「意味のある単位」で</li>
+    <li>メッセージは未来の自分への手紙</li>
+    <li>add を忘れずに（edit &rarr; add &rarr; commit）</li>
+    <li>迷ったらとりあえずcommit（後から直せる）</li>
+    <li>pushを恐れない（revertで戻せる）</li>
+    <li>練習用リポジトリを作って実験する</li>
+  </ul>
+  <p style="margin-top:1.5rem;color:#7fdbca;font-size:1rem;text-align:center">大丈夫、みんな最初はこうだった。<br>失敗しながら覚えていこう！</p>
+</div>
+
+<!-- ==================== Slide 15: コマンドリファレンス ==================== -->
+<div class="slide">
+  <h2>Appendix: コマンドリファレンス</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.2rem;font-size:.9rem">この編で登場したコマンドまとめ</p>
+  <div class="cmd-ref">
+    <code>git status</code><span class="desc">現在の状態を確認（変更ファイル、ステージング状況）</span>
+    <code>git add &lt;file&gt;</code><span class="desc">ファイルをステージングエリアに追加</span>
+    <code>git commit -m "msg"</code><span class="desc">ステージングされた変更をコミット</span>
+    <code>git commit --amend -m "msg"</code><span class="desc">直前のコミットメッセージを修正（push前のみ）</span>
+    <code>git reset HEAD~1</code><span class="desc">直前のコミットを取り消し（ファイルは残る）</span>
+    <code>git revert HEAD</code><span class="desc">直前のコミットを打ち消す新しいコミットを作成</span>
+    <code>git stash</code><span class="desc">作業中の変更を一時的に退避</span>
+    <code>git stash pop</code><span class="desc">退避した変更を復元</span>
+    <code>git checkout -b &lt;branch&gt;</code><span class="desc">新しいブランチを作成して切り替え</span>
+    <code>git rm --cached &lt;file&gt;</code><span class="desc">Gitの追跡から外す（ファイル自体は残る）</span>
+    <code>git log --oneline</code><span class="desc">コミット履歴を1行ずつ表示</span>
+    <code>git diff</code><span class="desc">まだステージングしていない変更を表示</span>
+  </div>
+</div>
+
+<!-- ===== Navigation UI ===== -->
+<div class="progress" id="progress">1 / 15</div>
+<div class="nav-hint">&larr; &rarr; で移動 &nbsp;|&nbsp; g: 最初 &nbsp; G: 最後 &nbsp; s: スキップ &nbsp; p: 一時停止</div>
+<div class="anim-controls" id="anim-controls">
+  <button class="anim-btn" onclick="skipAnim()">&#x23ED; スキップ (s)</button>
+  <button class="anim-btn" id="btn-pause" onclick="togglePause()">&#x23F8; 一時停止 (p)</button>
+</div>
+
+<script>
+/* ===== Navigation ===== */
+var slides=document.querySelectorAll('.slide');
+var prog=document.getElementById('progress');
+var cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+  else if(e.key==='s'){skipAnim()}else if(e.key==='p'){togglePause()}
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  /* Steps animation */
+  var steps=slide.querySelectorAll('.step');
+  if(steps.length){
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*600);
+    });
+  }
+  /* Checklist animation */
+  if(slide.id==='slide-checklist'){
+    var items=slide.querySelectorAll('.checklist li');
+    items.forEach(function(li,i){
+      li.classList.remove('checked');
+      setTimeout(function(){li.classList.add('checked')},400+i*500);
+    });
+  }
+  /* Outline animation */
+  if(slide.id==='slide-outline'){
+    var cards=slide.querySelectorAll('.step');
+    cards.forEach(function(c,i){
+      c.classList.remove('visible');
+      setTimeout(function(){c.classList.add('visible')},300+i*400);
+    });
+  }
+}
+
+/* ===== Animation Engine with Skip/Pause ===== */
+var _anim={timeouts:[],paused:false,lines:[],rendered:0,el:null,btnId:null,running:false};
+
+function _renderLine(l){
+  var div=document.createElement('div');
+  if(l.type==='prompt')div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+l.text+'</span>';
+  else if(l.type==='comment')div.innerHTML='<span class="info"># '+l.text+'</span>';
+  else div.innerHTML='<span class="'+(l.cls||'output')+'">'+l.text+'</span>';
+  _anim.el.appendChild(div);_anim.el.scrollTop=_anim.el.scrollHeight;
+}
+
+function _scheduleLines(startIdx){
+  var delay=0;
+  for(var i=startIdx;i<_anim.lines.length;i++){
+    delay+=_anim.lines[i].pause||500;
+    (function(idx,d){
+      var t=setTimeout(function(){
+        if(_anim.paused)return;
+        _renderLine(_anim.lines[idx]);
+        _anim.rendered=idx+1;
+      },d);
+      _anim.timeouts.push(t);
+    })(i,delay);
+  }
+  var t=setTimeout(function(){
+    if(_anim.paused)return;
+    _animDone();
+  },delay+500);
+  _anim.timeouts.push(t);
+}
+
+function _animDone(){
+  _anim.running=false;
+  if(_anim.btnId)document.getElementById(_anim.btnId).disabled=false;
+  document.getElementById('anim-controls').classList.remove('show');
+}
+
+function _cancelTimers(){
+  _anim.timeouts.forEach(clearTimeout);
+  _anim.timeouts=[];
+}
+
+function typeInTerminal(id,lines,btnId){
+  skipAnim();
+  _anim.el=document.getElementById(id);
+  _anim.el.innerHTML='';
+  _anim.btnId=btnId;
+  _anim.lines=lines;
+  _anim.rendered=0;
+  _anim.paused=false;
+  _anim.running=true;
+  if(btnId)document.getElementById(btnId).disabled=true;
+  document.getElementById('anim-controls').classList.add('show');
+  document.getElementById('btn-pause').textContent='\u23F8 \u4E00\u6642\u505C\u6B62';
+  document.getElementById('btn-pause').classList.remove('paused');
+  _scheduleLines(0);
+}
+
+function skipAnim(){
+  if(!_anim.running)return;
+  _cancelTimers();
+  for(var i=_anim.rendered;i<_anim.lines.length;i++){
+    _renderLine(_anim.lines[i]);
+  }
+  _anim.rendered=_anim.lines.length;
+  _anim.paused=false;
+  _animDone();
+}
+
+function togglePause(){
+  if(!_anim.running)return;
+  if(_anim.paused){
+    _anim.paused=false;
+    document.getElementById('btn-pause').textContent='\u23F8 \u4E00\u6642\u505C\u6B62';
+    document.getElementById('btn-pause').classList.remove('paused');
+    _scheduleLines(_anim.rendered);
+  }else{
+    _anim.paused=true;
+    _cancelTimers();
+    document.getElementById('btn-pause').textContent='\u25B6 \u518D\u958B';
+    document.getElementById('btn-pause').classList.add('paused');
+  }
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: When to Commit ===== */
+function runWhenDemo(){
+  typeInTerminal('term-when',[
+    {type:'comment',text:'ログインフォームを作成した',pause:0},
+    {type:'prompt',text:'git add src/LoginForm.tsx',pause:500},
+    {type:'prompt',text:'git commit -m "feat: ログインフォームのUIを作成"',pause:700},
+    {type:'output',text:'[main a1b2c3d] feat: ログインフォームのUIを作成',cls:'success',pause:400},
+    {type:'comment',text:'バリデーションを追加した',pause:600},
+    {type:'prompt',text:'git add src/LoginForm.tsx src/validation.ts',pause:500},
+    {type:'prompt',text:'git commit -m "feat: メール・パスワードのバリデーション追加"',pause:700},
+    {type:'output',text:'[main d4e5f6a] feat: メール・パスワードのバリデーション追加',cls:'success',pause:400},
+    {type:'comment',text:'テストを書いた',pause:600},
+    {type:'prompt',text:'git add tests/LoginForm.test.tsx',pause:500},
+    {type:'prompt',text:'git commit -m "test: ログインフォームのテストを追加"',pause:700},
+    {type:'output',text:'[main g7h8i9j] test: ログインフォームのテストを追加',cls:'success',pause:400},
+    {type:'prompt',text:'git log --oneline',pause:700},
+    {type:'output',text:'g7h8i9j test: ログインフォームのテストを追加',cls:'info',pause:300},
+    {type:'output',text:'d4e5f6a feat: メール・パスワードのバリデーション追加',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d feat: ログインフォームのUIを作成',cls:'info',pause:200},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ きれいな履歴！ 各commitの目的が一目でわかる',cls:'success',pause:400},
+  ],'btn-when');
+}
+
+/* ===== Demo: Commit Message ===== */
+function runMsgDemo(){
+  typeInTerminal('term-msg',[
+    {type:'comment',text:'--- 悪い例の git log ---',pause:0},
+    {type:'prompt',text:'git log --oneline',pause:500},
+    {type:'output',text:'f8g9h0i asdf',cls:'error',pause:300},
+    {type:'output',text:'e7f8g9h test',cls:'error',pause:200},
+    {type:'output',text:'d6e7f8g fix',cls:'error',pause:200},
+    {type:'output',text:'c5d6e7f update',cls:'error',pause:200},
+    {type:'output',text:'b4c5d6e 修正',cls:'error',pause:200},
+    {type:'output',text:'a3b4c5d あああ',cls:'error',pause:200},
+    {type:'comment',text:'何が何だかわからない... 3ヶ月後の自分は絶望する',pause:1000},
+    {type:'output',text:'',cls:'output',pause:500},
+    {type:'comment',text:'--- 良い例の git log ---',pause:800},
+    {type:'prompt',text:'git log --oneline',pause:500},
+    {type:'output',text:'f8g9h0i test: ユーザー認証のテストを追加',cls:'info',pause:300},
+    {type:'output',text:'e7f8g9h refactor: 認証ロジックをauthモジュールに分離',cls:'info',pause:300},
+    {type:'output',text:'d6e7f8g fix: メール送信時のnullエラーを修正',cls:'info',pause:300},
+    {type:'output',text:'c5d6e7f feat: パスワードリセット機能を追加',cls:'info',pause:300},
+    {type:'output',text:'b4c5d6e style: ログイン画面のレスポンシブ対応',cls:'info',pause:300},
+    {type:'output',text:'a3b4c5d feat: ログインフォームを実装',cls:'info',pause:300},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'✓ プロジェクトの成長過程が手に取るようにわかる！',cls:'success',pause:500},
+  ],'btn-msg');
+}
+
+/* ===== Demo: No Change ===== */
+function runNoChangeDemo(){
+  typeInTerminal('term-nochange',[
+    {type:'comment',text:'何も変更していない状態で...',pause:0},
+    {type:'prompt',text:'git status',pause:500},
+    {type:'output',text:'On branch main',cls:'output',pause:300},
+    {type:'output',text:'nothing to commit, working tree clean',cls:'output',pause:400},
+    {type:'comment',text:'「壊れた？」 いいえ、変更がないだけ！',pause:800},
+    {type:'output',text:'',cls:'output',pause:400},
+    {type:'comment',text:'ファイルを編集してみよう',pause:600},
+    {type:'prompt',text:'echo "console.log(\'hello\')" >> app.js',pause:500},
+    {type:'prompt',text:'git status',pause:500},
+    {type:'output',text:'On branch main',cls:'output',pause:200},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   app.js',cls:'error',pause:300},
+    {type:'comment',text:'変更が検出された！ あとは add して commit するだけ',pause:600},
+    {type:'prompt',text:'git add app.js',pause:500},
+    {type:'prompt',text:'git commit -m "feat: hello world のログを追加"',pause:600},
+    {type:'output',text:'[main k1l2m3n] feat: hello world のログを追加',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ 変更 → add → commit。これがGitの基本サイクル！',cls:'success',pause:400},
+  ],'btn-nochange');
+}
+
+/* ===== Demo: Forgot git add ===== */
+function runAddDemo(){
+  typeInTerminal('term-add',[
+    {type:'comment',text:'ファイルを編集した',pause:0},
+    {type:'prompt',text:'vim app.js',pause:400},
+    {type:'output',text:'(ファイルを編集して保存...)',cls:'output',pause:400},
+    {type:'comment',text:'addせずにcommitしてしまう...',pause:600},
+    {type:'prompt',text:'git commit -m "feat: 新機能追加"',pause:600},
+    {type:'output',text:'On branch main',cls:'output',pause:200},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   app.js',cls:'error',pause:200},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'no changes added to commit',cls:'error',pause:400},
+    {type:'comment',text:'「あれ？commitできない！」',pause:800},
+    {type:'comment',text:'addしてないから。ステージングされてない変更はcommitされない',pause:800},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'正しい手順: add してから commit',pause:600},
+    {type:'prompt',text:'git add app.js',pause:500},
+    {type:'prompt',text:'git commit -m "feat: 新機能追加"',pause:600},
+    {type:'output',text:'[main o4p5q6r] feat: 新機能追加',cls:'success',pause:400},
+    {type:'output',text:' 1 file changed, 15 insertions(+)',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ 成功！ edit → add → commit を忘れずに！',cls:'success',pause:400},
+  ],'btn-add');
+}
+
+/* ===== Demo: Undo Commits ===== */
+function runUndoDemo(){
+  typeInTerminal('term-undo',[
+    {type:'comment',text:'パターン1: メッセージを間違えた (push前)',pause:0},
+    {type:'prompt',text:'git commit -m "fxi: typoを修正"',pause:500},
+    {type:'output',text:'[main s7t8u9v] fxi: typoを修正',cls:'output',pause:400},
+    {type:'comment',text:'あ、"fxi"じゃなくて"fix"だった！',pause:600},
+    {type:'prompt',text:'git commit --amend -m "fix: typoを修正"',pause:600},
+    {type:'output',text:'[main w0x1y2z] fix: typoを修正',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:500},
+    {type:'comment',text:'パターン2: 余計なファイルをcommitした (push前)',pause:800},
+    {type:'prompt',text:'git reset HEAD~1',pause:600},
+    {type:'output',text:'Unstaged changes after reset:',cls:'output',pause:300},
+    {type:'output',text:'M  app.js',cls:'output',pause:200},
+    {type:'comment',text:'commitが取り消された。ファイルは残っている。やり直せる！',pause:600},
+    {type:'output',text:'',cls:'output',pause:500},
+    {type:'comment',text:'パターン3: もうpushしてしまった場合',pause:800},
+    {type:'prompt',text:'git revert HEAD',pause:600},
+    {type:'output',text:'[main a2b3c4d] Revert "feat: 間違った変更"',cls:'success',pause:400},
+    {type:'comment',text:'「打ち消しcommit」が作られる。履歴は残るが変更は元に戻る',pause:600},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ どのパターンでも対処法がある。落ち着いて対応しよう！',cls:'success',pause:400},
+  ],'btn-undo');
+}
+
+/* ===== Demo: .gitignore ===== */
+function runGitignoreDemo(){
+  typeInTerminal('term-gitignore',[
+    {type:'comment',text:'.gitignoreなしで git add . すると...',pause:0},
+    {type:'prompt',text:'git add .',pause:500},
+    {type:'prompt',text:'git status',pause:600},
+    {type:'output',text:'Changes to be committed:',cls:'output',pause:300},
+    {type:'output',text:'  new file:   node_modules/express/index.js',cls:'error',pause:200},
+    {type:'output',text:'  new file:   node_modules/express/lib/router.js',cls:'error',pause:150},
+    {type:'output',text:'  new file:   node_modules/lodash/lodash.js',cls:'error',pause:150},
+    {type:'output',text:'  ... (10,247 files)',cls:'error',pause:300},
+    {type:'comment',text:'node_modules全体がステージングされた！！',pause:800},
+    {type:'output',text:'',cls:'output',pause:400},
+    {type:'comment',text:'まずステージングを解除',pause:600},
+    {type:'prompt',text:'git reset',pause:500},
+    {type:'comment',text:'.gitignoreを作成する',pause:400},
+    {type:'prompt',text:'echo "node_modules/" >> .gitignore',pause:500},
+    {type:'prompt',text:'echo ".env" >> .gitignore',pause:400},
+    {type:'prompt',text:'echo ".DS_Store" >> .gitignore',pause:400},
+    {type:'comment',text:'もう一度 add してみると...',pause:500},
+    {type:'prompt',text:'git add .',pause:500},
+    {type:'prompt',text:'git status',pause:500},
+    {type:'output',text:'Changes to be committed:',cls:'output',pause:300},
+    {type:'output',text:'  new file:   .gitignore',cls:'success',pause:200},
+    {type:'output',text:'  new file:   index.js',cls:'success',pause:200},
+    {type:'output',text:'  new file:   package.json',cls:'success',pause:200},
+    {type:'comment',text:'node_modulesが無視された！',pause:500},
+    {type:'prompt',text:'git commit -m "chore: プロジェクト初期化"',pause:600},
+    {type:'output',text:'[main e5f6g7h] chore: プロジェクト初期化',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ .gitignoreはプロジェクト開始時に真っ先に作ろう！',cls:'success',pause:500},
+  ],'btn-gitignore');
+}
+
+/* ===== Demo: Main Branch Rescue ===== */
+function runBranchDemo(){
+  typeInTerminal('term-branch',[
+    {type:'comment',text:'mainブランチで作業してしまった... まだcommitしてない場合',pause:0},
+    {type:'prompt',text:'git status',pause:500},
+    {type:'output',text:'On branch main',cls:'output',pause:300},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   src/app.js',cls:'error',pause:200},
+    {type:'output',text:'  modified:   src/style.css',cls:'error',pause:200},
+    {type:'comment',text:'変更を一時退避する',pause:600},
+    {type:'prompt',text:'git stash',pause:500},
+    {type:'output',text:'Saved working directory and index state WIP on main',cls:'success',pause:400},
+    {type:'comment',text:'新しいブランチを作って切り替え',pause:500},
+    {type:'prompt',text:'git checkout -b feature/new-design',pause:600},
+    {type:'output',text:"Switched to a new branch 'feature/new-design'",cls:'success',pause:400},
+    {type:'comment',text:'退避した変更を復元',pause:500},
+    {type:'prompt',text:'git stash pop',pause:500},
+    {type:'output',text:'On branch feature/new-design',cls:'output',pause:200},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   src/app.js',cls:'info',pause:200},
+    {type:'output',text:'  modified:   src/style.css',cls:'info',pause:200},
+    {type:'output',text:'Dropped refs/stash@{0}',cls:'output',pause:300},
+    {type:'comment',text:'変更がfeatureブランチに移動した！ あとは普通にcommit',pause:600},
+    {type:'prompt',text:'git add . && git commit -m "feat: 新しいデザインを実装"',pause:600},
+    {type:'output',text:'[feature/new-design i8j9k0l] feat: 新しいデザインを実装',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ mainを汚さずブランチで作業できた！',cls:'success',pause:400},
+  ],'btn-branch');
+}
+
+/* ===== Init ===== */
+onSlideEnter(0);
+</script>
+</body></html>

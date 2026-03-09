@@ -18,6 +18,7 @@ https://lutelute.github.io/git-presentation/
 | 8 | [OSS参加編](https://lutelute.github.io/git-presentation/oss.html) | Fork & Contribute、ライセンス、CLA |
 | 9 | [GitHub CLI編](https://lutelute.github.io/git-presentation/gh-cli.html) | ghコマンド、エイリアス、スクリプト連携 |
 | 10 | [Git上級編](https://lutelute.github.io/git-presentation/git-advanced.html) | rebase、cherry-pick、bisect、submodule、worktree |
+| 11 | [初学者あるある編](https://lutelute.github.io/git-presentation/beginners-tips.html) | コミットの悩み、メッセージの書き方、よくあるミスと対処法 |
 
 ## 操作方法
 

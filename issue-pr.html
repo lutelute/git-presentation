@@ -554,15 +554,15 @@ ul.feature-list li::before{content:'\25B8 ';color:#00d2ff}
 <div class="slide" id="slide-review">
   <h2>PR レビュープロセス</h2>
   <div class="flow" style="margin-bottom:1.5rem;gap:.3rem" id="review-flow">
-    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#c792ea">PR 作成</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#58a6ff">レビュー依頼</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#ffcb6b">コメント</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#ff7b72">修正</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#27c93f">承認&マージ</p></div>
+    <div class="flow-box" id="rv-create" style="min-width:100px"><p style="font-size:.8rem;color:#c792ea">PR 作成</p></div>
+    <div class="flow-arrow" id="rv-a1">&#8594;</div>
+    <div class="flow-box" id="rv-review" style="min-width:100px"><p style="font-size:.8rem;color:#58a6ff">レビュー依頼</p></div>
+    <div class="flow-arrow" id="rv-a2">&#8594;</div>
+    <div class="flow-box" id="rv-comment" style="min-width:100px"><p style="font-size:.8rem;color:#ffcb6b">コメント</p></div>
+    <div class="flow-arrow" id="rv-a3">&#8594;</div>
+    <div class="flow-box" id="rv-fix" style="min-width:100px"><p style="font-size:.8rem;color:#ff7b72">修正</p></div>
+    <div class="flow-arrow" id="rv-a4">&#8594;</div>
+    <div class="flow-box" id="rv-merge" style="min-width:100px"><p style="font-size:.8rem;color:#27c93f">承認&マージ</p></div>
   </div>
   <div class="terminal" style="max-width:850px">
     <div class="terminal-bar">
@@ -573,7 +573,7 @@ ul.feature-list li::before{content:'\25B8 ';color:#00d2ff}
   </div>
   <div style="margin-top:.8rem;display:flex;gap:8px">
     <button class="demo-btn" id="btn-review" onclick="runReviewDemo()">Demo: PR レビューフロー</button>
-    <button class="demo-btn" onclick="resetTerm('term-review');document.getElementById('btn-review').disabled=false">Reset</button>
+    <button class="demo-btn" onclick="resetTerm('term-review');document.getElementById('btn-review').disabled=false;_rvHighlight(null)">Reset</button>
   </div>
   <div style="display:flex;gap:1rem;margin-top:.8rem;flex-wrap:wrap;justify-content:center">
     <span class="review-badge comment">Comment: 質問・提案</span>
@@ -989,8 +989,23 @@ function resetTerm(id){
 }
 
 /* ===== Demo: PR Review Flow ===== */
+function _rvHighlight(id){
+  ['rv-create','rv-review','rv-comment','rv-fix','rv-merge'].forEach(function(x){
+    document.getElementById(x).classList.remove('active-box');
+  });
+  ['rv-a1','rv-a2','rv-a3','rv-a4'].forEach(function(x){
+    document.getElementById(x).style.color='#555';
+  });
+  if(id){
+    document.getElementById(id).classList.add('active-box');
+    if(id==='rv-review'){document.getElementById('rv-a1').style.color='#00d2ff';}
+    if(id==='rv-comment'){['rv-a1','rv-a2'].forEach(function(x){document.getElementById(x).style.color='#00d2ff';});}
+    if(id==='rv-fix'){['rv-a1','rv-a2','rv-a3'].forEach(function(x){document.getElementById(x).style.color='#00d2ff';});}
+    if(id==='rv-merge'){['rv-a1','rv-a2','rv-a3','rv-a4'].forEach(function(x){document.getElementById(x).style.color='#00d2ff';});}
+  }
+}
 function runReviewDemo(){
-  typeInTerminal('term-review',[
+  var reviewLines=[
     {type:'comment',text:'PR を作成する',pause:0},
     {type:'prompt',text:'gh pr create --title "fix: login button bug" --body "Fixes #42"',pause:800},
     {type:'output',text:'Creating pull request for feature/fix-login-btn into main',cls:'output',pause:500},
@@ -1024,8 +1039,27 @@ function runReviewDemo(){
     {type:'output',text:'Merging pull request #48 (fix: login button bug)',cls:'info',pause:400},
     {type:'output',text:'Deleted branch feature/fix-login-btn',cls:'output',pause:300},
     {type:'output',text:'',cls:'output',pause:200},
-    {type:'output',text:'Pull request #48 merged successfully!',cls:'success',pause:400},
-  ],'btn-review');
+    {type:'output',text:'Pull request #48 merged successfully!',cls:'success',pause:400}
+  ];
+  _rvHighlight('rv-create');
+  typeInTerminal('term-review',reviewLines,'btn-review');
+  // Sync flow diagram highlights with terminal timing
+  var d=0;
+  // Step 1: PR create (lines 0-4) - already highlighted above
+  d+=0+800+500+400+300; // comment(0)+prompt(800)+output(500)+output(400)+output(300)
+  // Step 2: Review request (lines 5-8)
+  setTimeout(function(){_rvHighlight('rv-review')},d);
+  d+=600+700+400+300; // comment(600)+prompt(700)+output(400)+output(300)
+  // Step 3: Comment / status check (lines 9-17)
+  setTimeout(function(){_rvHighlight('rv-comment')},d);
+  d+=600+700+300+100+200+300+200+400+300; // comment(600)+prompt(700)+outputs...
+  // Step 4: Review comments (lines 18-22) - still comment phase
+  d+=600+700+400+400+400; // comment(600)+prompt(700)+outputs(400+400+400)
+  // Step 5: Fix (lines 23-27)
+  setTimeout(function(){_rvHighlight('rv-fix')},d);
+  d+=600+700+600+300+300; // comment(600)+prompt(700)+prompt(600)+output(300)+output(300)
+  // Step 6: Merge (lines 28-32)
+  setTimeout(function(){_rvHighlight('rv-merge')},d);
 }
 
 /* ===== Init ===== */

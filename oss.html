@@ -225,19 +225,19 @@ button:disabled{opacity:.4;cursor:default}
 <div class="slide" id="slide-workflow">
   <h2>Contribution ワークフロー</h2>
   <div class="flow" style="margin-bottom:2rem" id="oss-flow">
-    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Fork</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Clone</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Branch</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Code</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Commit</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Push</p></div>
-    <div class="flow-arrow">&#8594;</div>
-    <div class="flow-box" style="border-color:#27c93f55"><p style="font-size:.85rem;color:#27c93f;font-weight:600">PR</p></div>
+    <div class="flow-box" id="ow-fork"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Fork</p></div>
+    <div class="flow-arrow" id="ow-a1">&#8594;</div>
+    <div class="flow-box" id="ow-clone"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Clone</p></div>
+    <div class="flow-arrow" id="ow-a2">&#8594;</div>
+    <div class="flow-box" id="ow-branch"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Branch</p></div>
+    <div class="flow-arrow" id="ow-a3">&#8594;</div>
+    <div class="flow-box" id="ow-code"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Code</p></div>
+    <div class="flow-arrow" id="ow-a4">&#8594;</div>
+    <div class="flow-box" id="ow-commit"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Commit</p></div>
+    <div class="flow-arrow" id="ow-a5">&#8594;</div>
+    <div class="flow-box" id="ow-push"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Push</p></div>
+    <div class="flow-arrow" id="ow-a6">&#8594;</div>
+    <div class="flow-box" id="ow-pr" style="border-color:#27c93f55"><p style="font-size:.85rem;color:#27c93f;font-weight:600">PR</p></div>
   </div>
   <div class="terminal" id="term-workflow">
     <div class="terminal-bar">
@@ -626,13 +626,9 @@ function onSlideEnter(idx){
       setTimeout(function(){s.classList.add('visible')},300+i*500);
     });
   }
-  /* Flow diagram animation */
+  /* Flow diagram — reset highlights when entering the slide */
   if(slide.id==='slide-workflow'){
-    var boxes=slide.querySelectorAll('.flow-box');
-    boxes.forEach(function(b,i){
-      b.classList.remove('active-box');
-      setTimeout(function(){b.classList.add('active-box')},300+i*400);
-    });
+    _owHighlight(null);
   }
   /* Checklist animation */
   if(slide.id==='slide-start-oss'){
@@ -754,32 +750,63 @@ function runTermFork(){
   ],'btn-fork');
 }
 
+/* ===== Flow Diagram Highlight Helper ===== */
+function _owHighlight(id){
+  ['ow-fork','ow-clone','ow-branch','ow-code','ow-commit','ow-push','ow-pr'].forEach(function(x){
+    document.getElementById(x).classList.remove('active-box');
+  });
+  ['ow-a1','ow-a2','ow-a3','ow-a4','ow-a5','ow-a6'].forEach(function(x){
+    document.getElementById(x).style.color='#555';
+  });
+  if(id){
+    document.getElementById(id).classList.add('active-box');
+    var boxes=['ow-fork','ow-clone','ow-branch','ow-code','ow-commit','ow-push','ow-pr'];
+    var idx=boxes.indexOf(id);
+    for(var i=0;i<idx;i++){
+      document.getElementById('ow-a'+(i+1)).style.color='#00d2ff';
+    }
+  }
+}
+
 /* ===== Demo: Full Workflow ===== */
 function runTermWorkflow(){
-  typeInTerminal('term-workflow-body',[
-    {type:'comment',text:'1. 最新のmainを取得',pause:0},
+  var lines=[
+    {type:'comment',text:'1. 最新のmainを取得',pause:0,ow:'ow-fork'},
     {type:'prompt',text:'git checkout main',pause:500},
     {type:'prompt',text:'git pull upstream main',pause:500},
     {type:'output',text:'Already up to date.',cls:'success',pause:400},
-    {type:'comment',text:'2. 作業ブランチを作成',pause:500},
+    {type:'comment',text:'2. 作業ブランチを作成',pause:500,ow:'ow-clone'},
     {type:'prompt',text:'git checkout -b fix/typo-in-readme',pause:600},
-    {type:'output',text:'Switched to a new branch \'fix/typo-in-readme\'',cls:'success',pause:400},
-    {type:'comment',text:'3. ファイルを修正',pause:500},
+    {type:'output',text:'Switched to a new branch \'fix/typo-in-readme\'',cls:'success',pause:400,ow:'ow-branch'},
+    {type:'comment',text:'3. ファイルを修正',pause:500,ow:'ow-code'},
     {type:'prompt',text:'vim README.md',pause:500},
     {type:'output',text:'... editing ...',cls:'output',pause:400},
-    {type:'comment',text:'4. 変更をコミット',pause:500},
+    {type:'comment',text:'4. 変更をコミット',pause:500,ow:'ow-commit'},
     {type:'prompt',text:'git add README.md',pause:500},
     {type:'prompt',text:'git commit -m "fix: correct typo in installation section"',pause:600},
     {type:'output',text:'[fix/typo-in-readme abc1234] fix: correct typo in installation section',cls:'success',pause:400},
     {type:'output',text:' 1 file changed, 1 insertion(+), 1 deletion(-)',cls:'output',pause:200},
-    {type:'comment',text:'5. 自分のForkにpush',pause:500},
+    {type:'comment',text:'5. 自分のForkにpush',pause:500,ow:'ow-push'},
     {type:'prompt',text:'git push origin fix/typo-in-readme',pause:600},
     {type:'output',text:'Enumerating objects: 5, done.',cls:'output',pause:300},
     {type:'output',text:'To github.com:your-name/react.git',cls:'output',pause:200},
     {type:'output',text:' * [new branch]  fix/typo-in-readme -> fix/typo-in-readme',cls:'success',pause:300},
-    {type:'comment',text:'6. GitHubでPull Requestを作成（ブラウザ操作）',pause:500},
+    {type:'comment',text:'6. GitHubでPull Requestを作成（ブラウザ操作）',pause:500,ow:'ow-pr'},
     {type:'output',text:'Pull Request #12345 created successfully!',cls:'info',pause:400}
-  ],'btn-workflow');
+  ];
+
+  /* Pre-compute cumulative delays and schedule flow highlights */
+  var cumulative=0;
+  for(var i=0;i<lines.length;i++){
+    cumulative+=lines[i].pause||500;
+    if(lines[i].ow){
+      (function(owId,d){
+        setTimeout(function(){_owHighlight(owId)},d);
+      })(lines[i].ow,cumulative);
+    }
+  }
+
+  typeInTerminal('term-workflow-body',lines,'btn-workflow');
 }
 </script>
 </body></html>

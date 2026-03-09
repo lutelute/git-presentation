@@ -207,6 +207,83 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   </div>
 </div>
 
+<!-- ==================== Slide: Gitの用語を知ろう ==================== -->
+<div class="slide">
+  <h2>Gitの用語を知ろう</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem">まずは言葉の意味を押さえよう</p>
+  <div style="max-width:1000px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card" style="border-left:3px solid #00d2ff">
+      <h3 style="font-size:1.1rem;color:#00d2ff">リポジトリ（Repository）</h3>
+      <p style="font-size:.9rem">プロジェクトの「保管庫」。ファイルと全変更履歴がまとめて管理される場所。<br><code>git init</code> で作成する。</p>
+    </div>
+    <div class="card" style="border-left:3px solid #7fdbca">
+      <h3 style="font-size:1.1rem;color:#7fdbca">ローカル / リモート</h3>
+      <p style="font-size:.9rem"><strong style="color:#7fdbca">ローカル</strong> = 自分のPC上のリポジトリ<br><strong style="color:#ffcb6b">リモート</strong> = GitHub上のリポジトリ<br>この2つを同期して使う。</p>
+    </div>
+    <div class="card" style="border-left:3px solid #c792ea">
+      <h3 style="font-size:1.1rem;color:#c792ea">クローン（Clone）</h3>
+      <p style="font-size:.9rem">リモートのリポジトリを丸ごとコピーして、自分のPCに持ってくること。<br><code>git clone URL</code></p>
+    </div>
+    <div class="card" style="border-left:3px solid #f78c6c">
+      <h3 style="font-size:1.1rem;color:#f78c6c">コミット（Commit）</h3>
+      <p style="font-size:.9rem">変更を「記録」すること。ゲームのセーブポイントのようなもの。<br><code>git commit -m "メッセージ"</code></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ffcb6b">
+      <h3 style="font-size:1.1rem;color:#ffcb6b">プッシュ（Push）</h3>
+      <p style="font-size:.9rem">ローカルのcommitをリモートに送ること。「アップロード」に近い。<br><code>git push origin main</code></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ff5370">
+      <h3 style="font-size:1.1rem;color:#ff5370">プル（Pull）</h3>
+      <p style="font-size:.9rem">リモートの最新の変更をローカルに取得すること。「ダウンロード＋統合」。<br><code>git pull origin main</code></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide: ローカルとリモートの関係 ==================== -->
+<div class="slide">
+  <h2>ローカルとリモートの関係</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1rem">2つのリポジトリを行き来するイメージ</p>
+  <div style="max-width:800px;width:100%;display:flex;justify-content:center;align-items:center;gap:2rem;margin:1rem 0">
+    <div class="card" style="text-align:center;min-width:250px;border:2px solid #7fdbca">
+      <p style="font-size:.8rem;color:#7fdbca;margin-bottom:.5rem">LOCAL（自分のPC）</p>
+      <h3 style="color:#e0e0e0;font-size:1.3rem">ローカルリポジトリ</h3>
+      <div style="margin-top:.8rem;font-size:.85rem;color:#888;text-align:left">
+        <div>・コードを編集する場所</div>
+        <div>・<code>git add</code> / <code>git commit</code></div>
+        <div>・オフラインでも作業可能</div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:1rem;align-items:center">
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <code style="font-size:.8rem;color:#ffcb6b">git push</code>
+        <span style="color:#ffcb6b;font-size:1.5rem">→</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <span style="color:#ff5370;font-size:1.5rem">←</span>
+        <code style="font-size:.8rem;color:#ff5370">git pull</code>
+      </div>
+      <div style="display:flex;align-items:center;gap:.3rem">
+        <span style="color:#c792ea;font-size:1.5rem">←</span>
+        <code style="font-size:.8rem;color:#c792ea">git clone</code>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;min-width:250px;border:2px solid #ffcb6b">
+      <p style="font-size:.8rem;color:#ffcb6b;margin-bottom:.5rem">REMOTE（GitHub）</p>
+      <h3 style="color:#e0e0e0;font-size:1.3rem">リモートリポジトリ</h3>
+      <div style="margin-top:.8rem;font-size:.85rem;color:#888;text-align:left">
+        <div>・コードのバックアップ</div>
+        <div>・チームで共有</div>
+        <div>・GitHub Pagesで公開</div>
+      </div>
+    </div>
+  </div>
+  <div style="max-width:700px;text-align:center;margin-top:1rem">
+    <p style="font-size:.95rem;color:#bbb"><code style="color:#c792ea">clone</code> = 最初に一度だけ。リモートをコピーしてローカルに作る</p>
+    <p style="font-size:.95rem;color:#bbb"><code style="color:#ffcb6b">push</code> = ローカル → リモートに送る（自分の変更を共有）</p>
+    <p style="font-size:.95rem;color:#bbb"><code style="color:#ff5370">pull</code> = リモート → ローカルに取る（他人の変更を取得）</p>
+  </div>
+</div>
+
 <!-- ==================== Slide 4: 環境構築 (1/2) ==================== -->
 <div class="slide" id="slide-setup1">
   <h2>環境構築 (1/2) — インストール</h2>

@@ -224,12 +224,12 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   <h2>cherry-pick</h2>
   <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">他のブランチから<strong style="color:#00d2ff">特定のコミットだけ</strong>を取り込む</p>
   <div style="margin:1rem 0">
-    <div class="flow">
-      <div class="flow-box" style="border-color:#c792ea44;color:#c792ea">feature<br><span style="font-size:.75rem;color:#888">abc123</span></div>
-      <div class="flow-arrow">---</div>
-      <div class="flow-box" style="border-color:#ffcb6b44;color:#ffcb6b">cherry-pick</div>
-      <div class="flow-arrow">---&gt;</div>
-      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">main<br><span style="font-size:.75rem;color:#888">abc123'</span></div>
+    <div class="flow" id="flow-cherry">
+      <div class="flow-box" id="cp-feature" style="border-color:#c792ea44;color:#c792ea">feature<br><span style="font-size:.75rem;color:#888">abc123</span></div>
+      <div class="flow-arrow" id="cp-arrow1">---</div>
+      <div class="flow-box" id="cp-pick" style="border-color:#ffcb6b44;color:#ffcb6b">cherry-pick</div>
+      <div class="flow-arrow" id="cp-arrow2">---&gt;</div>
+      <div class="flow-box" id="cp-main" style="border-color:#00d2ff44;color:#00d2ff">main<br><span style="font-size:.75rem;color:#888">abc123'</span></div>
     </div>
   </div>
   <div class="btn-group">
@@ -261,14 +261,14 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   <h2>git stash</h2>
   <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">作業中の変更を一時的に退避させる</p>
   <div style="margin:.8rem 0">
-    <div class="flow">
-      <div class="flow-box" style="border-color:#ff537044;color:#ff5370">作業中の変更</div>
-      <div class="flow-arrow">--&gt;</div>
-      <div class="flow-box" style="border-color:#ffcb6b44;color:#ffcb6b">stash<br><span style="font-size:.75rem">一時退避</span></div>
-      <div class="flow-arrow">--&gt;</div>
-      <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca">別の作業</div>
-      <div class="flow-arrow">--&gt;</div>
-      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">stash pop<br><span style="font-size:.75rem">復元</span></div>
+    <div class="flow" id="flow-stash">
+      <div class="flow-box" id="st-working" style="border-color:#ff537044;color:#ff5370">作業中の変更</div>
+      <div class="flow-arrow" id="st-arrow1">--&gt;</div>
+      <div class="flow-box" id="st-stash" style="border-color:#ffcb6b44;color:#ffcb6b">stash<br><span style="font-size:.75rem">一時退避</span></div>
+      <div class="flow-arrow" id="st-arrow2">--&gt;</div>
+      <div class="flow-box" id="st-other" style="border-color:#7fdbca44;color:#7fdbca">別の作業</div>
+      <div class="flow-arrow" id="st-arrow3">--&gt;</div>
+      <div class="flow-box" id="st-pop" style="border-color:#00d2ff44;color:#00d2ff">stash pop<br><span style="font-size:.75rem">復元</span></div>
     </div>
   </div>
   <div class="btn-group">
@@ -286,12 +286,12 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   <h2>git worktree</h2>
   <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">1つのリポジトリから<strong style="color:#00d2ff">複数の作業ディレクトリ</strong>を作る</p>
   <div style="margin:.8rem 0">
-    <div class="flow">
-      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">my-project/<br><span style="font-size:.75rem;color:#888">main</span></div>
-      <div class="flow-arrow" style="transform:rotate(30deg)">---&gt;</div>
+    <div class="flow" id="flow-worktree">
+      <div class="flow-box" id="wt-main" style="border-color:#00d2ff44;color:#00d2ff">my-project/<br><span style="font-size:.75rem;color:#888">main</span></div>
+      <div class="flow-arrow" id="wt-arrow1" style="transform:rotate(30deg)">---&gt;</div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
-        <div class="flow-box" style="border-color:#c792ea44;color:#c792ea;font-size:.8rem">../my-project-fix/<br><span style="font-size:.7rem;color:#888">hotfix branch</span></div>
-        <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca;font-size:.8rem">../my-project-exp/<br><span style="font-size:.7rem;color:#888">experiment branch</span></div>
+        <div class="flow-box" id="wt-fix" style="border-color:#c792ea44;color:#c792ea;font-size:.8rem">../my-project-fix/<br><span style="font-size:.7rem;color:#888">hotfix branch</span></div>
+        <div class="flow-box" id="wt-exp" style="border-color:#7fdbca44;color:#7fdbca;font-size:.8rem">../my-project-exp/<br><span style="font-size:.7rem;color:#888">experiment branch</span></div>
       </div>
     </div>
   </div>
@@ -310,12 +310,12 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   <h2>git submodule</h2>
   <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">外部リポジトリを自分のリポジトリの中に含める</p>
   <div style="margin:.8rem 0">
-    <div class="flow">
-      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">my-project/<br><span style="font-size:.75rem;color:#888">メインリポ</span></div>
-      <div class="flow-arrow">contains</div>
+    <div class="flow" id="flow-submodule">
+      <div class="flow-box" id="sm-main" style="border-color:#00d2ff44;color:#00d2ff">my-project/<br><span style="font-size:.75rem;color:#888">メインリポ</span></div>
+      <div class="flow-arrow" id="sm-arrow1">contains</div>
       <div style="display:flex;flex-direction:column;gap:.5rem">
-        <div class="flow-box" style="border-color:#c792ea44;color:#c792ea;font-size:.8rem">libs/ui-kit/<br><span style="font-size:.7rem;color:#888">外部リポ A</span></div>
-        <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca;font-size:.8rem">libs/shared/<br><span style="font-size:.7rem;color:#888">外部リポ B</span></div>
+        <div class="flow-box" id="sm-uikit" style="border-color:#c792ea44;color:#c792ea;font-size:.8rem">libs/ui-kit/<br><span style="font-size:.7rem;color:#888">外部リポ A</span></div>
+        <div class="flow-box" id="sm-shared" style="border-color:#7fdbca44;color:#7fdbca;font-size:.8rem">libs/shared/<br><span style="font-size:.7rem;color:#888">外部リポ B</span></div>
       </div>
     </div>
   </div>
@@ -684,6 +684,11 @@ function resetTerm(id){
     var btns=slide.querySelectorAll('.demo-btn:not(.reset)');
     btns.forEach(function(b){b.disabled=false});
   }
+  // Clear flow highlights for slides that have them
+  if(id==='term-cherry') _cherryHighlight(null);
+  if(id==='term-stash') _stashHighlight(null);
+  if(id==='term-worktree') _worktreeHighlight(null);
+  if(id==='term-submodule') _submoduleHighlight(null);
 }
 
 /* ===== Demo: Rebase ===== */
@@ -747,9 +752,67 @@ function runIRebaseDemo(){
   ],'btn-irebase');
 }
 
+/* ===== Highlight Helpers ===== */
+function _cherryHighlight(id){
+  ['cp-feature','cp-pick','cp-main'].forEach(function(x){
+    document.getElementById(x).classList.remove('active-box');
+  });
+  ['cp-arrow1','cp-arrow2'].forEach(function(x){
+    document.getElementById(x).style.color='#555';
+  });
+  if(id){
+    document.getElementById(id).classList.add('active-box');
+    if(id==='cp-pick'||id==='cp-main') document.getElementById('cp-arrow1').style.color='#00d2ff';
+    if(id==='cp-main') document.getElementById('cp-arrow2').style.color='#00d2ff';
+  }
+}
+
+function _stashHighlight(id){
+  ['st-working','st-stash','st-other','st-pop'].forEach(function(x){
+    document.getElementById(x).classList.remove('active-box');
+  });
+  ['st-arrow1','st-arrow2','st-arrow3'].forEach(function(x){
+    document.getElementById(x).style.color='#555';
+  });
+  if(id){
+    document.getElementById(id).classList.add('active-box');
+    var order=['st-working','st-stash','st-other','st-pop'];
+    var arrows=['st-arrow1','st-arrow2','st-arrow3'];
+    var idx=order.indexOf(id);
+    for(var i=0;i<idx&&i<arrows.length;i++) document.getElementById(arrows[i]).style.color='#00d2ff';
+  }
+}
+
+function _worktreeHighlight(id){
+  ['wt-main','wt-fix','wt-exp'].forEach(function(x){
+    document.getElementById(x).classList.remove('active-box');
+  });
+  ['wt-arrow1'].forEach(function(x){
+    document.getElementById(x).style.color='#555';
+  });
+  if(id){
+    document.getElementById(id).classList.add('active-box');
+    if(id==='wt-fix'||id==='wt-exp') document.getElementById('wt-arrow1').style.color='#00d2ff';
+  }
+}
+
+function _submoduleHighlight(id){
+  ['sm-main','sm-uikit','sm-shared'].forEach(function(x){
+    document.getElementById(x).classList.remove('active-box');
+  });
+  ['sm-arrow1'].forEach(function(x){
+    document.getElementById(x).style.color='#555';
+  });
+  if(id){
+    document.getElementById(id).classList.add('active-box');
+    if(id==='sm-uikit'||id==='sm-shared') document.getElementById('sm-arrow1').style.color='#00d2ff';
+  }
+}
+
 /* ===== Demo: Cherry-pick ===== */
 function runCherryDemo(){
-  typeInTerminal('term-cherry',[
+  _cherryHighlight('cp-feature');
+  var lines=[
     {type:'comment',text:'featureブランチにバグ修正コミットがある。mainにも欲しい',pause:0},
     {type:'prompt',text:'git log --oneline feature',pause:700},
     {type:'output',text:'f9e8d7c feat: 新しいUI',cls:'info',pause:300},
@@ -772,7 +835,17 @@ function runCherryDemo(){
     {type:'comment',text:'範囲指定: git cherry-pick A..C',pause:400},
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'OK 必要なコミットだけmainに適用完了',cls:'success',pause:300},
-  ],'btn-cherry');
+  ];
+  typeInTerminal('term-cherry',lines,'btn-cherry');
+  // Sync flow highlights with terminal timing
+  // cumulative delays: line0=0, line1=0+700=700, ... line9(cherry-pick cmd)=0+700+300+300+200+400+700+600+400+800=4400
+  // line10(success)=4400+500=4900, line12(comment main copied)=4900+300+700=5900
+  var d=0,delays=[];
+  for(var i=0;i<lines.length;i++){delays.push(d);d+=lines[i].pause||500;}
+  setTimeout(function(){_cherryHighlight('cp-feature');},0);
+  setTimeout(function(){_cherryHighlight('cp-pick');},delays[9]);
+  setTimeout(function(){_cherryHighlight('cp-main');},delays[10]);
+  setTimeout(function(){_cherryHighlight(null);},d+500);
 }
 
 /* ===== Demo: Bisect ===== */
@@ -819,7 +892,8 @@ function runBisectDemo(){
 
 /* ===== Demo: Stash ===== */
 function runStashDemo(){
-  typeInTerminal('term-stash',[
+  _stashHighlight('st-working');
+  var lines=[
     {type:'comment',text:'機能開発中だけど、急ぎのバグ修正が入った',pause:0},
     {type:'prompt',text:'git status',pause:600},
     {type:'output',text:'On branch feature/new-dashboard',cls:'info',pause:300},
@@ -849,12 +923,26 @@ function runStashDemo(){
     {type:'output',text:'Dropped refs/stash@{0}',cls:'output',pause:300},
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'OK 作業が復元された。続きから再開できる',cls:'success',pause:300},
-  ],'btn-stash');
+  ];
+  typeInTerminal('term-stash',lines,'btn-stash');
+  // Sync flow highlights with terminal timing
+  var d=0,delays=[];
+  for(var i=0;i<lines.length;i++){delays.push(d);d+=lines[i].pause||500;}
+  // line0: working (initial state shown above)
+  // line7 (git stash push): stash step
+  // line12 (git checkout main): other work step
+  // line21 (git stash pop): pop step
+  setTimeout(function(){_stashHighlight('st-working');},0);
+  setTimeout(function(){_stashHighlight('st-stash');},delays[7]);
+  setTimeout(function(){_stashHighlight('st-other');},delays[12]);
+  setTimeout(function(){_stashHighlight('st-pop');},delays[21]);
+  setTimeout(function(){_stashHighlight(null);},d+500);
 }
 
 /* ===== Demo: Worktree ===== */
 function runWorktreeDemo(){
-  typeInTerminal('term-worktree',[
+  _worktreeHighlight('wt-main');
+  var lines=[
     {type:'comment',text:'mainで作業中だけど、別ブランチも同時に触りたい',pause:0},
     {type:'prompt',text:'pwd',pause:500},
     {type:'output',text:'/home/user/my-project',cls:'output',pause:300},
@@ -876,12 +964,25 @@ function runWorktreeDemo(){
     {type:'output',text:'/home/user/my-project   a1b2c3d [main]',cls:'info',pause:300},
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'OK stashと違い、両方のブランチを同時に開ける',cls:'success',pause:300},
-  ],'btn-worktree');
+  ];
+  typeInTerminal('term-worktree',lines,'btn-worktree');
+  // Sync flow highlights with terminal timing
+  var d=0,delays=[];
+  for(var i=0;i<lines.length;i++){delays.push(d);d+=lines[i].pause||500;}
+  // line0: main (initial)
+  // line4 (git worktree add): highlight fix branch
+  // line11 (git worktree list): both visible, highlight fix
+  // line15 (git worktree remove): back to main
+  setTimeout(function(){_worktreeHighlight('wt-main');},0);
+  setTimeout(function(){_worktreeHighlight('wt-fix');},delays[4]);
+  setTimeout(function(){_worktreeHighlight('wt-main');},delays[15]);
+  setTimeout(function(){_worktreeHighlight(null);},d+500);
 }
 
 /* ===== Demo: Submodule ===== */
 function runSubmoduleDemo(){
-  typeInTerminal('term-submodule',[
+  _submoduleHighlight('sm-main');
+  var lines=[
     {type:'comment',text:'共通UIライブラリを自分のプロジェクトに含める',pause:0},
     {type:'prompt',text:'git submodule add https://github.com/team/ui-kit.git libs/ui-kit',pause:900},
     {type:'output',text:'Cloning into \'libs/ui-kit\'...',cls:'output',pause:500},
@@ -906,7 +1007,21 @@ function runSubmoduleDemo(){
     {type:'output',text:'Submodule path \'libs/ui-kit\': checked out \'d8e9f0a\'',cls:'success',pause:400},
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'OK submoduleで外部リポを管理できる',cls:'success',pause:300},
-  ],'btn-submodule');
+  ];
+  typeInTerminal('term-submodule',lines,'btn-submodule');
+  // Sync flow highlights with terminal timing
+  var d=0,delays=[];
+  for(var i=0;i<lines.length;i++){delays.push(d);d+=lines[i].pause||500;}
+  // line0: main project (initial)
+  // line1 (git submodule add): highlight ui-kit
+  // line14 (git submodule update): highlight ui-kit again
+  // line17 (git clone --recurse): highlight both submodules
+  setTimeout(function(){_submoduleHighlight('sm-main');},0);
+  setTimeout(function(){_submoduleHighlight('sm-uikit');},delays[1]);
+  setTimeout(function(){_submoduleHighlight('sm-main');},delays[11]);
+  setTimeout(function(){_submoduleHighlight('sm-uikit');},delays[14]);
+  setTimeout(function(){_submoduleHighlight('sm-shared');},delays[17]);
+  setTimeout(function(){_submoduleHighlight(null);},d+500);
 }
 
 /* ===== Demo: Log Advanced ===== */
