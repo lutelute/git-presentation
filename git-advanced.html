@@ -1167,4 +1167,148 @@ function runHooksDemo(){
 /* ===== Init ===== */
 onSlideEnter(0);
 </script>
+<!-- Gallery / Jump Grid -->
+<style>
+._ts-toolbar{position:fixed;bottom:1rem;left:1.5rem;display:flex;gap:.5rem;z-index:9999;font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+._ts-btn{background:rgba(30,30,48,.85);color:#888;border:1px solid #333;padding:.4rem .8rem;border-radius:6px;font-size:.85rem;cursor:pointer;transition:all .2s;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);user-select:none}
+._ts-btn:hover{background:rgba(0,210,255,.15);color:#00d2ff;border-color:#00d2ff55}
+._ts-btn._ts-active{color:#00d2ff;border-color:#00d2ff55}
+._ts-jump{position:fixed;bottom:3.5rem;left:1.5rem;background:rgba(20,20,35,.95);border:1px solid #333;border-radius:10px;padding:.8rem;display:none;z-index:9999;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);max-height:60vh;overflow-y:auto}
+._ts-jump.show{display:block;animation:_tsFadeUp .2s ease-out}
+._ts-jump-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:.4rem;min-width:200px}
+._ts-jump-item{background:rgba(30,30,48,.9);color:#aaa;border:1px solid #2a2a4a;border-radius:6px;padding:.4rem;text-align:center;cursor:pointer;font-size:.85rem;transition:all .15s}
+._ts-jump-item:hover{background:rgba(0,210,255,.2);color:#fff;border-color:#00d2ff}
+._ts-jump-item._ts-current{background:rgba(0,210,255,.25);color:#00d2ff;border-color:#00d2ff;font-weight:bold}
+._ts-gallery-overlay{position:fixed;inset:0;background:rgba(5,5,15,.92);z-index:9998;display:none;overflow-y:auto;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+._ts-gallery-overlay.show{display:block;animation:_tsFadeIn .25s ease-out}
+._ts-gallery-header{position:sticky;top:0;display:flex;justify-content:space-between;align-items:center;padding:1.2rem 2rem;background:rgba(5,5,15,.8);backdrop-filter:blur(8px);z-index:1}
+._ts-gallery-title{color:#00d2ff;font-size:1.2rem;font-weight:600}
+._ts-gallery-close{background:none;border:1px solid #333;color:#888;width:36px;height:36px;border-radius:8px;font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
+._ts-gallery-close:hover{color:#ff5370;border-color:#ff5370}
+._ts-gallery-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;padding:1.2rem 2rem 2rem}
+._ts-gallery-card{background:rgba(26,26,46,.9);border:1px solid #2a2a4a;border-radius:10px;cursor:pointer;transition:all .2s;overflow:hidden;position:relative}
+._ts-gallery-card:hover{border-color:#00d2ff;transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,210,255,.12)}
+._ts-gallery-card._ts-current-card{border-color:#00d2ff;box-shadow:0 0 12px rgba(0,210,255,.2)}
+._ts-gallery-num{position:absolute;top:.6rem;left:.8rem;background:rgba(0,210,255,.2);color:#00d2ff;font-size:.75rem;font-weight:700;padding:.15rem .5rem;border-radius:4px;z-index:1}
+._ts-gallery-preview{height:160px;overflow:hidden;position:relative;background:#0f0f1a}
+._ts-gallery-preview-inner{transform:scale(0.28);transform-origin:top left;width:357%;height:357%;pointer-events:none;position:absolute;top:0;left:0}
+._ts-gallery-info{padding:.8rem 1rem}
+._ts-gallery-info h4{color:#e0e0e0;font-size:.9rem;margin:0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+._ts-gallery-info p{color:#666;font-size:.75rem;margin:.2rem 0 0}
+@keyframes _tsFadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes _tsFadeIn{from{opacity:0}to{opacity:1}}
+</style>
+<script>
+(function(){
+  var _slides=document.querySelectorAll('.slide');
+  if(_slides.length<2)return;
+
+  /* Find current slide index by checking .active class */
+  function _tsCurIdx(){for(var i=0;i<_slides.length;i++){if(_slides[i].classList.contains('active'))return i}return 0}
+
+  /* Hide old nav-hint, replace with toolbar */
+  var oldHint=document.querySelector('.nav-hint');
+  if(oldHint)oldHint.style.display='none';
+
+  function _getTitle(el){var h=el.querySelector('h1,h2,h3,h4');return h?h.textContent.trim():''}
+
+  /* --- Toolbar --- */
+  var toolbar=document.createElement('div');
+  toolbar.className='_ts-toolbar';
+  toolbar.innerHTML='<button class="_ts-btn _ts-counter-btn">1 / '+_slides.length+'</button><button class="_ts-btn _ts-grid-btn" title="全体表示 (Gallery)">&#9638;</button>';
+  document.body.appendChild(toolbar);
+  var counterBtn=toolbar.querySelector('._ts-counter-btn');
+  var gridBtn=toolbar.querySelector('._ts-grid-btn');
+
+  /* --- Jump Popup --- */
+  var jumpEl=document.createElement('div');
+  jumpEl.className='_ts-jump';
+  var jumpGrid=document.createElement('div');
+  jumpGrid.className='_ts-jump-grid';
+  for(var i=0;i<_slides.length;i++){
+    var item=document.createElement('div');
+    item.className='_ts-jump-item';
+    item.textContent=i+1;
+    item.dataset.idx=i;
+    item.addEventListener('click',function(){var idx=parseInt(this.dataset.idx);go(idx);closeJump();_tsUpdateUI()});
+    jumpGrid.appendChild(item);
+  }
+  jumpEl.appendChild(jumpGrid);
+  document.body.appendChild(jumpEl);
+
+  var jumpOpen=false;
+  function toggleJump(){jumpOpen=!jumpOpen;if(jumpOpen){jumpEl.classList.add('show');counterBtn.classList.add('_ts-active');highlightJumpCurrent()}else closeJump()}
+  function closeJump(){jumpOpen=false;jumpEl.classList.remove('show');counterBtn.classList.remove('_ts-active')}
+  function highlightJumpCurrent(){var c=_tsCurIdx();var items=jumpGrid.querySelectorAll('._ts-jump-item');for(var i=0;i<items.length;i++){items[i].classList.toggle('_ts-current',i===c)}}
+  counterBtn.addEventListener('click',function(e){e.stopPropagation();closeGallery();toggleJump()});
+
+  /* --- Gallery Overlay --- */
+  var gallery=document.createElement('div');
+  gallery.className='_ts-gallery-overlay';
+  var galleryHTML='<div class="_ts-gallery-header"><span class="_ts-gallery-title">全スライド一覧</span><button class="_ts-gallery-close">&times;</button></div><div class="_ts-gallery-grid">';
+  for(var i=0;i<_slides.length;i++){
+    var title=_getTitle(_slides[i])||'Slide '+(i+1);
+    galleryHTML+='<div class="_ts-gallery-card" data-idx="'+i+'"><span class="_ts-gallery-num">'+(i+1)+'</span><div class="_ts-gallery-preview"><div class="_ts-gallery-preview-inner" data-slide-idx="'+i+'"></div></div><div class="_ts-gallery-info"><h4>'+title+'</h4><p>'+(i+1)+' / '+_slides.length+'</p></div></div>';
+  }
+  galleryHTML+='</div>';
+  gallery.innerHTML=galleryHTML;
+  document.body.appendChild(gallery);
+
+  /* Clone slide contents into preview cards */
+  var previews=gallery.querySelectorAll('._ts-gallery-preview-inner');
+  for(var i=0;i<previews.length;i++){
+    var idx=parseInt(previews[i].dataset.slideIdx);
+    var clone=_slides[idx].cloneNode(true);
+    clone.style.display='flex';clone.style.position='static';clone.style.animation='none';
+    clone.classList.remove('out-left','out-right');clone.classList.add('active');
+    previews[i].appendChild(clone);
+  }
+
+  /* Gallery card click */
+  var cards=gallery.querySelectorAll('._ts-gallery-card');
+  for(var i=0;i<cards.length;i++){
+    cards[i].addEventListener('click',function(){var idx=parseInt(this.dataset.idx);closeGallery();go(idx);_tsUpdateUI()});
+  }
+
+  var galleryOpen=false;
+  function openGallery(){galleryOpen=true;_tsUpdateUI();gallery.classList.add('show');gridBtn.classList.add('_ts-active')}
+  function closeGallery(){galleryOpen=false;gallery.classList.remove('show');gridBtn.classList.remove('_ts-active')}
+  function highlightGalleryCard(){var c=_tsCurIdx();for(var i=0;i<cards.length;i++){cards[i].classList.toggle('_ts-current-card',i===c)}}
+  gallery.querySelector('._ts-gallery-close').addEventListener('click',function(e){e.stopPropagation();closeGallery()});
+  gridBtn.addEventListener('click',function(e){e.stopPropagation();closeJump();if(galleryOpen)closeGallery();else openGallery()});
+
+  /* Escape key to close overlays */
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Escape'){
+      if(galleryOpen){closeGallery();e.stopPropagation();e.preventDefault()}
+      else if(jumpOpen){closeJump();e.stopPropagation();e.preventDefault()}
+    }
+  },true);
+
+  /* Close on outside click */
+  document.addEventListener('click',function(e){
+    if(jumpOpen&&!jumpEl.contains(e.target)&&!counterBtn.contains(e.target))closeJump();
+  });
+
+  /* --- Sync UI with slide changes --- */
+  function _tsUpdateUI(){
+    var c=_tsCurIdx();
+    counterBtn.textContent=(c+1)+' / '+_slides.length;
+    if(jumpOpen)highlightJumpCurrent();
+    if(galleryOpen)highlightGalleryCard();
+  }
+
+  /* Poll for slide changes (works regardless of how go() is scoped) */
+  var _lastIdx=_tsCurIdx();
+  setInterval(function(){
+    var c=_tsCurIdx();
+    if(c!==_lastIdx){_lastIdx=c;_tsUpdateUI()}
+  },200);
+
+  /* Initial sync */
+  _tsUpdateUI();
+})();
+</script>
+
+
 </body></html>
