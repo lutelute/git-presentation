@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Git & GitHub 入門シリーズ</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:3rem 2rem}
+h1{font-size:2.5rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+.sub{color:#888;font-size:1.1rem;margin-bottom:2.5rem;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.2rem;max-width:1000px;width:100%}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem;text-decoration:none;transition:all .25s;cursor:pointer;display:block}
+.card:hover{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.15);transform:translateY(-3px)}
+.card .num{font-size:.8rem;color:#555;margin-bottom:.4rem}
+.card h2{font-size:1.2rem;color:#00d2ff;margin-bottom:.5rem}
+.card p{font-size:.88rem;color:#888;line-height:1.5}
+.card .tag{display:inline-block;background:#00d2ff15;color:#00d2ff;padding:.15em .5em;border-radius:3px;font-size:.75rem;margin-top:.6rem}
+.footer{margin-top:3rem;color:#444;font-size:.85rem;text-align:center}
+.footer a{color:#555;text-decoration:none}
+.footer a:hover{color:#00d2ff}
+.keys{color:#555;font-size:.85rem;margin-top:.3rem}
+</style></head><body>
+
+<h1>Git & GitHub 入門シリーズ</h1>
+<p class="sub">AIと一緒に学ぶバージョン管理 — インタラクティブなスライド集</p>
+
+<div class="grid">
+  <a class="card" href="git-intro.html" style="border-left:3px solid #00d2ff">
+    <div class="num">01</div>
+    <h2>Git入門編</h2>
+    <p>Gitの基礎、環境構築、基本コマンド、個人開発プロセス、AI活用、トラブルシューティング</p>
+    <span class="tag">初心者向け</span>
+  </a>
+  <a class="card" href="github-tools.html" style="border-left:3px solid #7fdbca">
+    <div class="num">02</div>
+    <h2>インタラクティブツール編</h2>
+    <p>GitHub Pages、Actions、Releases、Packages、Projects</p>
+    <span class="tag" style="background:#7fdbca15;color:#7fdbca">GitHub機能</span>
+  </a>
+  <a class="card" href="app-dev.html" style="border-left:3px solid #c792ea">
+    <div class="num">03</div>
+    <h2>アプリ開発編</h2>
+    <p>プロジェクト構成、package.json、ビルドツール、デプロイまでの流れ</p>
+    <span class="tag" style="background:#c792ea15;color:#c792ea">実践</span>
+  </a>
+  <a class="card" href="team-dev.html" style="border-left:3px solid #f78c6c">
+    <div class="num">04</div>
+    <h2>チーム開発編</h2>
+    <p>ブランチ戦略、コードレビュー、CODEOWNERS、Protected Branches</p>
+    <span class="tag" style="background:#f78c6c15;color:#f78c6c">チーム</span>
+  </a>
+  <a class="card" href="ci-cd.html" style="border-left:3px solid #ffcb6b">
+    <div class="num">05</div>
+    <h2>CI/CD編</h2>
+    <p>GitHub Actions、テスト自動化、自動デプロイ、ワークフロー構文</p>
+    <span class="tag" style="background:#ffcb6b15;color:#ffcb6b">自動化</span>
+  </a>
+  <a class="card" href="security.html" style="border-left:3px solid #ff5370">
+    <div class="num">06</div>
+    <h2>セキュリティ編</h2>
+    <p>Secrets管理、Dependabot、署名付きコミット、Security Advisories</p>
+    <span class="tag" style="background:#ff537015;color:#ff5370">セキュリティ</span>
+  </a>
+  <a class="card" href="issue-pr.html" style="border-left:3px solid #82aaff">
+    <div class="num">07</div>
+    <h2>Issue & PR活用編</h2>
+    <p>テンプレート、ラベル運用、レビュープロセス、Discussions</p>
+    <span class="tag" style="background:#82aaff15;color:#82aaff">管理</span>
+  </a>
+  <a class="card" href="oss.html" style="border-left:3px solid #c3e88d">
+    <div class="num">08</div>
+    <h2>OSS参加編</h2>
+    <p>Fork & Contribute、ライセンス選び、CLA、コミュニケーション</p>
+    <span class="tag" style="background:#c3e88d15;color:#c3e88d">コミュニティ</span>
+  </a>
+  <a class="card" href="gh-cli.html" style="border-left:3px solid #89ddff">
+    <div class="num">09</div>
+    <h2>GitHub CLI編</h2>
+    <p>ghコマンド活用、エイリアス、API操作、スクリプト連携</p>
+    <span class="tag" style="background:#89ddff15;color:#89ddff">効率化</span>
+  </a>
+  <a class="card" href="git-advanced.html" style="border-left:3px solid #f07178">
+    <div class="num">10</div>
+    <h2>Git上級編</h2>
+    <p>rebase、cherry-pick、bisect、submodule、worktree、hooks</p>
+    <span class="tag" style="background:#f0717815;color:#f07178">上級</span>
+  </a>
+</div>
+
+<div class="footer">
+  <p class="keys">操作: → ← スライド移動 / S スキップ / P 一時停止 / g 最初 / G 最後</p>
+  <p style="margin-top:.5rem"><a href="https://github.com/lutelute/git-presentation">GitHub</a></p>
+</div>
+
+</body></html>
