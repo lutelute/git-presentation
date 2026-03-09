@@ -59,6 +59,17 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
 .step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
 .step.visible{opacity:1;transform:translateX(0)}
 
+/* Viz sync animations */
+.viz-dim{opacity:.2;transition:all .5s ease}
+.viz-active{opacity:1!important;transition:all .5s ease}
+.viz-highlight{opacity:1!important;border-color:#00d2ff!important;box-shadow:0 0 15px rgba(0,210,255,.25)!important;transition:all .5s ease}
+.viz-glow-green{opacity:1!important;border-color:#27c93f!important;box-shadow:0 0 15px rgba(39,201,63,.25)!important;transition:all .5s ease}
+.viz-glow-yellow{opacity:1!important;border-color:#ffcb6b!important;box-shadow:0 0 15px rgba(255,203,107,.25)!important;transition:all .5s ease}
+.viz-glow-red{opacity:1!important;border-color:#ff5370!important;box-shadow:0 0 15px rgba(255,83,112,.25)!important;transition:all .5s ease}
+.viz-hidden{opacity:0;transform:translateY(10px);transition:all .5s ease}
+.viz-show{opacity:1!important;transform:translateY(0)!important;transition:all .5s ease}
+.viz-strikethrough span:first-child{text-decoration:line-through;color:#ff5370!important}
+
 /* Buttons */
 button{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff55;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;transition:all .2s}
 button:hover{background:#00d2ff33}
@@ -211,13 +222,13 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermAuth()" id="btn-auth">&#x25B6; 認証フローを見る</button>
-        <button onclick="resetTerm('term-auth-body');document.getElementById('btn-auth').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-auth-body');document.getElementById('btn-auth').disabled=false;vizClearAll();resetAuthViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:1.2rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center;margin-bottom:.5rem">認証フロー</p>
-        <div style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0a0a15;border-radius:8px;border:1px solid #2a2a4a">
+        <div id="auth-step-1" class="viz-dim" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0a0a15;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s ease">
           <span style="font-size:1.5rem">&#x1F310;</span>
           <div>
             <p style="font-size:.9rem;color:#00d2ff;font-weight:600">① GitHub.com</p>
@@ -225,7 +236,7 @@ button:disabled{opacity:.4;cursor:default}
           </div>
         </div>
         <div style="text-align:center;color:#555;font-size:1.2rem">&#x25BC;</div>
-        <div style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0a0a15;border-radius:8px;border:1px solid #2a2a4a">
+        <div id="auth-step-2" class="viz-dim" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0a0a15;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s ease">
           <span style="font-size:1.5rem">&#x1F513;</span>
           <div>
             <p style="font-size:.9rem;color:#ffcb6b;font-weight:600">② ブラウザ認証</p>
@@ -233,7 +244,7 @@ button:disabled{opacity:.4;cursor:default}
           </div>
         </div>
         <div style="text-align:center;color:#555;font-size:1.2rem">&#x25BC;</div>
-        <div style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0a0a15;border-radius:8px;border:1px solid #27c93f44">
+        <div id="auth-step-3" class="viz-dim" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;background:#0a0a15;border-radius:8px;border:1px solid #27c93f44;transition:all .5s ease">
           <span style="font-size:1.5rem">&#x2705;</span>
           <div>
             <p style="font-size:.9rem;color:#27c93f;font-weight:600">③ CLI紐付け完了</p>
@@ -259,41 +270,42 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermRepo()" id="btn-repo">&#x25B6; 実行してみる</button>
-        <button onclick="resetTerm('term-repo-body');document.getElementById('btn-repo').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-repo-body');document.getElementById('btn-repo').disabled=false;vizClearAll();resetRepoViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;gap:.8rem">
-        <div style="background:#0a0a15;border-radius:8px;padding:.8rem 1rem;border:1px solid #2a2a4a">
+        <div id="repo-viz-card" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.8rem 1rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.6rem">
             <span style="font-size:1.1rem">&#x1F4D6;</span>
-            <span style="color:#00d2ff;font-weight:600;font-size:.95rem">your-username/my-app</span>
+            <span id="repo-viz-name" style="color:#00d2ff;font-weight:600;font-size:.95rem">your-username/my-app</span>
           </div>
-          <div style="display:flex;gap:.5rem;margin-bottom:.5rem">
+          <div id="repo-viz-badge" style="display:flex;gap:.5rem;margin-bottom:.5rem">
             <span style="background:#27c93f22;color:#27c93f;font-size:.7rem;padding:.15rem .5rem;border-radius:10px;border:1px solid #27c93f44">Public</span>
           </div>
           <p style="font-size:.8rem;color:#888;margin-bottom:.6rem">The library for web and native user interfaces</p>
-          <div style="display:flex;gap:1rem;font-size:.75rem;color:#666">
+          <div id="repo-viz-stats" style="display:flex;gap:1rem;font-size:.75rem;color:#666">
             <span>&#x2B50; 232,456</span>
             <span>&#x1F374; 47,891</span>
             <span style="color:#ffcb6b">&#x25CF; JavaScript</span>
           </div>
         </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.6rem 1rem;border:1px solid #2a2a4a">
+        <div id="repo-viz-about" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.6rem 1rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <p style="font-size:.75rem;color:#666;margin-bottom:.3rem">About</p>
           <div style="display:flex;gap:.8rem;font-size:.75rem;color:#888">
             <span>&#x1F4DD; MIT License</span>
             <span>&#x1F440; 6,702 watching</span>
           </div>
         </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.6rem 1rem;border:1px solid #2a2a4a">
+        <div id="repo-viz-ops" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.6rem 1rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <p style="font-size:.75rem;color:#666;margin-bottom:.3rem">Operations</p>
           <div style="display:flex;flex-direction:column;gap:.3rem;font-size:.8rem">
-            <span style="color:#7fdbca">gh repo create</span>
-            <span style="color:#7fdbca">gh repo clone</span>
-            <span style="color:#7fdbca">gh repo view</span>
+            <span id="repo-viz-op-create" style="color:#7fdbca">gh repo create</span>
+            <span id="repo-viz-op-clone" style="color:#7fdbca">gh repo clone</span>
+            <span id="repo-viz-op-view" style="color:#7fdbca">gh repo view</span>
           </div>
         </div>
+        <div id="repo-viz-opening" style="text-align:center;font-size:.8rem;color:#00d2ff;opacity:0;transition:all .5s ease">Opening in browser...</div>
       </div>
     </div>
   </div>
@@ -313,13 +325,13 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermIssue()" id="btn-issue">&#x25B6; Issue操作を見る</button>
-        <button onclick="resetTerm('term-issue-body');document.getElementById('btn-issue').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-issue-body');document.getElementById('btn-issue').disabled=false;vizClearAll();resetIssueViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;gap:.6rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">Issue Card</p>
-        <div style="background:#0a0a15;border-radius:8px;padding:.8rem 1rem;border:1px solid #2a2a4a">
+        <div id="issue-viz-new" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.8rem 1rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.4rem">
             <span style="color:#27c93f;font-size:1.1rem">&#x25CB;</span>
             <span style="color:#e0e0e0;font-weight:600;font-size:.9rem">検索機能の追加</span>
@@ -334,13 +346,13 @@ button:disabled{opacity:.4;cursor:default}
             <span>0 comments</span>
           </div>
         </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a">
+        <div id="issue-viz-list" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <p style="font-size:.75rem;color:#666;margin-bottom:.3rem">Open Issues</p>
           <div style="display:flex;flex-direction:column;gap:.25rem;font-size:.75rem">
-            <div style="display:flex;justify-content:space-between"><span style="color:#bbb">#12 ダークモード対応</span><span style="color:#555">2h</span></div>
-            <div style="display:flex;justify-content:space-between"><span style="color:#ff5370;text-decoration:line-through">#11 ログインエラー修正</span><span style="color:#27c93f">Closed</span></div>
-            <div style="display:flex;justify-content:space-between"><span style="color:#bbb">#10 README更新</span><span style="color:#555">1d</span></div>
-            <div style="display:flex;justify-content:space-between"><span style="color:#bbb">#9 パフォーマンス改善</span><span style="color:#555">2d</span></div>
+            <div id="issue-viz-12" style="display:flex;justify-content:space-between;transition:all .5s ease"><span style="color:#bbb">#12 ダークモード対応</span><span style="color:#555">2h</span></div>
+            <div id="issue-viz-11" style="display:flex;justify-content:space-between;transition:all .5s ease"><span style="color:#bbb">#11 ログインエラー修正</span><span style="color:#555">5h</span></div>
+            <div id="issue-viz-10" style="display:flex;justify-content:space-between;transition:all .5s ease"><span style="color:#bbb">#10 README更新</span><span style="color:#555">1d</span></div>
+            <div id="issue-viz-9" style="display:flex;justify-content:space-between;transition:all .5s ease"><span style="color:#bbb">#9 パフォーマンス改善</span><span style="color:#555">2d</span></div>
           </div>
         </div>
       </div>
@@ -362,29 +374,29 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermPR()" id="btn-pr">&#x25B6; PRフローを見る</button>
-        <button onclick="resetTerm('term-pr-body');document.getElementById('btn-pr').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-pr-body');document.getElementById('btn-pr').disabled=false;vizClearAll();resetPRViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:.8rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">PR Flow</p>
         <div style="display:flex;flex-direction:column;align-items:center;gap:.4rem">
-          <div style="background:#0a0a15;border:2px solid #c792ea;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%">
+          <div id="pr-viz-branch" class="viz-dim" style="background:#0a0a15;border:2px solid #c792ea;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%;transition:all .5s ease">
             <span style="font-size:.85rem;color:#c792ea;font-weight:600">&#x1F33F; Branch</span>
             <p style="font-size:.7rem;color:#888">feature/search</p>
           </div>
           <span style="color:#555;font-size:1rem">&#x25BC;</span>
-          <div style="background:#0a0a15;border:2px solid #00d2ff;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%">
+          <div id="pr-viz-pr" class="viz-dim" style="background:#0a0a15;border:2px solid #00d2ff;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%;transition:all .5s ease">
             <span style="font-size:.85rem;color:#00d2ff;font-weight:600">&#x1F4E4; Pull Request</span>
             <p style="font-size:.7rem;color:#888">#14 検索機能を追加</p>
           </div>
           <span style="color:#555;font-size:1rem">&#x25BC;</span>
-          <div style="background:#0a0a15;border:2px solid #ffcb6b;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%">
+          <div id="pr-viz-review" class="viz-dim" style="background:#0a0a15;border:2px solid #ffcb6b;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%;transition:all .5s ease">
             <span style="font-size:.85rem;color:#ffcb6b;font-weight:600">&#x1F50D; Review</span>
             <p style="font-size:.7rem;color:#888">コードレビュー</p>
           </div>
           <span style="color:#555;font-size:1rem">&#x25BC;</span>
-          <div style="background:#0a0a15;border:2px solid #27c93f;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%">
+          <div id="pr-viz-merge" class="viz-dim" style="background:#0a0a15;border:2px solid #27c93f;border-radius:8px;padding:.5rem 1rem;text-align:center;width:80%;transition:all .5s ease">
             <span style="font-size:.85rem;color:#27c93f;font-weight:600">&#x2714; Merge</span>
             <p style="font-size:.7rem;color:#888">Squash and merge</p>
           </div>
@@ -408,26 +420,26 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermReview()" id="btn-review">&#x25B6; レビューフローを見る</button>
-        <button onclick="resetTerm('term-review-body');document.getElementById('btn-review').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-review-body');document.getElementById('btn-review').disabled=false;vizClearAll();resetReviewViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:1rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">Review Status</p>
         <div style="display:flex;flex-direction:column;gap:.6rem">
-          <div style="background:#0a0a15;border-radius:8px;padding:.6rem .8rem;border:1px solid #2a2a4a">
+          <div id="review-viz-ci" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.6rem .8rem;border:1px solid #2a2a4a;transition:all .5s ease">
             <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.3rem">
-              <span style="color:#27c93f">&#x2714;</span>
+              <span id="review-viz-ci-icon" style="color:#888">&#x25CB;</span>
               <span style="font-size:.8rem;color:#bbb;font-weight:600">CI Checks</span>
             </div>
-            <div style="display:flex;gap:.6rem;font-size:.7rem;color:#27c93f">
-              <span>&#x2714; build</span>
-              <span>&#x2714; test</span>
-              <span>&#x2714; lint</span>
+            <div id="review-viz-ci-items" style="display:flex;gap:.6rem;font-size:.7rem;color:#888">
+              <span id="review-viz-build">&#x25CB; build</span>
+              <span id="review-viz-test">&#x25CB; test</span>
+              <span id="review-viz-lint">&#x25CB; lint</span>
             </div>
           </div>
           <div style="text-align:center;color:#555;font-size:.9rem">&#x25BC;</div>
-          <div style="background:#0a0a15;border-radius:8px;padding:.6rem .8rem;border:1px solid #ffcb6b44">
+          <div id="review-viz-changes" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.6rem .8rem;border:1px solid #2a2a4a;transition:all .5s ease">
             <div style="display:flex;align-items:center;gap:.5rem">
               <span style="color:#ffcb6b;font-size:1.1rem">&#x1F4DD;</span>
               <div>
@@ -437,7 +449,7 @@ button:disabled{opacity:.4;cursor:default}
             </div>
           </div>
           <div style="text-align:center;color:#555;font-size:.9rem">&#x25BC;</div>
-          <div style="background:#0a0a15;border-radius:8px;padding:.6rem .8rem;border:1px solid #27c93f44">
+          <div id="review-viz-approved" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.6rem .8rem;border:1px solid #2a2a4a;transition:all .5s ease">
             <div style="display:flex;align-items:center;gap:.5rem">
               <span style="color:#27c93f;font-size:1.1rem">&#x2705;</span>
               <div>
@@ -467,32 +479,32 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermActions()" id="btn-actions">&#x25B6; Actions監視を見る</button>
-        <button onclick="resetTerm('term-actions-body');document.getElementById('btn-actions').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-actions-body');document.getElementById('btn-actions').disabled=false;vizClearAll();resetActionsViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:.8rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">Pipeline Status</p>
         <div style="display:flex;align-items:center;justify-content:center;gap:.3rem;flex-wrap:wrap">
-          <div style="background:#0a0a15;border:2px solid #27c93f;border-radius:8px;padding:.5rem .7rem;text-align:center;min-width:70px">
-            <span style="font-size:1.2rem">&#x2714;</span>
-            <p style="font-size:.75rem;color:#27c93f;font-weight:600;margin-top:.2rem">Build</p>
+          <div id="actions-viz-build" class="viz-dim" style="background:#0a0a15;border:2px solid #888;border-radius:8px;padding:.5rem .7rem;text-align:center;min-width:70px;transition:all .5s ease">
+            <span id="actions-viz-build-icon" style="font-size:1.2rem">&#x25CB;</span>
+            <p id="actions-viz-build-label" style="font-size:.75rem;color:#888;font-weight:600;margin-top:.2rem">Build</p>
             <p style="font-size:.65rem;color:#666">25s</p>
           </div>
-          <span style="color:#27c93f;font-size:1rem">&#x2192;</span>
-          <div style="background:#0a0a15;border:2px solid #27c93f;border-radius:8px;padding:.5rem .7rem;text-align:center;min-width:70px">
-            <span style="font-size:1.2rem">&#x2714;</span>
-            <p style="font-size:.75rem;color:#27c93f;font-weight:600;margin-top:.2rem">Test</p>
+          <span style="color:#555;font-size:1rem">&#x2192;</span>
+          <div id="actions-viz-test" class="viz-dim" style="background:#0a0a15;border:2px solid #888;border-radius:8px;padding:.5rem .7rem;text-align:center;min-width:70px;transition:all .5s ease">
+            <span id="actions-viz-test-icon" style="font-size:1.2rem">&#x25CB;</span>
+            <p id="actions-viz-test-label" style="font-size:.75rem;color:#888;font-weight:600;margin-top:.2rem">Test</p>
             <p style="font-size:.65rem;color:#666">1m42s</p>
           </div>
-          <span style="color:#27c93f;font-size:1rem">&#x2192;</span>
-          <div style="background:#0a0a15;border:2px solid #ffcb6b;border-radius:8px;padding:.5rem .7rem;text-align:center;min-width:70px">
-            <span style="font-size:1.2rem;animation:pulse 2s ease-in-out infinite">&#x23F3;</span>
-            <p style="font-size:.75rem;color:#ffcb6b;font-weight:600;margin-top:.2rem">Deploy</p>
+          <span style="color:#555;font-size:1rem">&#x2192;</span>
+          <div id="actions-viz-deploy" class="viz-dim" style="background:#0a0a15;border:2px solid #888;border-radius:8px;padding:.5rem .7rem;text-align:center;min-width:70px;transition:all .5s ease">
+            <span id="actions-viz-deploy-icon" style="font-size:1.2rem">&#x25CB;</span>
+            <p id="actions-viz-deploy-label" style="font-size:.75rem;color:#888;font-weight:600;margin-top:.2rem">Deploy</p>
             <p style="font-size:.65rem;color:#666">running</p>
           </div>
         </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a;margin-top:.5rem">
+        <div id="actions-viz-recent" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a;margin-top:.5rem;transition:all .5s ease">
           <p style="font-size:.7rem;color:#666;margin-bottom:.3rem">Recent Runs</p>
           <div style="display:flex;flex-direction:column;gap:.2rem;font-size:.72rem">
             <div style="display:flex;justify-content:space-between"><span style="color:#27c93f">&#x2714; feat: add search</span><span style="color:#555">2m ago</span></div>
@@ -519,13 +531,13 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermRelease()" id="btn-release">&#x25B6; リリースを作成</button>
-        <button onclick="resetTerm('term-release-body');document.getElementById('btn-release').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-release-body');document.getElementById('btn-release').disabled=false;vizClearAll();resetReleaseViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;gap:.8rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">Release Card</p>
-        <div style="background:#0a0a15;border-radius:8px;padding:.8rem 1rem;border:1px solid #27c93f44">
+        <div id="release-viz-main" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.8rem 1rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
             <span style="font-size:1.1rem">&#x1F3F7;</span>
             <span style="color:#27c93f;font-weight:700;font-size:1.1rem">v1.2.0</span>
@@ -538,7 +550,7 @@ button:disabled{opacity:.4;cursor:default}
             <p>- パフォーマンス改善</p>
             <p>- バグ修正</p>
           </div>
-          <div style="border-top:1px solid #2a2a4a;padding-top:.4rem;margin-top:.3rem">
+          <div id="release-viz-assets" style="border-top:1px solid #2a2a4a;padding-top:.4rem;margin-top:.3rem;opacity:0;transition:all .5s ease">
             <p style="font-size:.7rem;color:#666;margin-bottom:.3rem">Assets</p>
             <div style="display:flex;align-items:center;gap:.4rem;font-size:.75rem;color:#00d2ff">
               <span>&#x1F4E6;</span>
@@ -547,7 +559,7 @@ button:disabled{opacity:.4;cursor:default}
             </div>
           </div>
         </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.4rem .8rem;border:1px solid #2a2a4a;font-size:.72rem;color:#666">
+        <div id="release-viz-older" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.4rem .8rem;border:1px solid #2a2a4a;font-size:.72rem;color:#666;transition:all .5s ease">
           <div style="display:flex;justify-content:space-between"><span>v1.1.0</span><span>2 weeks ago</span></div>
           <div style="display:flex;justify-content:space-between"><span>v1.0.0</span><span>1 month ago</span></div>
         </div>
@@ -605,31 +617,33 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermAPI()" id="btn-api">&#x25B6; API呼び出しを見る</button>
-        <button onclick="resetTerm('term-api-body');document.getElementById('btn-api').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-api-body');document.getElementById('btn-api').disabled=false;vizClearAll();resetAPIViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;gap:.6rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">API Response</p>
-        <div style="background:#0a0a15;border-radius:8px;padding:.7rem .8rem;border:1px solid #2a2a4a;font-family:'Fira Code','SF Mono',monospace;font-size:.72rem;line-height:1.6">
-          <div style="color:#555;margin-bottom:.3rem">GET /repos/your-username/my-app</div>
-          <span style="color:#888">{</span><br>
-          <span style="color:#c792ea">&nbsp;&nbsp;"full_name"</span><span style="color:#888">: </span><span style="color:#7fdbca">"your-username/my-app"</span><span style="color:#888">,</span><br>
-          <span style="color:#c792ea">&nbsp;&nbsp;"private"</span><span style="color:#888">: </span><span style="color:#f78c6c">false</span><span style="color:#888">,</span><br>
-          <span style="color:#c792ea">&nbsp;&nbsp;"stargazers_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">42</span><span style="color:#888">,</span><br>
-          <span style="color:#c792ea">&nbsp;&nbsp;"forks_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">7</span><span style="color:#888">,</span><br>
-          <span style="color:#c792ea">&nbsp;&nbsp;"open_issues_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">3</span><br>
-          <span style="color:#888">}</span>
-        </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a">
-          <p style="font-size:.7rem;color:#666;margin-bottom:.3rem">Supported APIs</p>
-          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
-            <span style="background:#00d2ff11;color:#00d2ff;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;border:1px solid #00d2ff33">REST</span>
-            <span style="background:#c792ea11;color:#c792ea;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;border:1px solid #c792ea33">GraphQL</span>
-            <span style="background:#7fdbca11;color:#7fdbca;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;border:1px solid #7fdbca33">--jq filter</span>
+        <div id="api-viz-json" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.7rem .8rem;border:1px solid #2a2a4a;font-family:'Fira Code','SF Mono',monospace;font-size:.72rem;line-height:1.6;transition:all .5s ease">
+          <div id="api-viz-endpoint" style="color:#555;margin-bottom:.3rem">GET /repos/your-username/my-app</div>
+          <div id="api-viz-body">
+            <span style="color:#888">{</span><br>
+            <span style="color:#c792ea">&nbsp;&nbsp;"full_name"</span><span style="color:#888">: </span><span style="color:#7fdbca">"your-username/my-app"</span><span style="color:#888">,</span><br>
+            <span style="color:#c792ea">&nbsp;&nbsp;"private"</span><span style="color:#888">: </span><span style="color:#f78c6c">false</span><span style="color:#888">,</span><br>
+            <span style="color:#c792ea">&nbsp;&nbsp;"stargazers_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">42</span><span style="color:#888">,</span><br>
+            <span style="color:#c792ea">&nbsp;&nbsp;"forks_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">7</span><span style="color:#888">,</span><br>
+            <span style="color:#c792ea">&nbsp;&nbsp;"open_issues_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">3</span><br>
+            <span style="color:#888">}</span>
           </div>
         </div>
-        <div style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a">
+        <div id="api-viz-supported" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a;transition:all .5s ease">
+          <p style="font-size:.7rem;color:#666;margin-bottom:.3rem">Supported APIs</p>
+          <div style="display:flex;gap:.4rem;flex-wrap:wrap">
+            <span id="api-viz-rest-badge" style="background:#00d2ff11;color:#00d2ff;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;border:1px solid #00d2ff33;transition:all .5s ease">REST</span>
+            <span id="api-viz-graphql-badge" style="background:#c792ea11;color:#c792ea;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;border:1px solid #c792ea33;transition:all .5s ease">GraphQL</span>
+            <span id="api-viz-jq-badge" style="background:#7fdbca11;color:#7fdbca;font-size:.65rem;padding:.1rem .4rem;border-radius:4px;border:1px solid #7fdbca33;transition:all .5s ease">--jq filter</span>
+          </div>
+        </div>
+        <div id="api-viz-jq" class="viz-dim" style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a;transition:all .5s ease">
           <p style="font-size:.7rem;color:#666;margin-bottom:.2rem">jq filtering</p>
           <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.7rem">
             <span style="color:#7fdbca">--jq .stargazers_count</span><br>
@@ -656,24 +670,24 @@ button:disabled{opacity:.4;cursor:default}
       </div>
       <div style="margin-top:1rem;display:flex;gap:.8rem">
         <button onclick="runTermScript()" id="btn-script">&#x25B6; スクリプト例を見る</button>
-        <button onclick="resetTerm('term-script-body');document.getElementById('btn-script').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+        <button onclick="resetTerm('term-script-body');document.getElementById('btn-script').disabled=false;vizClearAll();resetScriptViz()" style="background:#2a2a4a;color:#888">リセット</button>
       </div>
     </div>
     <div style="flex:.7">
       <div class="card" style="height:100%;display:flex;flex-direction:column;justify-content:center;gap:.8rem">
         <p style="font-size:.85rem;color:#00d2ff;font-weight:600;text-align:center">Automation Pipeline</p>
         <div style="display:flex;flex-direction:column;align-items:center;gap:.3rem">
-          <div style="background:#0a0a15;border:2px solid #00d2ff;border-radius:8px;padding:.4rem .8rem;text-align:center;width:85%">
+          <div id="script-viz-api" class="viz-dim" style="background:#0a0a15;border:2px solid #00d2ff;border-radius:8px;padding:.4rem .8rem;text-align:center;width:85%;transition:all .5s ease">
             <span style="font-size:.8rem;color:#00d2ff;font-weight:600">&#x1F4E1; gh api</span>
             <p style="font-size:.65rem;color:#888">GitHub APIからデータ取得</p>
           </div>
           <span style="color:#555;font-size:.9rem">&#x25BC;</span>
-          <div style="background:#0a0a15;border:2px solid #c792ea;border-radius:8px;padding:.4rem .8rem;text-align:center;width:85%">
+          <div id="script-viz-jq" class="viz-dim" style="background:#0a0a15;border:2px solid #c792ea;border-radius:8px;padding:.4rem .8rem;text-align:center;width:85%;transition:all .5s ease">
             <span style="font-size:.8rem;color:#c792ea;font-weight:600">&#x1F527; jq / shell</span>
             <p style="font-size:.65rem;color:#888">データを整形・フィルタリング</p>
           </div>
           <span style="color:#555;font-size:.9rem">&#x25BC;</span>
-          <div style="background:#0a0a15;border:2px solid #7fdbca;border-radius:8px;padding:.4rem .8rem;text-align:center;width:85%">
+          <div id="script-viz-result" class="viz-dim" style="background:#0a0a15;border:2px solid #7fdbca;border-radius:8px;padding:.4rem .8rem;text-align:center;width:85%;transition:all .5s ease">
             <span style="font-size:.8rem;color:#7fdbca;font-weight:600">&#x2714; Result</span>
             <p style="font-size:.65rem;color:#888">自動処理結果を出力</p>
           </div>
@@ -681,10 +695,10 @@ button:disabled{opacity:.4;cursor:default}
         <div style="background:#0a0a15;border-radius:8px;padding:.5rem .8rem;border:1px solid #2a2a4a;margin-top:.3rem">
           <p style="font-size:.7rem;color:#666;margin-bottom:.3rem">Use Cases</p>
           <div style="display:flex;flex-direction:column;gap:.2rem;font-size:.72rem;color:#888">
-            <span>&#x25B8; PR一覧のタイトル抽出</span>
-            <span>&#x25B8; 古いIssueの一括クローズ</span>
-            <span>&#x25B8; 自動PR作成スクリプト</span>
-            <span>&#x25B8; リポジトリ統計の集計</span>
+            <span id="script-viz-uc1" style="transition:all .3s ease">&#x25B8; PR一覧のタイトル抽出</span>
+            <span id="script-viz-uc2" style="transition:all .3s ease">&#x25B8; 古いIssueの一括クローズ</span>
+            <span id="script-viz-uc3" style="transition:all .3s ease">&#x25B8; 自動PR作成スクリプト</span>
+            <span id="script-viz-uc4" style="transition:all .3s ease">&#x25B8; リポジトリ統計の集計</span>
           </div>
         </div>
       </div>
@@ -887,11 +901,14 @@ function typeInTerminal(id,lines,btnId){
 function skipAnim(){
   if(!_anim.running)return;
   _cancelTimers();
+  if(typeof vizClearAll==='function')vizClearAll();
   for(var i=_anim.rendered;i<_anim.lines.length;i++){
     _renderLine(_anim.lines[i]);
   }
   _anim.rendered=_anim.lines.length;
   _anim.paused=false;
+  // Show final viz state immediately
+  if(typeof _skipVizToEnd==='function')_skipVizToEnd();
   _animDone();
 }
 
@@ -912,6 +929,128 @@ function togglePause(){
 
 function resetTerm(id){
   document.getElementById(id).innerHTML='';
+}
+
+/* ===== Viz Sync Helpers ===== */
+var _vizTimeouts=[];
+function vizTimeout(fn,ms){var t=setTimeout(fn,ms);_vizTimeouts.push(t)}
+function vizClearAll(){_vizTimeouts.forEach(clearTimeout);_vizTimeouts=[]}
+
+function vizActivate(id,cls){
+  var el=document.getElementById(id);
+  if(el){el.classList.remove('viz-dim');el.classList.add(cls||'viz-highlight')}
+}
+function vizDim(id){
+  var el=document.getElementById(id);
+  if(el){el.classList.remove('viz-highlight','viz-glow-green','viz-glow-yellow','viz-glow-red','viz-active');el.classList.add('viz-dim')}
+}
+
+function resetAuthViz(){
+  ['auth-step-1','auth-step-2','auth-step-3'].forEach(function(id){vizDim(id)});
+}
+function resetRepoViz(){
+  ['repo-viz-card','repo-viz-about','repo-viz-ops'].forEach(function(id){vizDim(id)});
+  var opening=document.getElementById('repo-viz-opening');
+  if(opening)opening.style.opacity='0';
+}
+function resetIssueViz(){
+  ['issue-viz-new','issue-viz-list'].forEach(function(id){vizDim(id)});
+  var el11=document.getElementById('issue-viz-11');
+  if(el11){el11.querySelector('span').style.textDecoration='none';el11.querySelector('span').style.color='#bbb';el11.querySelectorAll('span')[1].textContent='5h';el11.querySelectorAll('span')[1].style.color='#555'}
+}
+function resetPRViz(){
+  ['pr-viz-branch','pr-viz-pr','pr-viz-review','pr-viz-merge'].forEach(function(id){vizDim(id)});
+}
+function resetReviewViz(){
+  ['review-viz-ci','review-viz-changes','review-viz-approved'].forEach(function(id){vizDim(id)});
+  var icon=document.getElementById('review-viz-ci-icon');if(icon){icon.textContent='\u25CB';icon.style.color='#888'}
+  ['review-viz-build','review-viz-test','review-viz-lint'].forEach(function(id){
+    var el=document.getElementById(id);if(el){el.textContent='\u25CB '+id.split('-').pop();el.style.color='#888'}
+  });
+  var ci=document.getElementById('review-viz-ci');if(ci)ci.style.borderColor='#2a2a4a';
+  var ch=document.getElementById('review-viz-changes');if(ch)ch.style.borderColor='#2a2a4a';
+  var ap=document.getElementById('review-viz-approved');if(ap)ap.style.borderColor='#2a2a4a';
+}
+function resetActionsViz(){
+  ['actions-viz-build','actions-viz-test','actions-viz-deploy','actions-viz-recent'].forEach(function(id){vizDim(id)});
+  ['actions-viz-build','actions-viz-test','actions-viz-deploy'].forEach(function(id){
+    var el=document.getElementById(id);if(el){el.style.borderColor='#888'}
+  });
+  var bi=document.getElementById('actions-viz-build-icon');if(bi)bi.textContent='\u25CB';
+  var ti=document.getElementById('actions-viz-test-icon');if(ti)ti.textContent='\u25CB';
+  var di=document.getElementById('actions-viz-deploy-icon');if(di)di.textContent='\u25CB';
+  var bl=document.getElementById('actions-viz-build-label');if(bl)bl.style.color='#888';
+  var tl=document.getElementById('actions-viz-test-label');if(tl)tl.style.color='#888';
+  var dl=document.getElementById('actions-viz-deploy-label');if(dl)dl.style.color='#888';
+}
+function resetReleaseViz(){
+  ['release-viz-main','release-viz-older'].forEach(function(id){vizDim(id)});
+  var assets=document.getElementById('release-viz-assets');if(assets)assets.style.opacity='0';
+  var main=document.getElementById('release-viz-main');if(main)main.style.borderColor='#2a2a4a';
+}
+function resetAPIViz(){
+  ['api-viz-json','api-viz-supported','api-viz-jq'].forEach(function(id){vizDim(id)});
+  ['api-viz-rest-badge','api-viz-graphql-badge','api-viz-jq-badge'].forEach(function(id){
+    var el=document.getElementById(id);if(el){el.style.transform='scale(1)';el.style.boxShadow='none'}
+  });
+  // Reset JSON body to REST response
+  var body=document.getElementById('api-viz-body');
+  var endpoint=document.getElementById('api-viz-endpoint');
+  if(endpoint)endpoint.textContent='GET /repos/your-username/my-app';
+  if(body)body.innerHTML='<span style="color:#888">{</span><br><span style="color:#c792ea">&nbsp;&nbsp;"full_name"</span><span style="color:#888">: </span><span style="color:#7fdbca">"your-username/my-app"</span><span style="color:#888">,</span><br><span style="color:#c792ea">&nbsp;&nbsp;"private"</span><span style="color:#888">: </span><span style="color:#f78c6c">false</span><span style="color:#888">,</span><br><span style="color:#c792ea">&nbsp;&nbsp;"stargazers_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">42</span><span style="color:#888">,</span><br><span style="color:#c792ea">&nbsp;&nbsp;"forks_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">7</span><span style="color:#888">,</span><br><span style="color:#c792ea">&nbsp;&nbsp;"open_issues_count"</span><span style="color:#888">: </span><span style="color:#f78c6c">3</span><br><span style="color:#888">}</span>';
+}
+function resetScriptViz(){
+  ['script-viz-api','script-viz-jq','script-viz-result'].forEach(function(id){vizDim(id)});
+  ['script-viz-uc1','script-viz-uc2','script-viz-uc3','script-viz-uc4'].forEach(function(id){
+    var el=document.getElementById(id);if(el){el.style.color='#888';el.style.fontWeight='normal'}
+  });
+}
+
+/* ===== Skip Viz to Final State ===== */
+function _skipVizToEnd(){
+  var active=document.querySelector('.slide.active');
+  if(!active)return;
+  var id=active.id;
+  if(id==='slide-auth'){
+    ['auth-step-1','auth-step-2','auth-step-3'].forEach(function(s){vizActivate(s,'viz-active')});
+    vizActivate('auth-step-3','viz-glow-green');
+  }else if(id==='slide-repo'){
+    ['repo-viz-card','repo-viz-about','repo-viz-ops'].forEach(function(s){vizActivate(s,'viz-active')});
+    var opening=document.getElementById('repo-viz-opening');if(opening)opening.style.opacity='1';
+  }else if(id==='slide-issue'){
+    vizActivate('issue-viz-list','viz-active');vizActivate('issue-viz-new','viz-glow-green');
+    var el11=document.getElementById('issue-viz-11');
+    if(el11){el11.querySelector('span').style.textDecoration='line-through';el11.querySelector('span').style.color='#ff5370';el11.querySelectorAll('span')[1].textContent='Closed';el11.querySelectorAll('span')[1].style.color='#27c93f'}
+  }else if(id==='slide-pr'){
+    ['pr-viz-branch','pr-viz-pr','pr-viz-review'].forEach(function(s){vizActivate(s,'viz-active')});
+    vizActivate('pr-viz-merge','viz-glow-green');
+  }else if(id==='slide-review'){
+    vizActivate('review-viz-ci','viz-glow-green');vizActivate('review-viz-approved','viz-glow-green');vizActivate('review-viz-changes','viz-glow-yellow');
+    var icon=document.getElementById('review-viz-ci-icon');if(icon){icon.textContent='\u2714';icon.style.color='#27c93f'}
+    document.getElementById('review-viz-build').textContent='\u2714 build';document.getElementById('review-viz-build').style.color='#27c93f';
+    document.getElementById('review-viz-test').textContent='\u2714 test';document.getElementById('review-viz-test').style.color='#27c93f';
+    document.getElementById('review-viz-lint').textContent='\u2714 lint';document.getElementById('review-viz-lint').style.color='#27c93f';
+  }else if(id==='slide-actions'){
+    vizActivate('actions-viz-recent','viz-active');
+    ['actions-viz-build','actions-viz-test','actions-viz-deploy'].forEach(function(s){
+      vizActivate(s,'viz-glow-green');document.getElementById(s).style.borderColor='#27c93f';
+    });
+    document.getElementById('actions-viz-build-icon').textContent='\u2714';document.getElementById('actions-viz-build-label').style.color='#27c93f';
+    document.getElementById('actions-viz-test-icon').textContent='\u2714';document.getElementById('actions-viz-test-label').style.color='#27c93f';
+    document.getElementById('actions-viz-deploy-icon').textContent='\u2714';document.getElementById('actions-viz-deploy-label').style.color='#27c93f';
+  }else if(id==='slide-release'){
+    vizActivate('release-viz-older','viz-active');vizActivate('release-viz-main','viz-glow-green');
+    document.getElementById('release-viz-main').style.borderColor='#27c93f';
+    var assets=document.getElementById('release-viz-assets');if(assets)assets.style.opacity='1';
+  }else if(id==='slide-api'){
+    vizActivate('api-viz-json','viz-active');vizActivate('api-viz-supported','viz-active');vizActivate('api-viz-jq','viz-active');
+    var gb=document.getElementById('api-viz-graphql-badge');if(gb){gb.style.transform='scale(1.15)';gb.style.boxShadow='0 0 8px rgba(199,146,234,.3)'}
+  }else if(id==='slide-script'){
+    ['script-viz-api','script-viz-jq','script-viz-result'].forEach(function(s){vizActivate(s,'viz-active')});
+    ['script-viz-uc1','script-viz-uc2','script-viz-uc3','script-viz-uc4'].forEach(function(id){
+      var el=document.getElementById(id);if(el){el.style.color='#7fdbca';el.style.fontWeight='bold'}
+    });
+  }
 }
 
 /* ===== Demo: Install ===== */
@@ -962,6 +1101,14 @@ function runTermAuth(){
     {cls:'output',text:'  - Token: ghp_****...****'},
     {cls:'output',text:'  - Token scopes: gist, read:org, repo, workflow'},
   ],'btn-auth');
+  // Viz sync: auth steps
+  vizClearAll();resetAuthViz();
+  // Line 3 "GitHub.com" selected ~1500ms (lines 0-2 each 500ms)
+  vizTimeout(function(){vizActivate('auth-step-1','viz-highlight')},1500);
+  // Line 12 "First copy your one-time code" ~5500ms (browser auth step)
+  vizTimeout(function(){vizActivate('auth-step-2','viz-glow-yellow')},5500);
+  // Line 14 "Authentication complete" ~6500ms
+  vizTimeout(function(){vizActivate('auth-step-3','viz-glow-green')},6500);
 }
 
 /* ===== Demo: Repo ===== */
@@ -991,6 +1138,20 @@ function runTermRepo(){
     {type:'prompt',text:'gh repo view --web'},
     {cls:'success',text:'&#x2714; Opening github.com/your-username/my-app in your browser'},
   ],'btn-repo');
+  // Viz sync: repo card
+  vizClearAll();resetRepoViz();
+  // gh repo create completes ~2500ms (lines 0-4, 500ms each)
+  vizTimeout(function(){vizActivate('repo-viz-card','viz-highlight');vizActivate('repo-viz-ops','viz-active');
+    var op=document.getElementById('repo-viz-op-create');if(op)op.style.fontWeight='bold';
+  },2500);
+  // gh repo view shows stats ~7000ms
+  vizTimeout(function(){vizActivate('repo-viz-about','viz-active');
+    var op=document.getElementById('repo-viz-op-view');if(op)op.style.fontWeight='bold';
+  },7000);
+  // --web opens ~9500ms
+  vizTimeout(function(){
+    var opening=document.getElementById('repo-viz-opening');if(opening)opening.style.opacity='1';
+  },9500);
 }
 
 /* ===== Demo: Issue ===== */
@@ -1023,6 +1184,22 @@ function runTermIssue(){
     {type:'prompt',text:'gh issue close 11 --reason completed'},
     {cls:'success',text:'&#x2714; Closed issue #11 (ログインエラー修正)'},
   ],'btn-issue');
+  // Viz sync: issue cards
+  vizClearAll();resetIssueViz();
+  // Issue list appears ~3500ms (lines 0-7)
+  vizTimeout(function(){vizActivate('issue-viz-list','viz-highlight')},3500);
+  // gh issue create #13 ~6000ms
+  vizTimeout(function(){vizActivate('issue-viz-new','viz-glow-green')},6000);
+  // gh issue close 11 ~9500ms
+  vizTimeout(function(){
+    var el11=document.getElementById('issue-viz-11');
+    if(el11){
+      el11.querySelector('span').style.textDecoration='line-through';
+      el11.querySelector('span').style.color='#ff5370';
+      el11.querySelectorAll('span')[1].textContent='Closed';
+      el11.querySelectorAll('span')[1].style.color='#27c93f';
+    }
+  },9500);
 }
 
 /* ===== Demo: PR ===== */
@@ -1057,6 +1234,16 @@ function runTermPR(){
     {cls:'success',text:'&#x2714; Squashed and merged pull request #14 (検索機能を追加)'},
     {cls:'success',text:'&#x2714; Deleted branch feature/search'},
   ],'btn-pr');
+  // Viz sync: PR flow boxes
+  vizClearAll();resetPRViz();
+  // git checkout -b ~1000ms (lines 0-1)
+  vizTimeout(function(){vizActivate('pr-viz-branch','viz-highlight')},1000);
+  // gh pr create completes ~4500ms
+  vizTimeout(function(){vizActivate('pr-viz-pr','viz-highlight')},4500);
+  // gh pr checkout ~7500ms
+  vizTimeout(function(){vizActivate('pr-viz-review','viz-glow-yellow')},7500);
+  // gh pr merge ~9000ms
+  vizTimeout(function(){vizActivate('pr-viz-merge','viz-glow-green')},9000);
 }
 
 /* ===== Demo: Review ===== */
@@ -1085,6 +1272,27 @@ function runTermReview(){
     {type:'prompt',text:'gh pr review 14 --request-changes --body "バリデーションを追加してください"'},
     {cls:'warn',text:'! Requested changes to pull request #14'},
   ],'btn-review');
+  // Viz sync: review status
+  vizClearAll();resetReviewViz();
+  // CI checks results ~5000ms (after gh pr checks)
+  vizTimeout(function(){
+    vizActivate('review-viz-ci','viz-glow-green');
+    var ci=document.getElementById('review-viz-ci');if(ci)ci.style.borderColor='#27c93f';
+    var icon=document.getElementById('review-viz-ci-icon');if(icon){icon.textContent='\u2714';icon.style.color='#27c93f'}
+    document.getElementById('review-viz-build').textContent='\u2714 build';document.getElementById('review-viz-build').style.color='#27c93f';
+    document.getElementById('review-viz-test').textContent='\u2714 test';document.getElementById('review-viz-test').style.color='#27c93f';
+    document.getElementById('review-viz-lint').textContent='\u2714 lint';document.getElementById('review-viz-lint').style.color='#27c93f';
+  },5000);
+  // --approve ~8000ms
+  vizTimeout(function(){
+    vizActivate('review-viz-approved','viz-glow-green');
+    var ap=document.getElementById('review-viz-approved');if(ap)ap.style.borderColor='#27c93f';
+  },8000);
+  // --request-changes ~9500ms
+  vizTimeout(function(){
+    vizActivate('review-viz-changes','viz-glow-yellow');
+    var ch=document.getElementById('review-viz-changes');if(ch)ch.style.borderColor='#ffcb6b';
+  },9500);
 }
 
 /* ===== Demo: Actions ===== */
@@ -1124,6 +1332,32 @@ function runTermActions(){
     {cls:'output',text:'',pause:600},
     {cls:'success',text:'&#x2714;  chore: bump deps completed (1m15s)'},
   ],'btn-actions');
+  // Viz sync: actions pipeline
+  vizClearAll();resetActionsViz();
+  // gh run list shows ~3000ms
+  vizTimeout(function(){vizActivate('actions-viz-recent','viz-highlight')},3000);
+  // gh run view shows jobs ~7000ms: build pass, test fail, lint pass
+  vizTimeout(function(){
+    vizActivate('actions-viz-build','viz-glow-green');
+    document.getElementById('actions-viz-build').style.borderColor='#27c93f';
+    document.getElementById('actions-viz-build-icon').textContent='\u2714';
+    document.getElementById('actions-viz-build-label').style.color='#27c93f';
+    vizActivate('actions-viz-test','viz-glow-red');
+    document.getElementById('actions-viz-test').style.borderColor='#ff5370';
+    document.getElementById('actions-viz-test-icon').textContent='\u2716';
+    document.getElementById('actions-viz-test-label').style.color='#ff5370';
+    vizActivate('actions-viz-deploy','viz-glow-green');
+    document.getElementById('actions-viz-deploy').style.borderColor='#27c93f';
+    document.getElementById('actions-viz-deploy-icon').textContent='\u2714';
+    document.getElementById('actions-viz-deploy-label').style.color='#27c93f';
+  },7000);
+  // gh run watch completes ~12000ms: all green
+  vizTimeout(function(){
+    vizActivate('actions-viz-test','viz-glow-green');
+    document.getElementById('actions-viz-test').style.borderColor='#27c93f';
+    document.getElementById('actions-viz-test-icon').textContent='\u2714';
+    document.getElementById('actions-viz-test-label').style.color='#27c93f';
+  },12000);
 }
 
 /* ===== Demo: Release ===== */
@@ -1150,6 +1384,19 @@ function runTermRelease(){
     {type:'prompt',text:'gh release view v1.2.0 --web'},
     {cls:'success',text:'&#x2714; Opening in your browser'},
   ],'btn-release');
+  // Viz sync: release card
+  vizClearAll();resetReleaseViz();
+  // gh release list ~3000ms
+  vizTimeout(function(){vizActivate('release-viz-older','viz-active')},3000);
+  // gh release create v1.2.0 ~5500ms
+  vizTimeout(function(){
+    vizActivate('release-viz-main','viz-glow-green');
+    document.getElementById('release-viz-main').style.borderColor='#27c93f';
+  },5500);
+  // asset uploaded ~8000ms
+  vizTimeout(function(){
+    var assets=document.getElementById('release-viz-assets');if(assets)assets.style.opacity='1';
+  },8000);
 }
 
 /* ===== Demo: Alias ===== */
@@ -1215,6 +1462,25 @@ function runTermAPI(){
     {type:'prompt',text:'gh api repos/your-username/my-app/issues -f title="API経由のIssue" -f body="gh apiから作成"'},
     {cls:'success',text:'&#x2714; Issue #15 created via API'},
   ],'btn-api');
+  // Viz sync: API response
+  vizClearAll();resetAPIViz();
+  // REST response ~3500ms
+  vizTimeout(function(){
+    vizActivate('api-viz-json','viz-highlight');vizActivate('api-viz-supported','viz-active');
+    var rb=document.getElementById('api-viz-rest-badge');if(rb){rb.style.transform='scale(1.15)';rb.style.boxShadow='0 0 8px rgba(0,210,255,.3)'}
+  },3500);
+  // --jq runs ~5500ms
+  vizTimeout(function(){
+    vizActivate('api-viz-jq','viz-glow-green');
+    var jb=document.getElementById('api-viz-jq-badge');if(jb){jb.style.transform='scale(1.15)';jb.style.boxShadow='0 0 8px rgba(127,219,202,.3)'}
+  },5500);
+  // GraphQL runs ~9000ms
+  vizTimeout(function(){
+    var gb=document.getElementById('api-viz-graphql-badge');if(gb){gb.style.transform='scale(1.15)';gb.style.boxShadow='0 0 8px rgba(199,146,234,.3)'}
+    var endpoint=document.getElementById('api-viz-endpoint');if(endpoint)endpoint.textContent='POST /graphql';
+    var body=document.getElementById('api-viz-body');
+    if(body)body.innerHTML='<span style="color:#888">{</span><br><span style="color:#c792ea">&nbsp;&nbsp;"data"</span><span style="color:#888">: {</span><br><span style="color:#c792ea">&nbsp;&nbsp;&nbsp;&nbsp;"viewer"</span><span style="color:#888">: {</span><br><span style="color:#7fdbca">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"login"</span><span style="color:#888">: </span><span style="color:#7fdbca">"your-username"</span><span style="color:#888">,</span><br><span style="color:#7fdbca">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"repositories"</span><span style="color:#888">: [...]</span><br><span style="color:#888">&nbsp;&nbsp;&nbsp;&nbsp;}</span><br><span style="color:#888">&nbsp;&nbsp;}</span><br><span style="color:#888">}</span>';
+  },9000);
 }
 
 /* ===== Demo: Script ===== */
@@ -1248,6 +1514,27 @@ function runTermScript(){
     {type:'prompt',text:'echo "Stars: $(gh api repos/:owner/:repo --jq .stargazers_count) | Issues: $(gh issue list --state open --json id --jq length) | PRs: $(gh pr list --json id --jq length)"'},
     {cls:'info',text:'Stars: 42 | Issues: 3 | PRs: 2'},
   ],'btn-script');
+  // Viz sync: automation pipeline stages
+  vizClearAll();resetScriptViz();
+  // "gh api" stage ~1500ms (lines 0-1)
+  vizTimeout(function(){
+    vizActivate('script-viz-api','viz-highlight');
+    var uc1=document.getElementById('script-viz-uc1');if(uc1){uc1.style.color='#00d2ff';uc1.style.fontWeight='bold'}
+  },1500);
+  // "jq/shell" processing ~5000ms
+  vizTimeout(function(){
+    vizActivate('script-viz-jq','viz-highlight');
+    var uc2=document.getElementById('script-viz-uc2');if(uc2){uc2.style.color='#c792ea';uc2.style.fontWeight='bold'}
+  },5000);
+  // "Result" stage ~7000ms
+  vizTimeout(function(){
+    vizActivate('script-viz-result','viz-glow-green');
+    var uc3=document.getElementById('script-viz-uc3');if(uc3){uc3.style.color='#7fdbca';uc3.style.fontWeight='bold'}
+  },7000);
+  // Final use case ~10000ms
+  vizTimeout(function(){
+    var uc4=document.getElementById('script-viz-uc4');if(uc4){uc4.style.color='#ffcb6b';uc4.style.fontWeight='bold'}
+  },10000);
 }
 </script>
 <!-- Gallery / Jump Grid -->
