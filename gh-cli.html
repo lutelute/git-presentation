@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>GitHub CLI編 — ghコマンドで効率化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+
+/* Flow diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Steps */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* Buttons */
+button{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff55;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;transition:all .2s}
+button:hover{background:#00d2ff33}
+button:disabled{opacity:.4;cursor:default}
+
+/* Cheat sheet table */
+.cheat-table{width:100%;border-collapse:collapse;font-size:.9rem}
+.cheat-table th{text-align:left;color:#00d2ff;padding:.5rem .8rem;border-bottom:2px solid #2a2a4a;font-weight:600}
+.cheat-table td{padding:.4rem .8rem;border-bottom:1px solid #1a1a2e}
+.cheat-table td:first-child{font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;white-space:nowrap}
+.cheat-table td:last-child{color:#888}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label">GITHUB CLI GUIDE</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">GitHub CLI編</h1>
+    <p style="font-size:1.5rem;color:#888;margin-bottom:1.5rem">ghコマンドで効率化</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
+      <div class="card" style="padding:.8rem 1.5rem;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.3rem">&#x2318;</div>
+        <p style="font-size:.85rem;color:#888">ターミナルから<br>GitHub操作</p>
+      </div>
+      <div class="card" style="padding:.8rem 1.5rem;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.3rem">&#x26A1;</div>
+        <p style="font-size:.85rem;color:#888">ブラウザ不要<br>高速ワークフロー</p>
+      </div>
+      <div class="card" style="padding:.8rem 1.5rem;text-align:center">
+        <div style="font-size:2rem;margin-bottom:.3rem">&#x1F527;</div>
+        <p style="font-size:.85rem;color:#888">スクリプトで<br>自動化可能</p>
+      </div>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">→ キーで次へ</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: GitHub CLI とは ==================== -->
+<div class="slide">
+  <h2>GitHub CLI とは？</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label red">ブラウザ操作</p>
+      <div style="font-size:.9rem;line-height:2;color:#ff5370">
+        1. ブラウザを開く<br>
+        2. GitHubにログイン<br>
+        3. リポジトリを探す<br>
+        4. ボタンをクリック<br>
+        5. フォームを埋める<br>
+        <span style="color:#888">&#x23F1; 約2〜3分</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#00d2ff44">
+      <p class="label green">gh コマンド</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.9rem;line-height:2;color:#7fdbca">
+        $ gh pr create --fill<br>
+        <span style="color:#888">&#x2714; 完了</span><br>
+        <br>
+        <br>
+        <br>
+        <span style="color:#27c93f">&#x23F1; 約5秒</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1.5rem;text-align:center">
+    <p style="font-size:.95rem"><code>gh</code> は GitHub公式のCLIツール。Issue作成、PR操作、Actions確認、Release公開まで<strong style="color:#00d2ff">全てターミナルから</strong>実行できる。</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: インストール ==================== -->
+<div class="slide" id="slide-install">
+  <h2>インストール</h2>
+  <div class="cols" style="max-width:900px;margin-bottom:1.5rem">
+    <div class="card step" data-step="0" style="text-align:center">
+      <p class="label">Mac</p>
+      <code style="font-size:1rem">brew install gh</code>
+    </div>
+    <div class="card step" data-step="1" style="text-align:center">
+      <p class="label">Linux (Debian/Ubuntu)</p>
+      <code style="font-size:1rem">sudo apt install gh</code>
+    </div>
+    <div class="card step" data-step="2" style="text-align:center">
+      <p class="label">Windows</p>
+      <code style="font-size:1rem">winget install GitHub.cli</code>
+    </div>
+  </div>
+  <div class="terminal" id="term-install">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — install gh</span>
+    </div>
+    <div class="terminal-body" id="term-install-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermInstall()" id="btn-install">&#x25B6; インストール実演</button>
+    <button onclick="resetTerm('term-install-body');document.getElementById('btn-install').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 4: 認証 ==================== -->
+<div class="slide" id="slide-auth">
+  <h2>認証 — gh auth login</h2>
+  <p style="margin-bottom:1rem;color:#888;font-size:.95rem">初回だけ必要。GitHubアカウントとCLIを紐付ける。</p>
+  <div class="terminal" id="term-auth">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh auth login</span>
+    </div>
+    <div class="terminal-body" id="term-auth-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermAuth()" id="btn-auth">&#x25B6; 認証フローを見る</button>
+    <button onclick="resetTerm('term-auth-body');document.getElementById('btn-auth').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: リポジトリ操作 ==================== -->
+<div class="slide" id="slide-repo">
+  <h2>リポジトリ操作</h2>
+  <div class="terminal" id="term-repo">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh repo</span>
+    </div>
+    <div class="terminal-body" id="term-repo-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermRepo()" id="btn-repo">&#x25B6; 実行してみる</button>
+    <button onclick="resetTerm('term-repo-body');document.getElementById('btn-repo').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: Issue操作 ==================== -->
+<div class="slide" id="slide-issue">
+  <h2>Issue操作</h2>
+  <div class="terminal" id="term-issue">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh issue</span>
+    </div>
+    <div class="terminal-body" id="term-issue-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermIssue()" id="btn-issue">&#x25B6; Issue操作を見る</button>
+    <button onclick="resetTerm('term-issue-body');document.getElementById('btn-issue').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: PR操作 ==================== -->
+<div class="slide" id="slide-pr">
+  <h2>PR操作 — フルフロー</h2>
+  <div class="terminal" id="term-pr">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh pr (full workflow)</span>
+    </div>
+    <div class="terminal-body" id="term-pr-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermPR()" id="btn-pr">&#x25B6; PRフローを見る</button>
+    <button onclick="resetTerm('term-pr-body');document.getElementById('btn-pr').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: PRレビュー ==================== -->
+<div class="slide" id="slide-review">
+  <h2>PRレビュー</h2>
+  <div class="terminal" id="term-review">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh pr review</span>
+    </div>
+    <div class="terminal-body" id="term-review-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermReview()" id="btn-review">&#x25B6; レビューフローを見る</button>
+    <button onclick="resetTerm('term-review-body');document.getElementById('btn-review').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 9: Actions操作 ==================== -->
+<div class="slide" id="slide-actions">
+  <h2>Actions操作</h2>
+  <p style="margin-bottom:1rem;color:#888;font-size:.95rem">CI/CDの状態をターミナルからリアルタイム監視</p>
+  <div class="terminal" id="term-actions">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh run</span>
+    </div>
+    <div class="terminal-body" id="term-actions-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermActions()" id="btn-actions">&#x25B6; Actions監視を見る</button>
+    <button onclick="resetTerm('term-actions-body');document.getElementById('btn-actions').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: Release操作 ==================== -->
+<div class="slide" id="slide-release">
+  <h2>Release操作</h2>
+  <div class="terminal" id="term-release">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh release</span>
+    </div>
+    <div class="terminal-body" id="term-release-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermRelease()" id="btn-release">&#x25B6; リリースを作成</button>
+    <button onclick="resetTerm('term-release-body');document.getElementById('btn-release').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: エイリアス ==================== -->
+<div class="slide" id="slide-alias">
+  <h2>エイリアス — ショートカット登録</h2>
+  <div class="cols" style="max-width:1000px;margin-bottom:1.5rem">
+    <div class="card">
+      <p class="label orange">毎回入力</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;color:#f78c6c;line-height:2">
+        $ gh pr checkout 42<br>
+        $ gh issue list --label bug<br>
+        $ gh pr list --state merged
+      </div>
+    </div>
+    <div class="card" style="border-color:#7fdbca44">
+      <p class="label green">エイリアス活用</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;color:#7fdbca;line-height:2">
+        $ gh co 42<br>
+        $ gh bugs<br>
+        $ gh merged
+      </div>
+    </div>
+  </div>
+  <div class="terminal" id="term-alias">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh alias</span>
+    </div>
+    <div class="terminal-body" id="term-alias-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermAlias()" id="btn-alias">&#x25B6; エイリアスを設定</button>
+    <button onclick="resetTerm('term-alias-body');document.getElementById('btn-alias').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: API操作 ==================== -->
+<div class="slide" id="slide-api">
+  <h2>API操作 — gh api</h2>
+  <p style="margin-bottom:1rem;color:#888;font-size:.95rem">GitHub REST / GraphQL APIを認証付きで直接呼べる</p>
+  <div class="terminal" id="term-api">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh api</span>
+    </div>
+    <div class="terminal-body" id="term-api-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermAPI()" id="btn-api">&#x25B6; API呼び出しを見る</button>
+    <button onclick="resetTerm('term-api-body');document.getElementById('btn-api').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: スクリプト連携 ==================== -->
+<div class="slide" id="slide-script">
+  <h2>スクリプト連携</h2>
+  <p style="margin-bottom:1rem;color:#888;font-size:.95rem">シェルスクリプトやjqと組み合わせて自動化</p>
+  <div class="terminal" id="term-script">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — gh + shell scripting</span>
+    </div>
+    <div class="terminal-body" id="term-script-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermScript()" id="btn-script">&#x25B6; スクリプト例を見る</button>
+    <button onclick="resetTerm('term-script-body');document.getElementById('btn-script').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 14: まとめ ==================== -->
+<div class="slide">
+  <h2>まとめ — よく使うコマンド一覧</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="card" style="overflow-y:auto;max-height:65vh">
+      <p class="label">基本操作</p>
+      <table class="cheat-table">
+        <tr><td>gh auth login</td><td>認証</td></tr>
+        <tr><td>gh repo create</td><td>リポジトリ作成</td></tr>
+        <tr><td>gh repo clone</td><td>クローン</td></tr>
+        <tr><td>gh issue create</td><td>Issue作成</td></tr>
+        <tr><td>gh issue list</td><td>Issue一覧</td></tr>
+        <tr><td>gh pr create</td><td>PR作成</td></tr>
+        <tr><td>gh pr list</td><td>PR一覧</td></tr>
+        <tr><td>gh pr checkout</td><td>PRのブランチに切替</td></tr>
+        <tr><td>gh pr merge</td><td>PRをマージ</td></tr>
+      </table>
+    </div>
+    <div class="card" style="overflow-y:auto;max-height:65vh">
+      <p class="label purple">応用操作</p>
+      <table class="cheat-table">
+        <tr><td>gh pr review</td><td>PRレビュー</td></tr>
+        <tr><td>gh pr diff</td><td>PRの差分確認</td></tr>
+        <tr><td>gh run list</td><td>Actions一覧</td></tr>
+        <tr><td>gh run watch</td><td>実行をリアルタイム監視</td></tr>
+        <tr><td>gh release create</td><td>リリース作成</td></tr>
+        <tr><td>gh alias set</td><td>ショートカット登録</td></tr>
+        <tr><td>gh api</td><td>APIを直接呼ぶ</td></tr>
+        <tr><td>gh search repos</td><td>リポジトリ検索</td></tr>
+        <tr><td>gh extension</td><td>拡張機能管理</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1.5rem;text-align:center">
+    <p style="font-size:.95rem">まずは <code>gh auth login</code> で認証して、<code>gh pr create</code> から使い始めよう！</p>
+  </div>
+</div>
+
+<!-- ==================== Navigation ==================== -->
+<div class="progress">1 / 14</div>
+<div class="nav-hint">← → で移動 | g: 最初 | G: 最後</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+const slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+let cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  if(slide.id==='slide-install'){
+    var steps=slide.querySelectorAll('.step');
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*400);
+    });
+  }
+}
+
+/* ===== Terminal Engine ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: Install ===== */
+function runTermInstall(){
+  typeInTerminal('term-install-body',[
+    {type:'prompt',text:'brew install gh'},
+    {type:'comment',text:'Homebrew でインストール (Mac)'},
+    {cls:'output',text:'==> Downloading gh 2.65.0...'},
+    {cls:'output',text:'==> Installing gh'},
+    {cls:'output',text:'==> Pouring gh--2.65.0.arm64_sonoma.bottle.tar.gz'},
+    {cls:'success',text:'&#x2714; /opt/homebrew/Cellar/gh/2.65.0: 198 files, 50.2MB'},
+    {type:'prompt',text:'gh --version',pause:300},
+    {cls:'info',text:'gh version 2.65.0 (2025-01-15)'},
+    {cls:'info',text:'https://github.com/cli/cli/releases/tag/v2.65.0'},
+    {cls:'success',text:'&#x2714; インストール完了！',pause:200},
+  ],'btn-install');
+}
+
+/* ===== Demo: Auth ===== */
+function runTermAuth(){
+  typeInTerminal('term-auth-body',[
+    {type:'prompt',text:'gh auth login'},
+    {type:'comment',text:'対話式で認証を設定'},
+    {cls:'info',text:'? What account do you want to log into?'},
+    {cls:'warn',text:'  > GitHub.com'},
+    {cls:'output',text:'    GitHub Enterprise Server'},
+    {cls:'info',text:'? What is your preferred protocol for Git operations?',pause:400},
+    {cls:'warn',text:'  > HTTPS'},
+    {cls:'output',text:'    SSH'},
+    {cls:'info',text:'? Authenticate Git with your GitHub credentials? (Y/n)',pause:300},
+    {cls:'warn',text:'  > Y'},
+    {cls:'info',text:'? How would you like to authenticate GitHub CLI?',pause:300},
+    {cls:'warn',text:'  > Login with a web browser'},
+    {cls:'output',text:'    Paste an authentication token'},
+    {cls:'output',text:'',pause:300},
+    {cls:'info',text:'! First copy your one-time code: AB12-CD34'},
+    {cls:'output',text:'Press Enter to open github.com in your browser...'},
+    {cls:'output',text:'',pause:500},
+    {cls:'success',text:'&#x2714; Authentication complete.'},
+    {cls:'success',text:'- gh config set -h github.com git_protocol https'},
+    {cls:'success',text:'&#x2714; Configured git protocol'},
+    {cls:'success',text:'&#x2714; Logged in as your-username',pause:200},
+    {type:'prompt',text:'gh auth status',pause:500},
+    {cls:'info',text:'github.com'},
+    {cls:'success',text:'  &#x2714; Logged in to github.com as your-username'},
+    {cls:'output',text:'  - Active account: true'},
+    {cls:'output',text:'  - Git operations protocol: https'},
+    {cls:'output',text:'  - Token: ghp_****...****'},
+    {cls:'output',text:'  - Token scopes: gist, read:org, repo, workflow'},
+  ],'btn-auth');
+}
+
+/* ===== Demo: Repo ===== */
+function runTermRepo(){
+  typeInTerminal('term-repo-body',[
+    {type:'comment',text:'リポジトリを新規作成'},
+    {type:'prompt',text:'gh repo create my-app --public --clone'},
+    {cls:'success',text:'&#x2714; Created repository your-username/my-app on GitHub'},
+    {cls:'output',text:'Cloning into \'my-app\'...'},
+    {cls:'success',text:'&#x2714; Cloned repository'},
+    {type:'comment',text:'既存リポジトリをクローン',pause:400},
+    {type:'prompt',text:'gh repo clone facebook/react'},
+    {cls:'output',text:'Cloning into \'react\'...'},
+    {cls:'output',text:'remote: Enumerating objects: 254789, done.'},
+    {cls:'output',text:'Receiving objects: 100% (254789/254789), 198.45 MiB'},
+    {cls:'success',text:'&#x2714; Done'},
+    {type:'comment',text:'リポジトリ情報を表示',pause:400},
+    {type:'prompt',text:'gh repo view facebook/react'},
+    {cls:'info',text:'facebook/react'},
+    {cls:'output',text:'The library for web and native user interfaces'},
+    {cls:'output',text:''},
+    {cls:'output',text:'  Stars:    232,456     Language: JavaScript'},
+    {cls:'output',text:'  Forks:     47,891     License:  MIT'},
+    {cls:'output',text:'  Open PRs:     583     Watchers:   6,702'},
+    {cls:'output',text:'  Issues:     1,245     Created:  May 2013'},
+    {type:'comment',text:'ブラウザでリポジトリを開く',pause:400},
+    {type:'prompt',text:'gh repo view --web'},
+    {cls:'success',text:'&#x2714; Opening github.com/your-username/my-app in your browser'},
+  ],'btn-repo');
+}
+
+/* ===== Demo: Issue ===== */
+function runTermIssue(){
+  typeInTerminal('term-issue-body',[
+    {type:'comment',text:'Issueを一覧表示'},
+    {type:'prompt',text:'gh issue list'},
+    {cls:'output',text:''},
+    {cls:'info',text:'Showing 4 of 4 open issues in your-username/my-app'},
+    {cls:'output',text:''},
+    {cls:'output',text:'#12  ダークモード対応     enhancement  2h ago'},
+    {cls:'output',text:'#11  ログインエラー修正   bug          5h ago'},
+    {cls:'output',text:'#10  README更新           docs         1d ago'},
+    {cls:'output',text:' #9  パフォーマンス改善   enhancement  2d ago'},
+    {type:'comment',text:'新しいIssueを作成',pause:500},
+    {type:'prompt',text:'gh issue create --title "検索機能の追加" --body "ユーザーが商品を検索できる機能" --label "enhancement"'},
+    {cls:'output',text:''},
+    {cls:'success',text:'Creating issue in your-username/my-app'},
+    {cls:'success',text:''},
+    {cls:'info',text:'https://github.com/your-username/my-app/issues/13'},
+    {type:'comment',text:'Issueの詳細を確認',pause:500},
+    {type:'prompt',text:'gh issue view 13'},
+    {cls:'info',text:'検索機能の追加  #13'},
+    {cls:'warn',text:'Open  ・ your-username opened about 1 minute ago  ・ 0 comments'},
+    {cls:'output',text:''},
+    {cls:'output',text:'  ユーザーが商品を検索できる機能'},
+    {cls:'output',text:''},
+    {cls:'output',text:'  Labels: enhancement'},
+    {type:'comment',text:'Issueをクローズ',pause:400},
+    {type:'prompt',text:'gh issue close 11 --reason completed'},
+    {cls:'success',text:'&#x2714; Closed issue #11 (ログインエラー修正)'},
+  ],'btn-issue');
+}
+
+/* ===== Demo: PR ===== */
+function runTermPR(){
+  typeInTerminal('term-pr-body',[
+    {type:'comment',text:'ブランチで作業後、PRを作成'},
+    {type:'prompt',text:'git checkout -b feature/search'},
+    {cls:'output',text:'Switched to a new branch \'feature/search\''},
+    {type:'comment',text:'... コードを編集・コミット ...',pause:300},
+    {type:'prompt',text:'git add . && git commit -m "feat: add search functionality"',pause:200},
+    {cls:'output',text:'[feature/search a1b2c3d] feat: add search functionality'},
+    {type:'prompt',text:'git push -u origin feature/search',pause:300},
+    {cls:'output',text:'remote: Create a pull request for \'feature/search\' on GitHub'},
+    {cls:'output',text:''},
+    {type:'comment',text:'PRを作成（タイトルとボディを指定）',pause:300},
+    {type:'prompt',text:'gh pr create --title "検索機能を追加" --body "Closes #13"'},
+    {cls:'output',text:''},
+    {cls:'success',text:'Creating pull request for feature/search into main in your-username/my-app'},
+    {cls:'info',text:'https://github.com/your-username/my-app/pull/14'},
+    {type:'comment',text:'PR一覧を確認',pause:500},
+    {type:'prompt',text:'gh pr list'},
+    {cls:'output',text:''},
+    {cls:'info',text:'Showing 1 of 1 open pull request in your-username/my-app'},
+    {cls:'output',text:''},
+    {cls:'output',text:'#14  検索機能を追加  feature/search  about 30s ago'},
+    {type:'comment',text:'他の人のPRをチェックアウト',pause:500},
+    {type:'prompt',text:'gh pr checkout 14'},
+    {cls:'output',text:'remote: Enumerating objects: 8, done.'},
+    {cls:'success',text:'Switched to branch \'feature/search\''},
+    {type:'comment',text:'PRをマージ',pause:500},
+    {type:'prompt',text:'gh pr merge 14 --squash --delete-branch'},
+    {cls:'success',text:'&#x2714; Squashed and merged pull request #14 (検索機能を追加)'},
+    {cls:'success',text:'&#x2714; Deleted branch feature/search'},
+  ],'btn-pr');
+}
+
+/* ===== Demo: Review ===== */
+function runTermReview(){
+  typeInTerminal('term-review-body',[
+    {type:'comment',text:'PRの差分を確認'},
+    {type:'prompt',text:'gh pr diff 14'},
+    {cls:'output',text:'diff --git a/src/search.js b/src/search.js'},
+    {cls:'output',text:'new file mode 100644'},
+    {cls:'success',text:'+export function search(query, items) {'},
+    {cls:'success',text:'+  return items.filter(item =>'},
+    {cls:'success',text:'+    item.name.toLowerCase().includes(query.toLowerCase())'},
+    {cls:'success',text:'+  );'},
+    {cls:'success',text:'+}'},
+    {type:'comment',text:'CIの状態を確認',pause:500},
+    {type:'prompt',text:'gh pr checks 14'},
+    {cls:'output',text:''},
+    {cls:'success',text:'&#x2714;  build        3m45s  https://github.com/.../1'},
+    {cls:'success',text:'&#x2714;  test         2m12s  https://github.com/.../2'},
+    {cls:'success',text:'&#x2714;  lint         0m38s  https://github.com/.../3'},
+    {cls:'output',text:''},
+    {type:'comment',text:'レビューを承認',pause:500},
+    {type:'prompt',text:'gh pr review 14 --approve --body "LGTM! 検索ロジックが綺麗です"'},
+    {cls:'success',text:'&#x2714; Approved pull request #14'},
+    {type:'comment',text:'コメント付きでレビュー（変更要求）',pause:400},
+    {type:'prompt',text:'gh pr review 14 --request-changes --body "バリデーションを追加してください"'},
+    {cls:'warn',text:'! Requested changes to pull request #14'},
+  ],'btn-review');
+}
+
+/* ===== Demo: Actions ===== */
+function runTermActions(){
+  typeInTerminal('term-actions-body',[
+    {type:'comment',text:'ワークフロー実行一覧'},
+    {type:'prompt',text:'gh run list --limit 5'},
+    {cls:'output',text:''},
+    {cls:'output',text:'STATUS  TITLE                  WORKFLOW  BRANCH   EVENT  AGE'},
+    {cls:'success',text:'&#x2714;      feat: add search       CI        main     push   2m'},
+    {cls:'success',text:'&#x2714;      fix: login error       CI        main     push   1h'},
+    {cls:'error',text:'X      test: update snapshots CI        feature  push   2h'},
+    {cls:'success',text:'&#x2714;      docs: update README    CI        main     push   5h'},
+    {cls:'warn',text:'*      chore: bump deps       CI        deps     push   5m'},
+    {type:'comment',text:'失敗した実行の詳細を確認',pause:500},
+    {type:'prompt',text:'gh run view 12345678'},
+    {cls:'output',text:''},
+    {cls:'error',text:'X  test: update snapshots  ・  CI  ・  feature'},
+    {cls:'output',text:'Triggered via push about 2 hours ago'},
+    {cls:'output',text:''},
+    {cls:'output',text:'JOBS'},
+    {cls:'success',text:'&#x2714;  build   (25s)'},
+    {cls:'error',text:'X  test    (1m42s)'},
+    {cls:'success',text:'&#x2714;  lint    (15s)'},
+    {type:'comment',text:'実行中のワークフローをリアルタイム監視',pause:500},
+    {type:'prompt',text:'gh run watch'},
+    {cls:'info',text:'Refreshing run status every 3 seconds...'},
+    {cls:'output',text:''},
+    {cls:'warn',text:'*  chore: bump deps  ・  CI'},
+    {cls:'warn',text:'   *  build    In progress (18s)'},
+    {cls:'output',text:'   -  test     Waiting'},
+    {cls:'output',text:'   -  lint     Waiting'},
+    {cls:'output',text:'',pause:600},
+    {cls:'success',text:'   &#x2714;  build    Passed (32s)'},
+    {cls:'warn',text:'   *  test     In progress (5s)'},
+    {cls:'warn',text:'   *  lint     In progress (3s)'},
+    {cls:'output',text:'',pause:600},
+    {cls:'success',text:'&#x2714;  chore: bump deps completed (1m15s)'},
+  ],'btn-actions');
+}
+
+/* ===== Demo: Release ===== */
+function runTermRelease(){
+  typeInTerminal('term-release-body',[
+    {type:'comment',text:'リリース一覧を確認'},
+    {type:'prompt',text:'gh release list'},
+    {cls:'output',text:''},
+    {cls:'output',text:'TITLE    TAG      PUBLISHED'},
+    {cls:'output',text:'v1.1.0   v1.1.0   about 2 weeks ago'},
+    {cls:'output',text:'v1.0.0   v1.0.0   about 1 month ago'},
+    {cls:'output',text:'v0.9.0   v0.9.0   about 2 months ago'},
+    {type:'comment',text:'新しいリリースを作成',pause:500},
+    {type:'prompt',text:'gh release create v1.2.0 --title "v1.2.0 検索機能追加" --notes "## What\'s New\\n- 検索機能を追加\\n- パフォーマンス改善\\n- バグ修正"'},
+    {cls:'output',text:''},
+    {cls:'success',text:'&#x2714; Created release v1.2.0'},
+    {cls:'info',text:'https://github.com/your-username/my-app/releases/tag/v1.2.0'},
+    {type:'comment',text:'ビルド成果物を添付してリリース',pause:500},
+    {type:'prompt',text:'gh release create v1.2.1 ./dist/app.zip --title "v1.2.1 Hotfix" --notes "緊急バグ修正"'},
+    {cls:'output',text:'Uploading app.zip...'},
+    {cls:'success',text:'&#x2714; Created release v1.2.1'},
+    {cls:'info',text:'https://github.com/your-username/my-app/releases/tag/v1.2.1'},
+    {type:'comment',text:'リリースをブラウザで開く',pause:400},
+    {type:'prompt',text:'gh release view v1.2.0 --web'},
+    {cls:'success',text:'&#x2714; Opening in your browser'},
+  ],'btn-release');
+}
+
+/* ===== Demo: Alias ===== */
+function runTermAlias(){
+  typeInTerminal('term-alias-body',[
+    {type:'comment',text:'PR checkoutのショートカット'},
+    {type:'prompt',text:'gh alias set co \'pr checkout\''},
+    {cls:'success',text:'- Adding alias for co: pr checkout'},
+    {cls:'success',text:'&#x2714; Added alias.'},
+    {type:'comment',text:'バグIssue一覧のショートカット',pause:300},
+    {type:'prompt',text:'gh alias set bugs \'issue list --label bug\''},
+    {cls:'success',text:'- Adding alias for bugs: issue list --label bug'},
+    {cls:'success',text:'&#x2714; Added alias.'},
+    {type:'comment',text:'マージ済みPR一覧のショートカット',pause:300},
+    {type:'prompt',text:'gh alias set merged \'pr list --state merged\''},
+    {cls:'success',text:'- Adding alias for merged: pr list --state merged'},
+    {cls:'success',text:'&#x2714; Added alias.'},
+    {type:'comment',text:'登録済みエイリアスを確認',pause:300},
+    {type:'prompt',text:'gh alias list'},
+    {cls:'output',text:''},
+    {cls:'info',text:'bugs:    issue list --label bug'},
+    {cls:'info',text:'co:      pr checkout'},
+    {cls:'info',text:'merged:  pr list --state merged'},
+    {type:'comment',text:'実際に使ってみる',pause:400},
+    {type:'prompt',text:'gh co 14'},
+    {cls:'output',text:'remote: Enumerating objects: 8, done.'},
+    {cls:'success',text:'Switched to branch \'feature/search\''},
+    {type:'prompt',text:'gh bugs',pause:300},
+    {cls:'output',text:'#11  ログインエラー修正   bug  5h ago'},
+  ],'btn-alias');
+}
+
+/* ===== Demo: API ===== */
+function runTermAPI(){
+  typeInTerminal('term-api-body',[
+    {type:'comment',text:'リポジトリ情報をJSON取得'},
+    {type:'prompt',text:'gh api repos/your-username/my-app'},
+    {cls:'output',text:'{'},
+    {cls:'info',text:'  "full_name": "your-username/my-app",'},
+    {cls:'info',text:'  "private": false,'},
+    {cls:'info',text:'  "stargazers_count": 42,'},
+    {cls:'info',text:'  "forks_count": 7,'},
+    {cls:'info',text:'  "open_issues_count": 3'},
+    {cls:'output',text:'}'},
+    {type:'comment',text:'jq でスター数だけ抽出',pause:500},
+    {type:'prompt',text:'gh api repos/your-username/my-app --jq .stargazers_count'},
+    {cls:'info',text:'42'},
+    {type:'comment',text:'GraphQL APIを使う',pause:500},
+    {type:'prompt',text:'gh api graphql -f query=\'{ viewer { login repositories(first:3) { nodes { name stargazerCount } } } }\''},
+    {cls:'output',text:'{'},
+    {cls:'output',text:'  "data": {'},
+    {cls:'info',text:'    "viewer": {'},
+    {cls:'info',text:'      "login": "your-username",'},
+    {cls:'info',text:'      "repositories": { "nodes": ['},
+    {cls:'info',text:'        { "name": "my-app", "stargazerCount": 42 },'},
+    {cls:'info',text:'        { "name": "dotfiles", "stargazerCount": 15 },'},
+    {cls:'info',text:'        { "name": "blog", "stargazerCount": 8 }'},
+    {cls:'output',text:'      ]}'},
+    {cls:'output',text:'    }'},
+    {cls:'output',text:'  }'},
+    {cls:'output',text:'}'},
+    {type:'comment',text:'POSTリクエスト (Issue作成)',pause:400},
+    {type:'prompt',text:'gh api repos/your-username/my-app/issues -f title="API経由のIssue" -f body="gh apiから作成"'},
+    {cls:'success',text:'&#x2714; Issue #15 created via API'},
+  ],'btn-api');
+}
+
+/* ===== Demo: Script ===== */
+function runTermScript(){
+  typeInTerminal('term-script-body',[
+    {type:'comment',text:'例1: 全オープンPRのタイトルを取得'},
+    {type:'prompt',text:'gh pr list --json title --jq \'.[].title\''},
+    {cls:'output',text:'検索機能を追加'},
+    {cls:'output',text:'CI設定を更新'},
+    {cls:'output',text:'README改善'},
+    {type:'comment',text:'例2: 古いIssueを一括クローズ',pause:500},
+    {type:'prompt',text:'gh issue list --state open --json number --jq \'.[].number\' | while read num; do'},
+    {cls:'output',text:'  gh issue close "$num" --reason "not planned"'},
+    {cls:'output',text:'done'},
+    {cls:'success',text:'&#x2714; Closed issue #9'},
+    {cls:'success',text:'&#x2714; Closed issue #10'},
+    {cls:'success',text:'&#x2714; Closed issue #12'},
+    {type:'comment',text:'例3: PR作成を自動化するスクリプト',pause:500},
+    {type:'prompt',text:'cat auto-pr.sh'},
+    {cls:'info',text:'#!/bin/bash'},
+    {cls:'info',text:'BRANCH=$(git branch --show-current)'},
+    {cls:'info',text:'git push -u origin "$BRANCH"'},
+    {cls:'info',text:'gh pr create \\'},
+    {cls:'info',text:'  --title "$(git log -1 --format=%s)" \\'},
+    {cls:'info',text:'  --body "$(git log -1 --format=%b)" \\'},
+    {cls:'info',text:'  --reviewer teammate1,teammate2'},
+    {type:'prompt',text:'bash auto-pr.sh',pause:300},
+    {cls:'output',text:'remote: Create PR for feature/search on GitHub'},
+    {cls:'success',text:'https://github.com/your-username/my-app/pull/16'},
+    {type:'comment',text:'例4: リポジトリの統計情報',pause:500},
+    {type:'prompt',text:'echo "Stars: $(gh api repos/:owner/:repo --jq .stargazers_count) | Issues: $(gh issue list --state open --json id --jq length) | PRs: $(gh pr list --json id --jq length)"'},
+    {cls:'info',text:'Stars: 42 | Issues: 3 | PRs: 2'},
+  ],'btn-script');
+}
+</script>
+</body></html>

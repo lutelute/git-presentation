@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>GitHub インタラクティブツール編</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+.github-ui{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.github-header{background:#161b22;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #30363d}
+.github-header .gh-icon{color:#e0e0e0;font-size:1.3rem}
+.github-header .gh-repo{color:#58a6ff;font-size:.95rem;font-weight:600}
+.github-body{padding:1.2rem 1.5rem}
+.gh-file{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #21262d}
+.gh-file .icon{color:#8b949e;font-size:1rem}
+.gh-file .name{color:#58a6ff;font-size:.9rem}
+.gh-file .msg{color:#8b949e;font-size:.85rem;flex:1;text-align:right}
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+.gh-setting{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #21262d}
+.gh-setting .setting-label{color:#c9d1d9;font-size:.9rem}
+.gh-setting .setting-value{color:#8b949e;font-size:.85rem}
+.gh-btn{background:#238636;color:#fff;border:1px solid #2ea043;border-radius:6px;padding:5px 16px;font-size:.85rem;cursor:pointer;font-weight:600}
+.gh-btn:hover{background:#2ea043}
+.gh-btn.secondary{background:#21262d;border-color:#363b42;color:#c9d1d9}
+.gh-btn.secondary:hover{background:#30363d}
+.gh-select{background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:5px 12px;border-radius:6px;font-size:.85rem}
+.gh-tab{display:inline-block;padding:8px 16px;color:#8b949e;font-size:.9rem;border-bottom:2px solid transparent;cursor:pointer}
+.gh-tab.active-tab{color:#c9d1d9;border-bottom-color:#f78c6c}
+.gh-badge{display:inline-block;background:#238636;color:#fff;padding:2px 8px;border-radius:10px;font-size:.75rem;font-weight:600}
+.gh-badge.yellow{background:#9e6a03}
+.gh-badge.red{background:#da3633}
+.gh-badge.blue{background:#1f6feb}
+.kanban{display:flex;gap:1rem;width:100%;max-width:1000px}
+.kanban-col{flex:1;background:#161b22;border:1px solid #30363d;border-radius:8px;padding:.8rem}
+.kanban-col h4{color:#c9d1d9;font-size:.85rem;margin-bottom:.6rem;padding-bottom:.4rem;border-bottom:1px solid #30363d}
+.kanban-card{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:.6rem .8rem;margin-bottom:.5rem;font-size:.8rem;color:#c9d1d9}
+.kanban-card .card-label{display:inline-block;padding:1px 6px;border-radius:10px;font-size:.7rem;margin-top:4px}
+.yaml-key{color:#ff7b72}
+.yaml-val{color:#a5d6ff}
+.yaml-comment{color:#8b949e}
+.demo-btn{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff44;border-radius:6px;padding:8px 20px;font-size:.9rem;cursor:pointer;margin-top:1rem;transition:all .2s}
+.demo-btn:hover{background:#00d2ff33}
+.demo-btn:disabled{opacity:.4;cursor:not-allowed}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label purple">INTERACTIVE TOOLS</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">GitHub インタラクティブツール編</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1.5rem">Pages / Actions / Releases / Projects</p>
+    <div style="display:flex;gap:1rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap">
+      <span class="label green">Pages</span>
+      <span class="label orange">Actions</span>
+      <span class="label purple">Releases</span>
+      <span class="label yellow">Projects</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">→ キーで次へ</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: GitHub Pages とは ==================== -->
+<div class="slide">
+  <p class="label green">HOSTING</p>
+  <h2>GitHub Pages とは</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <h3>無料の静的サイトホスティング</h3>
+      <ul class="feature-list">
+        <li>リポジトリから直接Webサイトを公開</li>
+        <li>HTML / CSS / JS の静的サイトに対応</li>
+        <li>Jekyll によるブログ構築も可能</li>
+        <li>HTTPS が標準で有効</li>
+        <li>完全無料（パブリックリポジトリ）</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>URL パターン</h3>
+      <div style="margin-top:.8rem">
+        <p style="margin-bottom:.8rem"><span class="label">ユーザーサイト</span></p>
+        <code style="font-size:1rem">username.github.io</code>
+        <p style="margin-top:1.2rem;margin-bottom:.8rem"><span class="label orange">プロジェクトサイト</span></p>
+        <code style="font-size:1rem">username.github.io/repo-name</code>
+        <p style="margin-top:1.2rem;color:#888;font-size:.9rem">
+          例: <code>lutelute.github.io/2048_project</code>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: Pages 設定方法 ==================== -->
+<div class="slide">
+  <p class="label green">SETUP</p>
+  <h2>Pages 設定方法</h2>
+  <div class="github-ui" style="max-width:800px">
+    <div class="github-header">
+      <span class="gh-icon">⚙️</span>
+      <span class="gh-repo">Settings</span>
+      <span style="color:#8b949e;font-size:.85rem">/ Pages</span>
+    </div>
+    <div class="github-body">
+      <div style="margin-bottom:1rem">
+        <div class="gh-tab active-tab">GitHub Pages</div>
+      </div>
+      <div class="gh-setting">
+        <div>
+          <div class="setting-label">Source</div>
+          <div class="setting-value">Build and deployment</div>
+        </div>
+        <select class="gh-select">
+          <option>Deploy from a branch</option>
+          <option>GitHub Actions</option>
+        </select>
+      </div>
+      <div class="gh-setting">
+        <div>
+          <div class="setting-label">Branch</div>
+          <div class="setting-value">公開するブランチを選択</div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="gh-select">
+            <option>main</option>
+            <option>gh-pages</option>
+          </select>
+          <select class="gh-select">
+            <option>/ (root)</option>
+            <option>/docs</option>
+          </select>
+          <button class="gh-btn">Save</button>
+        </div>
+      </div>
+      <div class="gh-setting" style="border-bottom:none">
+        <div>
+          <div class="setting-label">Custom domain</div>
+          <div class="setting-value">独自ドメインを設定（オプション）</div>
+        </div>
+        <input type="text" placeholder="example.com" style="background:#0d1117;border:1px solid #30363d;color:#c9d1d9;padding:5px 12px;border-radius:6px;font-size:.85rem;width:180px">
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem">Settings → Pages → Branch を選んで Save するだけ!</p>
+</div>
+
+<!-- ==================== Slide 4: Pages デモ ==================== -->
+<div class="slide">
+  <p class="label green">DEMO</p>
+  <h2>Pages デプロイの流れ</h2>
+  <div class="terminal" style="max-width:800px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>pages-demo</span>
+    </div>
+    <div class="terminal-body" id="pages-demo"></div>
+  </div>
+  <button class="demo-btn" id="pages-demo-btn" onclick="demoPages()">▶ デモを実行</button>
+  <div class="flow" style="margin-top:1.5rem" id="pages-flow">
+    <div class="flow-box" id="pf1">Push</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="pf2">GitHub 検出</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="pf3">Build</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="pf4">Deploy</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="pf5">🌐 Live!</div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: Pages カスタムドメイン ==================== -->
+<div class="slide">
+  <p class="label green">CUSTOM DOMAIN</p>
+  <h2>カスタムドメイン設定</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <h3>設定手順</h3>
+      <ul class="feature-list">
+        <li>DNS プロバイダで CNAME レコードを追加</li>
+        <li><code>www.example.com</code> → <code>username.github.io</code></li>
+        <li>Settings → Pages → Custom domain に入力</li>
+        <li>Enforce HTTPS にチェック</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>Apex ドメインの場合</h3>
+      <p style="margin-bottom:.8rem">A レコードで GitHub の IP を指定:</p>
+      <div style="background:#0a0a15;padding:1rem;border-radius:8px;font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.8">
+        <span class="info">185.199.108.153</span><br>
+        <span class="info">185.199.109.153</span><br>
+        <span class="info">185.199.110.153</span><br>
+        <span class="info">185.199.111.153</span>
+      </div>
+      <p style="margin-top:.8rem;font-size:.9rem;color:#888">※ HTTPS 証明書は自動発行されます</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: GitHub Actions とは ==================== -->
+<div class="slide">
+  <p class="label orange">CI/CD</p>
+  <h2>GitHub Actions とは</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <h3>自動化プラットフォーム</h3>
+      <p>リポジトリ内のイベントをトリガーにして、<br>ワークフローを自動実行する CI/CD ツール</p>
+      <div style="margin-top:1rem">
+        <p class="label">トリガーの例</p>
+        <ul class="feature-list" style="margin-top:.5rem">
+          <li><code>push</code> — コードをプッシュした時</li>
+          <li><code>pull_request</code> — PR が作成された時</li>
+          <li><code>schedule</code> — 定期実行（cron）</li>
+          <li><code>workflow_dispatch</code> — 手動実行</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card">
+      <h3>主な用途</h3>
+      <ul class="feature-list">
+        <li>テストの自動実行</li>
+        <li>コードの品質チェック（lint）</li>
+        <li>ビルド & デプロイ</li>
+        <li>リリースの自動化</li>
+        <li>依存パッケージの更新チェック</li>
+        <li>Docker イメージのビルド</li>
+      </ul>
+      <p style="margin-top:1rem;font-size:.9rem">
+        <span class="label green">無料枠</span> パブリックリポジトリは無制限
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: Actions ワークフロー構文 ==================== -->
+<div class="slide">
+  <p class="label orange">YAML SYNTAX</p>
+  <h2>ワークフローの書き方</h2>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>.github/workflows/ci.yml</span>
+    </div>
+    <div class="terminal-body" style="font-size:.88rem;line-height:1.7">
+      <div><span class="yaml-key">name:</span> <span class="yaml-val">CI Pipeline</span>  <span class="yaml-comment"># ワークフロー名</span></div>
+      <div>&nbsp;</div>
+      <div><span class="yaml-key">on:</span>  <span class="yaml-comment"># トリガー条件</span></div>
+      <div>&nbsp; <span class="yaml-key">push:</span></div>
+      <div>&nbsp;   <span class="yaml-key">branches:</span> <span class="yaml-val">[ main ]</span></div>
+      <div>&nbsp; <span class="yaml-key">pull_request:</span></div>
+      <div>&nbsp;   <span class="yaml-key">branches:</span> <span class="yaml-val">[ main ]</span></div>
+      <div>&nbsp;</div>
+      <div><span class="yaml-key">jobs:</span>  <span class="yaml-comment"># 実行するジョブ</span></div>
+      <div>&nbsp; <span class="yaml-key">test:</span></div>
+      <div>&nbsp;   <span class="yaml-key">runs-on:</span> <span class="yaml-val">ubuntu-latest</span>  <span class="yaml-comment"># 実行環境</span></div>
+      <div>&nbsp;   <span class="yaml-key">steps:</span></div>
+      <div>&nbsp;     - <span class="yaml-key">uses:</span> <span class="yaml-val">actions/checkout@v4</span>  <span class="yaml-comment"># コード取得</span></div>
+      <div>&nbsp;     - <span class="yaml-key">uses:</span> <span class="yaml-val">actions/setup-node@v4</span></div>
+      <div>&nbsp;       <span class="yaml-key">with:</span></div>
+      <div>&nbsp;         <span class="yaml-key">node-version:</span> <span class="yaml-val">20</span></div>
+      <div>&nbsp;     - <span class="yaml-key">run:</span> <span class="yaml-val">npm install</span>  <span class="yaml-comment"># 依存関係インストール</span></div>
+      <div>&nbsp;     - <span class="yaml-key">run:</span> <span class="yaml-val">npm test</span>  <span class="yaml-comment"># テスト実行</span></div>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem">ファイルを <code>.github/workflows/</code> に置くだけで有効化!</p>
+</div>
+
+<!-- ==================== Slide 8: Actions デモ ==================== -->
+<div class="slide">
+  <p class="label orange">DEMO</p>
+  <h2>Actions 実行デモ</h2>
+  <div class="terminal" style="max-width:800px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>actions-demo</span>
+    </div>
+    <div class="terminal-body" id="actions-demo"></div>
+  </div>
+  <button class="demo-btn" id="actions-demo-btn" onclick="demoActions()">▶ デモを実行</button>
+  <div class="flow" style="margin-top:1.5rem" id="actions-flow">
+    <div class="flow-box" id="af1">git push</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="af2">Trigger</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="af3">Run Tests</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="af4">Build</div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="af5">Deploy</div>
+  </div>
+</div>
+
+<!-- ==================== Slide 9: Releases とは ==================== -->
+<div class="slide">
+  <p class="label purple">VERSIONING</p>
+  <h2>Releases とは</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <h3>バージョン管理と配布</h3>
+      <p>特定の時点のコードに「バージョン番号」を付けて<br>正式なリリースとして公開する機能</p>
+      <ul class="feature-list" style="margin-top:1rem">
+        <li>Git タグと連動</li>
+        <li>リリースノートを記述可能</li>
+        <li>バイナリやアセットを添付可能</li>
+        <li>自動リリースノート生成</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>セマンティックバージョニング</h3>
+      <div style="text-align:center;margin:1rem 0">
+        <code style="font-size:1.3rem;padding:.4em .8em">v1.2.3</code>
+      </div>
+      <div style="display:flex;gap:.5rem;justify-content:center;margin-bottom:1rem">
+        <div style="text-align:center">
+          <div style="color:#ff5370;font-weight:600;font-size:1.2rem">1</div>
+          <div style="color:#888;font-size:.8rem">MAJOR</div>
+          <div style="color:#666;font-size:.75rem">破壊的変更</div>
+        </div>
+        <div style="color:#555;font-size:1.2rem;padding-top:.2rem">.</div>
+        <div style="text-align:center">
+          <div style="color:#ffcb6b;font-weight:600;font-size:1.2rem">2</div>
+          <div style="color:#888;font-size:.8rem">MINOR</div>
+          <div style="color:#666;font-size:.75rem">機能追加</div>
+        </div>
+        <div style="color:#555;font-size:1.2rem;padding-top:.2rem">.</div>
+        <div style="text-align:center">
+          <div style="color:#27c93f;font-weight:600;font-size:1.2rem">3</div>
+          <div style="color:#888;font-size:.8rem">PATCH</div>
+          <div style="color:#666;font-size:.75rem">バグ修正</div>
+        </div>
+      </div>
+      <p style="font-size:.9rem;color:#888;text-align:center">semver.org に基づく命名規則</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: Releases デモ ==================== -->
+<div class="slide">
+  <p class="label purple">DEMO</p>
+  <h2>リリース作成デモ</h2>
+  <div class="terminal" style="max-width:800px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>releases-demo</span>
+    </div>
+    <div class="terminal-body" id="releases-demo"></div>
+  </div>
+  <button class="demo-btn" id="releases-demo-btn" onclick="demoReleases()">▶ デモを実行</button>
+</div>
+
+<!-- ==================== Slide 11: GitHub Packages ==================== -->
+<div class="slide">
+  <p class="label">REGISTRY</p>
+  <h2>GitHub Packages</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <h3>パッケージレジストリ</h3>
+      <p>GitHub に直接パッケージを公開・管理できるサービス</p>
+      <ul class="feature-list" style="margin-top:1rem">
+        <li>npm / Maven / NuGet / RubyGems 対応</li>
+        <li>Docker コンテナレジストリ（ghcr.io）</li>
+        <li>リポジトリと統合された権限管理</li>
+        <li>GitHub Actions から簡単にパブリッシュ</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>対応フォーマット</h3>
+      <div style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem">
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <span class="label green" style="min-width:80px;text-align:center">npm</span>
+          <span style="color:#888;font-size:.9rem">JavaScript / TypeScript</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <span class="label orange" style="min-width:80px;text-align:center">Maven</span>
+          <span style="color:#888;font-size:.9rem">Java / Kotlin</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <span class="label purple" style="min-width:80px;text-align:center">Docker</span>
+          <span style="color:#888;font-size:.9rem">コンテナイメージ</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <span class="label red" style="min-width:80px;text-align:center">RubyGems</span>
+          <span style="color:#888;font-size:.9rem">Ruby</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.8rem">
+          <span class="label yellow" style="min-width:80px;text-align:center">NuGet</span>
+          <span style="color:#888;font-size:.9rem">C# / .NET</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: GitHub Projects ==================== -->
+<div class="slide">
+  <p class="label yellow">PROJECT MANAGEMENT</p>
+  <h2>GitHub Projects</h2>
+  <p style="margin-bottom:1rem;color:#888">Issue や PR をカンバンボードで管理</p>
+  <div class="kanban">
+    <div class="kanban-col">
+      <h4>📋 Todo <span class="gh-badge" style="margin-left:6px;font-size:.7rem">3</span></h4>
+      <div class="kanban-card">
+        ユーザー認証の実装
+        <div><span class="card-label" style="background:#da363333;color:#ff7b72">bug</span></div>
+      </div>
+      <div class="kanban-card">
+        API ドキュメント作成
+        <div><span class="card-label" style="background:#1f6feb33;color:#58a6ff">docs</span></div>
+      </div>
+      <div class="kanban-card">
+        パフォーマンス最適化
+        <div><span class="card-label" style="background:#23863633;color:#7ee787">enhancement</span></div>
+      </div>
+    </div>
+    <div class="kanban-col">
+      <h4>🔄 In Progress <span class="gh-badge yellow" style="margin-left:6px;font-size:.7rem">2</span></h4>
+      <div class="kanban-card">
+        ダッシュボード UI
+        <div><span class="card-label" style="background:#23863633;color:#7ee787">feature</span></div>
+      </div>
+      <div class="kanban-card">
+        テストカバレッジ向上
+        <div><span class="card-label" style="background:#9e6a0333;color:#e3b341">test</span></div>
+      </div>
+    </div>
+    <div class="kanban-col">
+      <h4>✅ Done <span class="gh-badge" style="margin-left:6px;font-size:.7rem;background:#238636">4</span></h4>
+      <div class="kanban-card" style="opacity:.7">
+        初期セットアップ
+        <div><span class="card-label" style="background:#1f6feb33;color:#58a6ff">setup</span></div>
+      </div>
+      <div class="kanban-card" style="opacity:.7">
+        CI/CD パイプライン構築
+        <div><span class="card-label" style="background:#23863633;color:#7ee787">infra</span></div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem">ドラッグ&ドロップで Issue のステータスを変更可能</p>
+</div>
+
+<!-- ==================== Slide 13: まとめ ==================== -->
+<div class="slide">
+  <p class="label">SUMMARY</p>
+  <h2>まとめ</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:800px;width:100%">
+    <div class="card" style="display:flex;align-items:center;gap:1.2rem">
+      <span class="label green" style="min-width:110px;text-align:center;margin-bottom:0">Pages</span>
+      <p style="margin:0">リポジトリから無料で静的サイトを公開。設定は Branch を選ぶだけ。</p>
+    </div>
+    <div class="card" style="display:flex;align-items:center;gap:1.2rem">
+      <span class="label orange" style="min-width:110px;text-align:center;margin-bottom:0">Actions</span>
+      <p style="margin:0">YAML でワークフローを定義し、テスト・ビルド・デプロイを自動化。</p>
+    </div>
+    <div class="card" style="display:flex;align-items:center;gap:1.2rem">
+      <span class="label purple" style="min-width:110px;text-align:center;margin-bottom:0">Releases</span>
+      <p style="margin:0">セマンティックバージョニングでコードをタグ付け・配布。</p>
+    </div>
+    <div class="card" style="display:flex;align-items:center;gap:1.2rem">
+      <span class="label" style="min-width:110px;text-align:center;margin-bottom:0">Packages</span>
+      <p style="margin:0">npm / Docker などのパッケージをリポジトリと統合して管理。</p>
+    </div>
+    <div class="card" style="display:flex;align-items:center;gap:1.2rem">
+      <span class="label yellow" style="min-width:110px;text-align:center;margin-bottom:0">Projects</span>
+      <p style="margin:0">カンバンボードで Issue や PR を視覚的にプロジェクト管理。</p>
+    </div>
+  </div>
+  <p style="margin-top:2rem;color:#555;font-size:.9rem">これらのツールを組み合わせて開発ワークフローを効率化しよう!</p>
+</div>
+
+<div class="progress">1 / 13</div>
+<div class="nav-hint">← → キーで移動</div>
+
+<script>
+/* ===== Terminal animation engine ===== */
+function typeInTerminal(id,lines,btnId){
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var el=document.getElementById(id);el.innerHTML='';var delay=0;
+  lines.forEach(function(l){
+    delay+=l.pause||500;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      if(l.type==='prompt'){div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+l.text+'</span>'}
+      else if(l.type==='comment'){div.innerHTML='<span class="info"># '+l.text+'</span>'}
+      else{div.innerHTML='<span class="'+(l.cls||'output')+'">'+l.text+'</span>'}
+      el.appendChild(div);el.scrollTop=el.scrollHeight;
+    },delay);
+  });
+  setTimeout(function(){if(btnId)document.getElementById(btnId).disabled=false},delay+500);
+}
+
+/* ===== Flow box highlighter ===== */
+function highlightFlow(prefix,index,total){
+  for(var i=1;i<=total;i++){
+    var box=document.getElementById(prefix+i);
+    if(i<=index)box.classList.add('active-box');
+    else box.classList.remove('active-box');
+  }
+}
+
+/* ===== Pages Demo ===== */
+function demoPages(){
+  highlightFlow('pf',0,5);
+  var lines=[
+    {type:'comment',text:'HTML ファイルを作成',pause:300},
+    {type:'prompt',text:'echo "&lt;h1&gt;Hello GitHub Pages!&lt;/h1&gt;" > index.html',pause:500},
+    {type:'prompt',text:'git add index.html',pause:400},
+    {type:'prompt',text:'git commit -m "Add index.html for Pages"',pause:500},
+    {cls:'output',text:'[main abc1234] Add index.html for Pages',pause:300},
+    {cls:'output',text:' 1 file changed, 1 insertion(+)',pause:300},
+    {type:'prompt',text:'git push origin main',pause:600},
+    {cls:'output',text:'Enumerating objects: 3, done.',pause:300},
+    {cls:'output',text:'Counting objects: 100% (3/3), done.',pause:300},
+    {cls:'success',text:'To github.com:user/my-site.git',pause:300},
+    {cls:'success',text:'   def5678..abc1234  main -> main',pause:500},
+    {type:'comment',text:'GitHub が自動でサイトをビルド & デプロイ...',pause:800},
+    {cls:'info',text:'✓ GitHub Pages deployment complete!',pause:500},
+    {cls:'success',text:'🌐 https://user.github.io/my-site/',pause:300},
+  ];
+  typeInTerminal('pages-demo',lines,'pages-demo-btn');
+  // Animate flow boxes
+  setTimeout(function(){highlightFlow('pf',1,5)},1800);
+  setTimeout(function(){highlightFlow('pf',2,5)},3200);
+  setTimeout(function(){highlightFlow('pf',3,5)},4800);
+  setTimeout(function(){highlightFlow('pf',4,5)},6000);
+  setTimeout(function(){highlightFlow('pf',5,5)},7000);
+}
+
+/* ===== Actions Demo ===== */
+function demoActions(){
+  highlightFlow('af',0,5);
+  var lines=[
+    {type:'comment',text:'コードを変更してプッシュ',pause:300},
+    {type:'prompt',text:'git add . && git commit -m "feat: add new feature"',pause:500},
+    {cls:'output',text:'[main 1a2b3c4] feat: add new feature',pause:300},
+    {type:'prompt',text:'git push origin main',pause:600},
+    {cls:'success',text:'   main -> main',pause:500},
+    {type:'comment',text:'Actions ワークフローが自動起動...',pause:800},
+    {cls:'info',text:'⚡ Workflow "CI Pipeline" triggered',pause:600},
+    {cls:'warn',text:'⏳ Running job: test...',pause:500},
+    {cls:'output',text:'  ✓ actions/checkout@v4',pause:400},
+    {cls:'output',text:'  ✓ actions/setup-node@v4 (node 20)',pause:400},
+    {cls:'output',text:'  ✓ npm install (12s)',pause:500},
+    {cls:'output',text:'  ✓ npm test (8s)',pause:500},
+    {cls:'success',text:'  ✅ All 24 tests passed!',pause:500},
+    {cls:'warn',text:'⏳ Running job: deploy...',pause:600},
+    {cls:'output',text:'  ✓ Building project...',pause:500},
+    {cls:'output',text:'  ✓ Deploying to production...',pause:500},
+    {cls:'success',text:'✅ Workflow completed successfully!',pause:300},
+  ];
+  typeInTerminal('actions-demo',lines,'actions-demo-btn');
+  setTimeout(function(){highlightFlow('af',1,5)},1800);
+  setTimeout(function(){highlightFlow('af',2,5)},3400);
+  setTimeout(function(){highlightFlow('af',3,5)},5200);
+  setTimeout(function(){highlightFlow('af',4,5)},8200);
+  setTimeout(function(){highlightFlow('af',5,5)},10800);
+}
+
+/* ===== Releases Demo ===== */
+function demoReleases(){
+  var lines=[
+    {type:'comment',text:'Git タグを作成',pause:300},
+    {type:'prompt',text:'git tag -a v1.0.0 -m "Initial stable release"',pause:500},
+    {type:'prompt',text:'git push origin v1.0.0',pause:500},
+    {cls:'output',text:'Enumerating objects: 1, done.',pause:300},
+    {cls:'output',text:'Counting objects: 100% (1/1), done.',pause:300},
+    {cls:'success',text:' * [new tag]         v1.0.0 -> v1.0.0',pause:500},
+    {type:'comment',text:'GitHub CLI でリリースを作成',pause:500},
+    {type:'prompt',text:'gh release create v1.0.0 --title "v1.0.0 - Initial Release" \\',pause:300},
+    {cls:'cmd',text:'  --notes "## What\'s New\n- Feature A\n- Feature B\n- Bug fix C" \\',pause:300},
+    {cls:'cmd',text:'  --latest',pause:500},
+    {cls:'info',text:'Creating release v1.0.0...',pause:600},
+    {cls:'success',text:'✅ Release created!',pause:400},
+    {cls:'info',text:'https://github.com/user/repo/releases/tag/v1.0.0',pause:500},
+    {type:'comment',text:'アセット（バイナリ等）を追加',pause:500},
+    {type:'prompt',text:'gh release upload v1.0.0 ./dist/app.zip',pause:500},
+    {cls:'success',text:'✅ Asset uploaded: app.zip (2.4 MB)',pause:300},
+  ];
+  typeInTerminal('releases-demo',lines,'releases-demo-btn');
+}
+
+/* ===== Navigation ===== */
+var cur=0,slides=document.querySelectorAll('.slide');
+function go(i){if(i<0||i>=slides.length)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');document.querySelector('.progress').textContent=(cur+1)+' / '+slides.length;if(typeof onSlideEnter==='function')onSlideEnter(cur)}
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' ')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='g')go(0);else if(e.key==='G')go(slides.length-1)});
+</script>
+</body></html>

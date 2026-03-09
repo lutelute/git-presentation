@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>CI/CD編 — GitHub Actionsで自動化</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* Diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Highlight step */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* YAML block */
+.yaml-block{background:#0a0a15;border:1px solid #2a2a4a;border-radius:8px;padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;line-height:1.7;overflow-x:auto;max-width:900px;width:100%}
+.yaml-key{color:#c792ea}
+.yaml-str{color:#c3e88d}
+.yaml-comment{color:#546e7a}
+.yaml-val{color:#f78c6c}
+.yaml-uses{color:#82aaff}
+.yaml-bool{color:#ff5370}
+
+/* Pipeline flow */
+.pipeline{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap;margin:1rem 0}
+.pipe-stage{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.7rem 1rem;text-align:center;min-width:100px;transition:all .6s;opacity:.4}
+.pipe-stage.lit{opacity:1;border-color:#00d2ff;box-shadow:0 0 15px rgba(0,210,255,.25)}
+.pipe-stage.pass{border-color:#27c93f;box-shadow:0 0 15px rgba(39,201,63,.25)}
+.pipe-arrow{color:#555;font-size:1.3rem;padding:0 .2rem;transition:color .4s}
+.pipe-arrow.lit{color:#00d2ff}
+
+/* Button */
+button{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff44;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;transition:all .2s}
+button:hover{background:#00d2ff33}
+button:disabled{opacity:.4;cursor:default}
+
+/* Annotation */
+.anno{position:relative;display:inline-block}
+.anno-line{position:absolute;border-left:2px solid;padding-left:.6rem;font-size:.78rem;white-space:nowrap}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label">CI/CD SERIES</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">CI/CD編</h1>
+    <p style="font-size:1.5rem;color:#888;margin-bottom:1.5rem">GitHub Actionsで自動化</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
+      <span style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;color:#7fdbca">テスト自動実行</span>
+      <span style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;color:#c792ea">自動デプロイ</span>
+      <span style="background:#1a1a2e;border:1px solid #2a2a4a;border-radius:8px;padding:.5rem 1rem;font-size:.95rem;color:#f78c6c">ワークフロー構築</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">→ キーで次へ</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: CI/CDとは ==================== -->
+<div class="slide" id="slide-cicd-what">
+  <h2>CI/CDとは？</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="card step" data-step="0">
+      <p class="label red">BEFORE: 手動の世界</p>
+      <div style="font-size:.95rem;line-height:2;color:#ff5370">
+        1. コードを書く<br>
+        2. 手動でテストを実行<br>
+        3. 「動いたっぽい」で本番へ<br>
+        4. バグ発覚、深夜の緊急対応...<br>
+        <span style="color:#888;font-size:.85rem">ミスが起きやすく、時間もかかる</span>
+      </div>
+    </div>
+    <div class="card step" data-step="1" style="border-color:#27c93f44">
+      <p class="label green">AFTER: CI/CDの世界</p>
+      <div style="font-size:.95rem;line-height:2;color:#27c93f">
+        1. コードをpush<br>
+        2. 自動でテスト実行<br>
+        3. 全テスト通過 → 自動でデプロイ<br>
+        4. 問題があれば即検知・通知<br>
+        <span style="color:#888;font-size:.85rem">安全・高速・再現可能</span>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem;max-width:800px;text-align:center">
+    <p style="font-size:1rem;color:#bbb">
+      <strong style="color:#00d2ff">CI</strong> = Continuous Integration（継続的インテグレーション）— pushするたびに自動テスト<br>
+      <strong style="color:#c792ea">CD</strong> = Continuous Deployment（継続的デプロイ）— テスト通過後に自動で本番反映
+    </p>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: GitHub Actionsの仕組み ==================== -->
+<div class="slide" id="slide-actions-how">
+  <h2>GitHub Actionsの仕組み</h2>
+  <p style="margin-bottom:1.5rem;color:#888">GitHubに組み込まれたCI/CDプラットフォーム。無料枠あり。</p>
+  <div class="flow" id="actions-flow" style="margin-bottom:2rem">
+    <div class="flow-box" style="min-width:140px">
+      <p class="label orange">EVENT</p>
+      <p style="font-size:.85rem">push, PR作成<br>スケジュール etc.</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="min-width:140px">
+      <p class="label purple">WORKFLOW</p>
+      <p style="font-size:.85rem">.ymlファイル<br>自動化の定義</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="min-width:140px">
+      <p class="label">JOB</p>
+      <p style="font-size:.85rem">仮想マシン上で<br>実行される単位</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="min-width:140px">
+      <p class="label green">STEP</p>
+      <p style="font-size:.85rem">個々のコマンド<br>やアクション</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;text-align:center">
+    <p style="font-size:.95rem;color:#bbb">
+      <strong style="color:#f78c6c">イベント</strong>が発生 → <strong style="color:#c792ea">ワークフロー</strong>が起動 → <strong style="color:#00d2ff">ジョブ</strong>がVMで実行 → <strong style="color:#7fdbca">ステップ</strong>を順番に処理
+    </p>
+  </div>
+</div>
+
+<!-- ==================== Slide 4: ワークフローファイルの場所 ==================== -->
+<div class="slide" id="slide-workflow-location">
+  <h2>ワークフローファイルの場所</h2>
+  <p style="margin-bottom:1rem;color:#888">リポジトリ内の決まった場所にYAMLファイルを置く</p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">ディレクトリ構成</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.9rem;line-height:2;color:#bbb">
+        my-project/<br>
+        <span style="color:#888">├──</span> src/<br>
+        <span style="color:#888">├──</span> package.json<br>
+        <span style="color:#888">└──</span> <span style="color:#00d2ff;font-weight:bold">.github/</span><br>
+        <span style="color:#888">&nbsp;&nbsp;&nbsp;&nbsp;└──</span> <span style="color:#c792ea;font-weight:bold">workflows/</span><br>
+        <span style="color:#888">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├──</span> <span style="color:#c3e88d">ci.yml</span><br>
+        <span style="color:#888">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└──</span> <span style="color:#c3e88d">deploy.yml</span>
+      </div>
+    </div>
+    <div>
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <span>Terminal — setup</span>
+        </div>
+        <div class="terminal-body" id="term-setup-body"></div>
+      </div>
+      <div style="margin-top:.8rem;display:flex;gap:.6rem">
+        <button onclick="runSetupDemo()" id="btn-setup">▶ 実行してみる</button>
+        <button onclick="resetTerm('term-setup-body');document.getElementById('btn-setup').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: YAMLの基本構文 ==================== -->
+<div class="slide" id="slide-yaml-basics">
+  <h2>YAMLの基本構文</h2>
+  <p style="margin-bottom:1rem;color:#888">最小限のワークフローを読んでみよう</p>
+  <div class="cols" style="max-width:1100px;align-items:start">
+    <div class="yaml-block" style="flex:1.3">
+      <div class="step" data-step="0"><span class="yaml-key">name:</span> <span class="yaml-str">My First Workflow</span> <span class="yaml-comment"># ワークフロー名</span></div>
+      <br>
+      <div class="step" data-step="1"><span class="yaml-key">on:</span> <span class="yaml-comment"># いつ実行するか</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">push:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">branches:</span> [ <span class="yaml-str">main</span> ]<br>
+      &nbsp;&nbsp;<span class="yaml-key">pull_request:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">branches:</span> [ <span class="yaml-str">main</span> ]</div>
+      <br>
+      <div class="step" data-step="2"><span class="yaml-key">jobs:</span> <span class="yaml-comment"># 実行するジョブ</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">build:</span> <span class="yaml-comment"># ジョブ名（自由に命名）</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span> <span class="yaml-comment"># 実行環境</span></div>
+      <br>
+      <div class="step" data-step="3">&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span> <span class="yaml-comment"># ステップ一覧</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span> <span class="yaml-comment"># コード取得</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">echo "Hello, CI!"</span> <span class="yaml-comment"># コマンド実行</span></div>
+    </div>
+    <div style="flex:.7;display:flex;flex-direction:column;gap:1rem">
+      <div class="card step" data-step="0" style="padding:1rem">
+        <p class="label orange">name</p>
+        <p style="font-size:.85rem">ActionsタブでのUI表示名</p>
+      </div>
+      <div class="card step" data-step="1" style="padding:1rem">
+        <p class="label purple">on</p>
+        <p style="font-size:.85rem">トリガー条件。pushやPR作成時</p>
+      </div>
+      <div class="card step" data-step="2" style="padding:1rem">
+        <p class="label">runs-on</p>
+        <p style="font-size:.85rem">Ubuntu/macOS/Windowsが選べる</p>
+      </div>
+      <div class="card step" data-step="3" style="padding:1rem">
+        <p class="label green">steps</p>
+        <p style="font-size:.85rem"><code>uses</code>で既製アクション、<code>run</code>でシェルコマンド</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: 実践: テスト自動化 ==================== -->
+<div class="slide" id="slide-test-auto">
+  <h2>実践: テスト自動化</h2>
+  <p style="margin-bottom:1rem;color:#888">pushやPRのたびにテストを自動実行</p>
+  <div class="cols" style="max-width:1100px;align-items:start">
+    <div class="yaml-block" style="flex:1.2;font-size:.8rem">
+      <span class="yaml-key">name:</span> <span class="yaml-str">Run Tests</span><br><br>
+      <span class="yaml-key">on:</span> [<span class="yaml-str">push</span>, <span class="yaml-str">pull_request</span>]<br><br>
+      <span class="yaml-key">jobs:</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">test:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">node-version:</span> <span class="yaml-val">20</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm test</span>
+    </div>
+    <div style="flex:.9">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <span>Terminal — push &amp; test</span>
+        </div>
+        <div class="terminal-body" id="term-test-body" style="min-height:220px"></div>
+      </div>
+      <div style="margin-top:.8rem;display:flex;gap:.6rem">
+        <button onclick="runTestDemo()" id="btn-test">▶ pushしてみる</button>
+        <button onclick="resetTerm('term-test-body');document.getElementById('btn-test').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: 実践: 自動デプロイ ==================== -->
+<div class="slide" id="slide-deploy">
+  <h2>実践: 自動デプロイ</h2>
+  <p style="margin-bottom:1rem;color:#888">mainブランチにpushしたら自動でGitHub Pagesにデプロイ</p>
+  <div class="cols" style="max-width:1100px;align-items:start">
+    <div class="yaml-block" style="flex:1.2;font-size:.8rem">
+      <span class="yaml-key">name:</span> <span class="yaml-str">Deploy to Pages</span><br><br>
+      <span class="yaml-key">on:</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">push:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">branches:</span> [ <span class="yaml-str">main</span> ] <span class="yaml-comment"># mainのみ</span><br><br>
+      <span class="yaml-key">permissions:</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">pages:</span> <span class="yaml-str">write</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">id-token:</span> <span class="yaml-str">write</span><br><br>
+      <span class="yaml-key">jobs:</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">deploy:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">node-version:</span> <span class="yaml-val">20</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci &amp;&amp; npm run build</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/upload-pages-artifact@v3</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">path:</span> <span class="yaml-str">dist</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/deploy-pages@v4</span>
+    </div>
+    <div style="flex:.8;display:flex;flex-direction:column;gap:1rem">
+      <div class="card step" data-step="0">
+        <p class="label orange">トリガー</p>
+        <p style="font-size:.9rem">mainへのpush時のみ実行。PR時はデプロイしない。</p>
+      </div>
+      <div class="card step" data-step="1">
+        <p class="label purple">permissions</p>
+        <p style="font-size:.9rem">GitHub Pagesへの書き込み権限を付与。</p>
+      </div>
+      <div class="card step" data-step="2">
+        <p class="label green">ビルド → デプロイ</p>
+        <p style="font-size:.9rem"><code>npm run build</code>で生成 → <code>dist/</code>フォルダをPagesにアップロード。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: Actions マーケットプレイス ==================== -->
+<div class="slide" id="slide-marketplace">
+  <h2>Actions マーケットプレイス</h2>
+  <p style="margin-bottom:1.2rem;color:#888">よく使うアクションは既に誰かが作ってくれている</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:900px;width:100%">
+    <div class="card step" data-step="0" style="text-align:center">
+      <p class="label">actions/checkout@v4</p>
+      <p style="font-size:.9rem;color:#bbb">リポジトリのコードを取得。<br><strong style="color:#ffcb6b">ほぼ全てのワークフローで必須</strong></p>
+    </div>
+    <div class="card step" data-step="1" style="text-align:center">
+      <p class="label green">actions/setup-node@v4</p>
+      <p style="font-size:.9rem;color:#bbb">Node.jsをインストール。<br>バージョン指定も可能。</p>
+    </div>
+    <div class="card step" data-step="2" style="text-align:center">
+      <p class="label purple">actions/cache@v4</p>
+      <p style="font-size:.9rem;color:#bbb">依存関係をキャッシュ。<br>ワークフロー高速化の定番。</p>
+    </div>
+    <div class="card step" data-step="3" style="text-align:center">
+      <p class="label orange">actions/deploy-pages@v4</p>
+      <p style="font-size:.9rem;color:#bbb">GitHub Pagesへデプロイ。<br>静的サイトの公開に。</p>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem;text-align:center">
+    <p style="font-size:.95rem;color:#888">探し方: <code>github.com/marketplace?type=actions</code> で検索<br>
+    使い方: <code>uses: 作者/アクション名@バージョン</code> で指定</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 9: Secrets ==================== -->
+<div class="slide" id="slide-secrets">
+  <h2>Secrets（シークレット）</h2>
+  <p style="margin-bottom:1.2rem;color:#888">APIキーやトークンを安全にワークフローで使う</p>
+  <div class="cols" style="max-width:1050px;align-items:start">
+    <div style="flex:1;display:flex;flex-direction:column;gap:1rem">
+      <div class="card step" data-step="0">
+        <p class="label red">やってはいけない</p>
+        <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;background:#0a0a15;padding:.8rem;border-radius:6px;color:#ff5370">
+          run: curl -H "token: sk-abc123..."
+          <br><span class="yaml-comment"># コードにAPIキー直書き = 漏洩リスク</span>
+        </div>
+      </div>
+      <div class="card step" data-step="1">
+        <p class="label green">正しい方法</p>
+        <p style="font-size:.9rem;color:#bbb;margin-bottom:.5rem">Settings → Secrets and variables → Actions → New secret</p>
+        <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;background:#0a0a15;padding:.8rem;border-radius:6px">
+          <span class="yaml-key">steps:</span><br>
+          &nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">curl -H "token: ${{ secrets.API_KEY }}"</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">env:</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">MY_TOKEN:</span> <span class="yaml-str">${{ secrets.MY_TOKEN }}</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:.8">
+      <div class="card" style="border-color:#ffcb6b44">
+        <p class="label yellow">ポイント</p>
+        <ul class="feature-list" style="max-width:none">
+          <li>ログには <code>***</code> でマスクされる</li>
+          <li>Forkからは読めない（安全）</li>
+          <li>リポジトリ単位 or Organization単位で設定可</li>
+          <li><code>GITHUB_TOKEN</code> は自動で利用可能</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: 環境 (Environments) ==================== -->
+<div class="slide" id="slide-environments">
+  <h2>環境（Environments）</h2>
+  <p style="margin-bottom:1.2rem;color:#888">本番・ステージングを分けて安全にデプロイ</p>
+  <div class="flow" style="margin-bottom:2rem" id="env-flow">
+    <div class="flow-box" style="min-width:150px">
+      <p class="label green">development</p>
+      <p style="font-size:.85rem">開発環境<br>誰でもデプロイ可</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="min-width:150px">
+      <p class="label yellow">staging</p>
+      <p style="font-size:.85rem">検証環境<br>自動テスト後に</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" style="min-width:150px">
+      <p class="label red">production</p>
+      <p style="font-size:.85rem">本番環境<br><strong style="color:#ff5370">承認必須</strong></p>
+    </div>
+  </div>
+  <div class="cols" style="max-width:900px">
+    <div class="card step" data-step="0">
+      <p class="label">YAMLでの指定</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;background:#0a0a15;padding:.8rem;border-radius:6px">
+        <span class="yaml-key">jobs:</span><br>
+        &nbsp;&nbsp;<span class="yaml-key">deploy:</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">environment:</span> <span class="yaml-str">production</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span>
+      </div>
+    </div>
+    <div class="card step" data-step="1">
+      <p class="label purple">保護ルール</p>
+      <ul class="feature-list" style="max-width:none">
+        <li>承認者によるレビュー必須</li>
+        <li>待機タイマー（例: 30分後に実行）</li>
+        <li>特定ブランチのみ許可</li>
+        <li>環境ごとのSecretsを設定可</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: Matrix Strategy ==================== -->
+<div class="slide" id="slide-matrix">
+  <h2>Matrix Strategy</h2>
+  <p style="margin-bottom:1rem;color:#888">複数バージョン・OSの組み合わせを一気にテスト</p>
+  <div class="cols" style="max-width:1100px;align-items:start">
+    <div class="yaml-block" style="flex:1.1;font-size:.82rem">
+      <span class="yaml-key">jobs:</span><br>
+      &nbsp;&nbsp;<span class="yaml-key">test:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">strategy:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">matrix:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">node-version:</span> [<span class="yaml-val">18</span>, <span class="yaml-val">20</span>, <span class="yaml-val">22</span>]<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">os:</span> [<span class="yaml-str">ubuntu-latest</span>, <span class="yaml-str">macos-latest</span>]<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">${{ matrix.os }}</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">node-version:</span> <span class="yaml-str">${{ matrix.node-version }}</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci &amp;&amp; npm test</span>
+    </div>
+    <div style="flex:.9">
+      <div class="card" style="margin-bottom:1rem">
+        <p class="label">生成されるジョブ（3 x 2 = 6個）</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.4rem;font-family:'Fira Code',monospace;font-size:.8rem" id="matrix-grid">
+          <div style="background:#0a0a15;padding:.4rem .6rem;border-radius:4px;border:1px solid #2a2a4a;transition:all .5s" class="matrix-cell"><span style="color:#7fdbca">Node 18</span> <span style="color:#888">Ubuntu</span></div>
+          <div style="background:#0a0a15;padding:.4rem .6rem;border-radius:4px;border:1px solid #2a2a4a;transition:all .5s" class="matrix-cell"><span style="color:#7fdbca">Node 18</span> <span style="color:#888">macOS</span></div>
+          <div style="background:#0a0a15;padding:.4rem .6rem;border-radius:4px;border:1px solid #2a2a4a;transition:all .5s" class="matrix-cell"><span style="color:#c792ea">Node 20</span> <span style="color:#888">Ubuntu</span></div>
+          <div style="background:#0a0a15;padding:.4rem .6rem;border-radius:4px;border:1px solid #2a2a4a;transition:all .5s" class="matrix-cell"><span style="color:#c792ea">Node 20</span> <span style="color:#888">macOS</span></div>
+          <div style="background:#0a0a15;padding:.4rem .6rem;border-radius:4px;border:1px solid #2a2a4a;transition:all .5s" class="matrix-cell"><span style="color:#f78c6c">Node 22</span> <span style="color:#888">Ubuntu</span></div>
+          <div style="background:#0a0a15;padding:.4rem .6rem;border-radius:4px;border:1px solid #2a2a4a;transition:all .5s" class="matrix-cell"><span style="color:#f78c6c">Node 22</span> <span style="color:#888">macOS</span></div>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:#888;text-align:center">全て<strong style="color:#00d2ff">並列</strong>で実行される → 高速</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: キャッシュ ==================== -->
+<div class="slide" id="slide-cache">
+  <h2>キャッシュで高速化</h2>
+  <p style="margin-bottom:1.2rem;color:#888">依存関係のインストールを毎回やらない</p>
+  <div class="cols" style="max-width:1050px;align-items:start">
+    <div class="yaml-block" style="flex:1.1;font-size:.82rem">
+      <span class="yaml-key">steps:</span><br>
+      &nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+      &nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">node-version:</span> <span class="yaml-val">20</span><br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">cache:</span> <span class="yaml-str">'npm'</span> <span class="yaml-comment"># これだけでOK!</span><br>
+      &nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci</span><br>
+      &nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm test</span>
+    </div>
+    <div style="flex:.9">
+      <div class="cols" style="gap:1rem;max-width:none;flex-direction:column">
+        <div class="card" style="border-color:#ff537044">
+          <p class="label red">キャッシュなし</p>
+          <div style="display:flex;align-items:center;gap:1rem">
+            <div style="flex:1;background:#4d1f28;height:24px;border-radius:4px;position:relative;overflow:hidden">
+              <div style="background:#ff5370;height:100%;width:100%;border-radius:4px"></div>
+            </div>
+            <span style="color:#ff5370;font-family:'Fira Code',monospace;font-size:.9rem;white-space:nowrap">~2分30秒</span>
+          </div>
+          <p style="font-size:.8rem;color:#888;margin-top:.3rem">npm ci が毎回全パッケージをダウンロード</p>
+        </div>
+        <div class="card" style="border-color:#27c93f44">
+          <p class="label green">キャッシュあり</p>
+          <div style="display:flex;align-items:center;gap:1rem">
+            <div style="flex:1;background:#1a472133;height:24px;border-radius:4px;position:relative;overflow:hidden">
+              <div style="background:#27c93f;height:100%;width:30%;border-radius:4px"></div>
+            </div>
+            <span style="color:#27c93f;font-family:'Fira Code',monospace;font-size:.9rem;white-space:nowrap">~45秒</span>
+          </div>
+          <p style="font-size:.8rem;color:#888;margin-top:.3rem">キャッシュヒットで即座にリストア</p>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:#ffcb6b;text-align:center;margin-top:.8rem">約70%の時間短縮！</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: デバッグ ==================== -->
+<div class="slide" id="slide-debug">
+  <h2>ワークフローのデバッグ</h2>
+  <p style="margin-bottom:1rem;color:#888">失敗したとき、どう調べるか</p>
+  <div class="cols" style="max-width:1050px;align-items:start">
+    <div style="flex:1">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <span>Terminal — debug</span>
+        </div>
+        <div class="terminal-body" id="term-debug-body" style="min-height:240px"></div>
+      </div>
+      <div style="margin-top:.8rem;display:flex;gap:.6rem">
+        <button onclick="runDebugDemo()" id="btn-debug">▶ デバッグしてみる</button>
+        <button onclick="resetTerm('term-debug-body');document.getElementById('btn-debug').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+      </div>
+    </div>
+    <div style="flex:.8;display:flex;flex-direction:column;gap:.8rem">
+      <div class="card step" data-step="0" style="padding:1rem">
+        <p class="label red">よくあるエラー</p>
+        <ul class="feature-list" style="max-width:none;font-size:.9rem">
+          <li>インデントのずれ（YAMLは厳密）</li>
+          <li>Secretsの名前ミス</li>
+          <li>permissionsの不足</li>
+          <li>Node/Pythonバージョン違い</li>
+        </ul>
+      </div>
+      <div class="card step" data-step="1" style="padding:1rem">
+        <p class="label green">調べ方</p>
+        <ul class="feature-list" style="max-width:none;font-size:.9rem">
+          <li>Actions タブでログ確認</li>
+          <li><code>gh run view</code> でCLIから確認</li>
+          <li><code>gh run view --log-failed</code></li>
+          <li><code>act</code> でローカル実行</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 14: 完全なCI/CDパイプライン ==================== -->
+<div class="slide" id="slide-full-pipeline">
+  <h2>実践: 完全なCI/CDパイプライン</h2>
+  <p style="margin-bottom:1rem;color:#888">Lint → Test → Build → Deploy の全自動化</p>
+  <div class="pipeline" id="full-pipeline">
+    <div class="pipe-stage" id="pipe-lint">
+      <p style="font-size:.75rem;color:#888">STEP 1</p>
+      <p style="font-size:1.1rem;color:#c792ea;font-weight:bold">Lint</p>
+      <p style="font-size:.75rem;color:#666">コード品質チェック</p>
+    </div>
+    <div class="pipe-arrow" id="pa1">→</div>
+    <div class="pipe-stage" id="pipe-test">
+      <p style="font-size:.75rem;color:#888">STEP 2</p>
+      <p style="font-size:1.1rem;color:#00d2ff;font-weight:bold">Test</p>
+      <p style="font-size:.75rem;color:#666">自動テスト実行</p>
+    </div>
+    <div class="pipe-arrow" id="pa2">→</div>
+    <div class="pipe-stage" id="pipe-build">
+      <p style="font-size:.75rem;color:#888">STEP 3</p>
+      <p style="font-size:1.1rem;color:#f78c6c;font-weight:bold">Build</p>
+      <p style="font-size:.75rem;color:#666">本番用ビルド</p>
+    </div>
+    <div class="pipe-arrow" id="pa3">→</div>
+    <div class="pipe-stage" id="pipe-deploy">
+      <p style="font-size:.75rem;color:#888">STEP 4</p>
+      <p style="font-size:1.1rem;color:#27c93f;font-weight:bold">Deploy</p>
+      <p style="font-size:.75rem;color:#666">本番デプロイ</p>
+    </div>
+  </div>
+  <div class="yaml-block" style="max-width:900px;font-size:.78rem;max-height:38vh;overflow-y:auto">
+    <span class="yaml-key">name:</span> <span class="yaml-str">CI/CD Pipeline</span><br>
+    <span class="yaml-key">on:</span><br>
+    &nbsp;&nbsp;<span class="yaml-key">push:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">branches:</span> [ <span class="yaml-str">main</span> ]<br><br>
+    <span class="yaml-key">jobs:</span><br>
+    &nbsp;&nbsp;<span class="yaml-key">lint:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span> { <span class="yaml-key">node-version:</span> <span class="yaml-val">20</span>, <span class="yaml-key">cache:</span> <span class="yaml-str">'npm'</span> }<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm run lint</span><br><br>
+    &nbsp;&nbsp;<span class="yaml-key">test:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">needs:</span> <span class="yaml-str">lint</span> <span class="yaml-comment"># lint完了後に実行</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span> { <span class="yaml-key">node-version:</span> <span class="yaml-val">20</span>, <span class="yaml-key">cache:</span> <span class="yaml-str">'npm'</span> }<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm test</span><br><br>
+    &nbsp;&nbsp;<span class="yaml-key">build-and-deploy:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">needs:</span> <span class="yaml-str">test</span> <span class="yaml-comment"># test完了後に実行</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">runs-on:</span> <span class="yaml-str">ubuntu-latest</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">steps:</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/checkout@v4</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/setup-node@v4</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="yaml-key">with:</span> { <span class="yaml-key">node-version:</span> <span class="yaml-val">20</span>, <span class="yaml-key">cache:</span> <span class="yaml-str">'npm'</span> }<br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">run:</span> <span class="yaml-str">npm ci &amp;&amp; npm run build</span><br>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span class="yaml-key">uses:</span> <span class="yaml-uses">actions/deploy-pages@v4</span>
+  </div>
+</div>
+
+<!-- ==================== Slide 15: まとめ ==================== -->
+<div class="slide" id="slide-summary">
+  <h2>まとめ</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:900px;width:100%">
+    <div class="card step" data-step="0" style="text-align:center">
+      <p style="font-size:1.8rem;margin-bottom:.3rem">🔄</p>
+      <h3>CI/CDで自動化</h3>
+      <p style="font-size:.9rem">テスト・ビルド・デプロイを手動から解放</p>
+    </div>
+    <div class="card step" data-step="1" style="text-align:center">
+      <p style="font-size:1.8rem;margin-bottom:.3rem">📝</p>
+      <h3>YAMLで定義</h3>
+      <p style="font-size:.9rem"><code>.github/workflows/</code>にYAMLファイルを置くだけ</p>
+    </div>
+    <div class="card step" data-step="2" style="text-align:center">
+      <p style="font-size:1.8rem;margin-bottom:.3rem">🔒</p>
+      <h3>Secretsで安全に</h3>
+      <p style="font-size:.9rem">機密情報はSecrets経由で。直書き厳禁。</p>
+    </div>
+    <div class="card step" data-step="3" style="text-align:center">
+      <p style="font-size:1.8rem;margin-bottom:.3rem">⚡</p>
+      <h3>キャッシュで高速化</h3>
+      <p style="font-size:.9rem">cache設定で大幅な時間短縮を</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1.5rem;text-align:center;border-color:#00d2ff44">
+    <p class="label">BEST PRACTICES</p>
+    <ul class="feature-list" style="max-width:none">
+      <li>小さなワークフローから始めて、徐々に追加する</li>
+      <li>PRでは必ずテストを通す（ブランチ保護ルール）</li>
+      <li><code>needs:</code> でジョブの依存関係を明示する</li>
+      <li>失敗時はログを読む習慣をつける</li>
+    </ul>
+  </div>
+</div>
+
+<div class="progress"></div>
+<div class="nav-hint">← → で移動 | g: 最初 | G: 最後</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+const slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+let cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  // Animate steps
+  var steps=slide.querySelectorAll('.step');
+  if(steps.length){
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*500);
+    });
+  }
+  // Animate flow boxes
+  if(slide.id==='slide-actions-how'){
+    var boxes=slide.querySelectorAll('.flow-box');
+    boxes.forEach(function(b,i){
+      b.classList.remove('active-box');
+      setTimeout(function(){b.classList.add('active-box')},500+i*700);
+    });
+  }
+  // Animate env flow
+  if(slide.id==='slide-environments'){
+    var boxes=slide.querySelectorAll('.flow-box');
+    boxes.forEach(function(b,i){
+      b.classList.remove('active-box');
+      setTimeout(function(){b.classList.add('active-box')},500+i*800);
+    });
+  }
+  // Animate matrix cells
+  if(slide.id==='slide-matrix'){
+    var cells=slide.querySelectorAll('.matrix-cell');
+    cells.forEach(function(c,i){
+      c.style.borderColor='#2a2a4a';
+      c.style.boxShadow='none';
+      setTimeout(function(){
+        c.style.borderColor='#27c93f';
+        c.style.boxShadow='0 0 10px rgba(39,201,63,.2)';
+      },600+i*300);
+    });
+  }
+  // Animate pipeline
+  if(slide.id==='slide-full-pipeline'){
+    animatePipeline();
+  }
+}
+
+/* ===== Pipeline Animation ===== */
+function animatePipeline(){
+  var stages=['pipe-lint','pipe-test','pipe-build','pipe-deploy'];
+  var arrows=['pa1','pa2','pa3'];
+  stages.forEach(function(id){
+    var el=document.getElementById(id);
+    el.classList.remove('lit','pass');
+  });
+  arrows.forEach(function(id){
+    document.getElementById(id).classList.remove('lit');
+  });
+  stages.forEach(function(id,i){
+    setTimeout(function(){
+      var el=document.getElementById(id);
+      el.classList.add('lit');
+      if(i>0){
+        document.getElementById(arrows[i-1]).classList.add('lit');
+      }
+      setTimeout(function(){
+        el.classList.remove('lit');
+        el.classList.add('pass');
+      },800);
+    },500+i*1000);
+  });
+}
+
+/* ===== Terminal Typing Engine ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: Setup ===== */
+function runSetupDemo(){
+  typeInTerminal('term-setup-body',[
+    {type:'prompt',text:'mkdir -p .github/workflows',pause:0},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'↑ ワークフロー用のディレクトリを作成',pause:500},
+    {type:'prompt',text:'touch .github/workflows/ci.yml',pause:600},
+    {type:'comment',text:'↑ ワークフローファイルを作成',pause:500},
+    {type:'prompt',text:'ls -la .github/workflows/',pause:700},
+    {type:'output',text:'total 8',cls:'output',pause:300},
+    {type:'output',text:'-rw-r--r--  1 user  staff  0 Mar 10 10:00 ci.yml',cls:'info',pause:300},
+    {type:'comment',text:'あとはこのYAMLを編集するだけ！',pause:500},
+    {type:'prompt',text:'code .github/workflows/ci.yml',pause:600},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'✓ VSCodeでワークフローファイルを開いた',cls:'success',pause:400},
+  ],'btn-setup');
+}
+
+/* ===== Demo: Test Automation ===== */
+function runTestDemo(){
+  typeInTerminal('term-test-body',[
+    {type:'prompt',text:'git add . && git commit -m "feat: add login"',pause:0},
+    {type:'output',text:'[main a1b2c3d] feat: add login',cls:'success',pause:500},
+    {type:'prompt',text:'git push origin main',pause:700},
+    {type:'output',text:'To github.com:user/my-app.git',cls:'output',pause:400},
+    {type:'output',text:'   f8g9h0i..a1b2c3d  main -> main',cls:'success',pause:300},
+    {type:'comment',text:'↑ pushした瞬間、GitHub Actionsが自動起動！',pause:800},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'--- GitHub Actions ---',cls:'info',pause:500},
+    {type:'output',text:'Run Tests: Triggered by push',cls:'info',pause:400},
+    {type:'output',text:'  Setting up job...',cls:'output',pause:500},
+    {type:'output',text:'  actions/checkout@v4 ........... done',cls:'output',pause:600},
+    {type:'output',text:'  actions/setup-node@v4 ......... done',cls:'output',pause:500},
+    {type:'output',text:'  npm ci ........................ done (45s)',cls:'output',pause:700},
+    {type:'output',text:'  npm test ......................',cls:'output',pause:800},
+    {type:'output',text:'    PASS  src/login.test.ts',cls:'success',pause:400},
+    {type:'output',text:'    PASS  src/utils.test.ts',cls:'success',pause:300},
+    {type:'output',text:'    Tests: 12 passed, 12 total',cls:'success',pause:300},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'✓ All checks passed!',cls:'success',pause:500},
+  ],'btn-test');
+}
+
+/* ===== Demo: Debug ===== */
+function runDebugDemo(){
+  typeInTerminal('term-debug-body',[
+    {type:'comment',text:'Actions が失敗した！ CLIで確認してみよう',pause:0},
+    {type:'prompt',text:'gh run list --limit 3',pause:700},
+    {type:'output',text:'STATUS  TITLE           BRANCH  EVENT  ID',cls:'output',pause:400},
+    {type:'output',text:'X       Run Tests       main    push   12345678',cls:'error',pause:300},
+    {type:'output',text:'✓       Deploy          main    push   12345670',cls:'success',pause:300},
+    {type:'output',text:'✓       Run Tests       main    push   12345660',cls:'success',pause:300},
+    {type:'comment',text:'↑ 最新のRun Testsが失敗(X)している',pause:800},
+    {type:'prompt',text:'gh run view 12345678 --log-failed',pause:800},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'test (ubuntu-latest)',cls:'info',pause:400},
+    {type:'output',text:'  npm test',cls:'output',pause:300},
+    {type:'output',text:'    FAIL  src/login.test.ts',cls:'error',pause:500},
+    {type:'output',text:'    Expected: "Welcome, Alice"',cls:'warn',pause:300},
+    {type:'output',text:'    Received: "Welcome, undefined"',cls:'error',pause:400},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'↑ 原因が分かった！ ユーザー名がundefinedになっている',pause:800},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'→ コードを修正して再pushすれば自動で再実行される',cls:'success',pause:500},
+  ],'btn-debug');
+}
+
+/* ===== Init ===== */
+onSlideEnter(0);
+</script>
+</body></html>

@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>セキュリティ編 — GitHubで安全に開発する</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* GitHub UI mock */
+.github-ui{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.github-header{background:#161b22;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #30363d}
+.github-header .gh-icon{color:#e0e0e0;font-size:1.3rem}
+.github-header .gh-repo{color:#58a6ff;font-size:.95rem;font-weight:600}
+.github-body{padding:1.2rem 1.5rem}
+.gh-file{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #21262d}
+.gh-file .icon{color:#8b949e;font-size:1rem}
+.gh-file .name{color:#58a6ff;font-size:.9rem}
+.gh-file .msg{color:#8b949e;font-size:.85rem;flex:1;text-align:right}
+.gh-commit{display:flex;align-items:center;gap:8px;padding:6px 0}
+.gh-commit .hash{color:#58a6ff;font-family:'Fira Code',monospace;font-size:.85rem}
+.gh-commit .cm{color:#c9d1d9;font-size:.9rem}
+.gh-diff-add{background:#1a4721;color:#7ee787;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #27c93f}
+.gh-diff-del{background:#4d1f28;color:#ff7b72;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #ff5370}
+.gh-diff-ctx{background:#161b22;color:#8b949e;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #30363d}
+
+/* Diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Highlight step */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* Security badge */
+.sec-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#ff537033,#ffcb6b33);border:1px solid #ff537055;border-radius:20px;padding:4px 14px;font-size:.85rem;color:#ff5370}
+
+/* Checklist */
+.checklist{list-style:none;max-width:700px;width:100%}
+.checklist li{padding:.6rem 0;font-size:1rem;color:#bbb;border-bottom:1px solid #1a1a2e;display:flex;align-items:center;gap:.6rem}
+.checklist li .check{color:#27c93f;font-size:1.1rem;min-width:1.2rem}
+
+/* Verified badge */
+.verified{display:inline-block;background:#23863622;color:#238636;border:1px solid #238636;border-radius:12px;padding:2px 10px;font-size:.8rem;font-weight:600}
+
+/* GitHub tab bar */
+.gh-tabs{display:flex;gap:0;border-bottom:1px solid #30363d;margin-bottom:1rem}
+.gh-tab{padding:8px 16px;font-size:.85rem;color:#8b949e;cursor:pointer;border-bottom:2px solid transparent}
+.gh-tab.active-tab{color:#e0e0e0;border-bottom-color:#f78c6c}
+
+/* Alert box */
+.alert-box{border-radius:8px;padding:1rem 1.2rem;margin:.5rem 0;font-size:.9rem}
+.alert-box.critical{background:#4d1f2833;border:1px solid #ff5370;color:#ff7b72}
+.alert-box.warning{background:#4d3a0033;border:1px solid #ffcb6b;color:#ffcb6b}
+.alert-box.info{background:#0d2a4a33;border:1px solid #58a6ff;color:#58a6ff}
+.alert-box.ok{background:#1a472133;border:1px solid #27c93f;color:#7ee787}
+
+/* btn */
+button{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff44;padding:.4rem 1.2rem;border-radius:6px;cursor:pointer;font-family:inherit;font-size:.85rem;transition:all .2s}
+button:hover{background:#00d2ff33}
+button:disabled{opacity:.4;cursor:default}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label red">SECURITY GUIDE</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">セキュリティ編</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1.5rem">GitHubで安全に開発する</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:1rem">
+      <span class="sec-badge">事故を未然に防ぐために知っておくべきこと</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">→ キーで次へ</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: なぜセキュリティが重要か ==================== -->
+<div class="slide">
+  <h2>なぜセキュリティが重要か？</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="card">
+      <p class="label red">実際にあった事故</p>
+      <div style="line-height:2;font-size:.95rem">
+        <p style="color:#ff5370;margin-bottom:.5rem">AWS APIキーをGitHubにpush</p>
+        <p style="color:#888">→ 数分でボットに検出される</p>
+        <p style="color:#888">→ 仮想通貨マイニングに悪用</p>
+        <p style="color:#ff5370;font-weight:bold">→ 一晩で数十万円の請求</p>
+      </div>
+      <div style="margin-top:1rem;padding:.8rem;background:#4d1f2822;border-radius:8px;border:1px solid #ff537044">
+        <p style="font-size:.85rem;color:#ff7b72">GitHubの公開リポジトリは常にスキャンされている。シークレットを1秒でも公開すると危険。</p>
+      </div>
+    </div>
+    <div class="card" style="border-color:#27c93f44">
+      <p class="label green">でも防げる！</p>
+      <ul class="feature-list" style="max-width:100%">
+        <li>.gitignore で機密ファイルを除外</li>
+        <li>git-secrets でコミット前にチェック</li>
+        <li>GitHub Secret Scanning で自動検出</li>
+        <li>環境変数でシークレットを管理</li>
+        <li>2FA で不正ログインを防止</li>
+      </ul>
+      <p style="font-size:.9rem;color:#27c93f;margin-top:.8rem">正しい知識があれば、事故はほぼ100%防げる</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: Secrets管理 ==================== -->
+<div class="slide" id="slide-secrets">
+  <h2>Secrets管理 — 機密情報を守る</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:900px;width:100%;align-items:center">
+    <div class="cols" style="margin-bottom:.5rem">
+      <div class="card step" data-step="0">
+        <p class="label orange">.env ファイル</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.8">
+          <span style="color:#7fdbca">DATABASE_URL</span>=<span style="color:#c3e88d">postgres://user:pass@host/db</span><br>
+          <span style="color:#7fdbca">API_KEY</span>=<span style="color:#c3e88d">sk-abcdef123456789</span><br>
+          <span style="color:#7fdbca">SECRET_TOKEN</span>=<span style="color:#c3e88d">ghp_xxxxxxxxxxxx</span>
+        </div>
+        <p style="font-size:.85rem;color:#ff5370;margin-top:.5rem">これを絶対にコミットしない！</p>
+      </div>
+      <div class="card step" data-step="1">
+        <p class="label green">.gitignore</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.8">
+          <span style="color:#888"># 環境変数</span><br>
+          <span style="color:#c3e88d">.env</span><br>
+          <span style="color:#c3e88d">.env.local</span><br>
+          <span style="color:#c3e88d">.env.production</span><br>
+          <span style="color:#888"># 認証情報</span><br>
+          <span style="color:#c3e88d">credentials.json</span><br>
+          <span style="color:#c3e88d">*.pem</span>
+        </div>
+        <p style="font-size:.85rem;color:#27c93f;margin-top:.5rem">プロジェクト開始時に必ず設定</p>
+      </div>
+    </div>
+    <div class="terminal">
+      <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>secrets-demo</span></div>
+      <div class="terminal-body" id="term-secrets" style="min-height:160px"></div>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button id="btn-secrets" onclick="runSecretsDemo()">デモ再生</button>
+      <button onclick="resetTerm('term-secrets');document.getElementById('btn-secrets').disabled=false">リセット</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 4: git-secrets ==================== -->
+<div class="slide" id="slide-gitsecrets">
+  <h2>git-secrets — コミット前にブロック</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:900px;width:100%;align-items:center">
+    <div class="card" style="max-width:900px;width:100%">
+      <p class="label purple">git-secrets とは？</p>
+      <p style="font-size:.95rem">AWSが開発したツール。<code>git commit</code> 時にフックが走り、AWSキーやパスワードのパターンを検出してコミットをブロックする。</p>
+    </div>
+    <div class="terminal">
+      <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git-secrets-demo</span></div>
+      <div class="terminal-body" id="term-gitsecrets" style="min-height:200px"></div>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button id="btn-gitsecrets" onclick="runGitSecretsDemo()">デモ再生</button>
+      <button onclick="resetTerm('term-gitsecrets');document.getElementById('btn-gitsecrets').disabled=false">リセット</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: Dependabot ==================== -->
+<div class="slide" id="slide-dependabot">
+  <h2>Dependabot — 脆弱性を自動修正</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:900px;width:100%;align-items:center">
+    <div class="cols" style="margin-bottom:.5rem">
+      <div class="card">
+        <p class="label green">何をしてくれる？</p>
+        <ul class="feature-list" style="max-width:100%">
+          <li>依存パッケージの脆弱性を検出</li>
+          <li>修正バージョンへのPRを自動作成</li>
+          <li>定期的にバージョンアップのPRも作成</li>
+          <li>GitHub上で無料で使える</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="label">有効化方法</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.8;color:#888">
+          <span style="color:#7fdbca"># .github/dependabot.yml</span><br>
+          <span style="color:#c792ea">version:</span> 2<br>
+          <span style="color:#c792ea">updates:</span><br>
+          &nbsp;&nbsp;- <span style="color:#c792ea">package-ecosystem:</span> <span style="color:#c3e88d">"npm"</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c792ea">directory:</span> <span style="color:#c3e88d">"/"</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c792ea">schedule:</span><br>
+          &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c792ea">interval:</span> <span style="color:#c3e88d">"weekly"</span>
+        </div>
+      </div>
+    </div>
+    <div class="github-ui">
+      <div class="github-header">
+        <span class="gh-icon">&#9636;</span>
+        <span class="gh-repo">my-app</span>
+        <span style="color:#8b949e;font-size:.85rem;margin-left:auto">Pull requests</span>
+      </div>
+      <div class="github-body" style="padding:1rem">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #21262d">
+          <span style="color:#27c93f;font-size:1.1rem">&#9679;</span>
+          <span style="color:#c9d1d9;font-size:.9rem;font-weight:600">Bump express from 4.17.1 to 4.18.2</span>
+          <span style="background:#23863622;color:#238636;padding:2px 8px;border-radius:12px;font-size:.75rem;margin-left:auto">security</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #21262d">
+          <span style="color:#27c93f;font-size:1.1rem">&#9679;</span>
+          <span style="color:#c9d1d9;font-size:.9rem;font-weight:600">Bump lodash from 4.17.20 to 4.17.21</span>
+          <span style="background:#23863622;color:#238636;padding:2px 8px;border-radius:12px;font-size:.75rem;margin-left:auto">security</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 0;">
+          <span style="color:#27c93f;font-size:1.1rem">&#9679;</span>
+          <span style="color:#c9d1d9;font-size:.9rem;font-weight:600">Bump axios from 0.21.1 to 1.6.5</span>
+          <span style="background:#4d3a0022;color:#d29922;padding:2px 8px;border-radius:12px;font-size:.75rem;margin-left:auto">dependencies</span>
+        </div>
+        <p style="font-size:.8rem;color:#8b949e;margin-top:.8rem">Dependabotが自動でPRを作成。レビューしてマージするだけ。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: Security Advisories ==================== -->
+<div class="slide" id="slide-advisories">
+  <h2>Security Advisories — 脆弱性アラート</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:900px;width:100%;align-items:center">
+    <div class="github-ui">
+      <div class="github-header">
+        <span class="gh-icon">&#9636;</span>
+        <span class="gh-repo">my-app</span>
+      </div>
+      <div style="background:#161b22;padding:0">
+        <div class="gh-tabs">
+          <div class="gh-tab">Code</div>
+          <div class="gh-tab">Issues</div>
+          <div class="gh-tab">Pull requests</div>
+          <div class="gh-tab active-tab">Security</div>
+          <div class="gh-tab">Actions</div>
+        </div>
+      </div>
+      <div class="github-body">
+        <div class="alert-box critical" style="margin-bottom:.8rem">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:.3rem">
+            <span style="font-size:1.1rem">&#9888;</span>
+            <strong>Critical: Prototype Pollution in lodash</strong>
+            <span style="background:#f8514933;color:#f85149;padding:2px 8px;border-radius:12px;font-size:.7rem;margin-left:auto">CVE-2021-23337</span>
+          </div>
+          <p style="font-size:.85rem;color:#ff7b72">lodash &lt; 4.17.21 に任意コード実行の脆弱性。Dependabot PRで修正可能。</p>
+        </div>
+        <div class="alert-box warning" style="margin-bottom:.8rem">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:.3rem">
+            <span style="font-size:1.1rem">&#9888;</span>
+            <strong>High: Regular Expression DoS in express</strong>
+            <span style="background:#4d3a0033;color:#d29922;padding:2px 8px;border-radius:12px;font-size:.7rem;margin-left:auto">CVE-2024-xxxx</span>
+          </div>
+          <p style="font-size:.85rem;color:#d29922">express 4.17.x にReDoS脆弱性。4.18.2以上にアップデート推奨。</p>
+        </div>
+        <div class="alert-box ok">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:1.1rem">&#10003;</span>
+            <strong>react: No known vulnerabilities</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="max-width:900px;width:100%;text-align:center">
+      <p style="font-size:.95rem;color:#bbb">GitHubは<strong style="color:#00d2ff">CVEデータベース</strong>と連携し、使用中のパッケージに脆弱性が見つかるとアラートを送信。<br><span style="color:#888;font-size:.9rem">Settings → Code security and analysis で通知を有効化しよう。</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: 署名付きコミット ==================== -->
+<div class="slide" id="slide-signing">
+  <h2>署名付きコミット (GPG/SSH)</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:900px;width:100%;align-items:center">
+    <div class="cols">
+      <div class="card">
+        <p class="label purple">なぜ署名が必要？</p>
+        <p style="font-size:.95rem"><code>git config user.email</code> は誰でも自由に設定できる。つまり<strong style="color:#ff5370">他人になりすましてコミット</strong>できてしまう。</p>
+        <p style="font-size:.9rem;color:#888;margin-top:.5rem">GPG/SSH署名で「このコミットは本当に自分が作った」と証明できる。</p>
+        <div style="margin-top:.8rem;display:flex;gap:.5rem;align-items:center">
+          <span style="color:#888;font-size:.9rem">署名なし: abc1234 feat: update</span>
+        </div>
+        <div style="display:flex;gap:.5rem;align-items:center;margin-top:.3rem">
+          <span style="color:#c9d1d9;font-size:.9rem">署名あり: abc1234 feat: update</span>
+          <span class="verified">Verified</span>
+        </div>
+      </div>
+      <div class="card">
+        <p class="label green">SSH署名がおすすめ</p>
+        <p style="font-size:.9rem;color:#888">Git 2.34以降はSSH鍵で署名可能。GPGより設定が簡単！</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.8rem;line-height:1.8;color:#888;margin-top:.5rem">
+          <span style="color:#7fdbca"># 設定3行でOK</span><br>
+          git config gpg.format ssh<br>
+          git config user.signingkey ~/.ssh/id_ed25519.pub<br>
+          git config commit.gpgsign true
+        </div>
+      </div>
+    </div>
+    <div class="terminal">
+      <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>gpg-signing-demo</span></div>
+      <div class="terminal-body" id="term-signing" style="min-height:160px"></div>
+    </div>
+    <div style="display:flex;gap:.5rem">
+      <button id="btn-signing" onclick="runSigningDemo()">デモ再生</button>
+      <button onclick="resetTerm('term-signing');document.getElementById('btn-signing').disabled=false">リセット</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: 2FA ==================== -->
+<div class="slide" id="slide-2fa">
+  <h2>2FA（二要素認証）</h2>
+  <div style="display:flex;flex-direction:column;gap:1.2rem;max-width:950px;width:100%;align-items:center">
+    <div class="cols">
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">&#128272;</div>
+        <p class="label red">パスワードだけでは危険</p>
+        <p style="font-size:.95rem">パスワードが漏洩すると、誰でもあなたのアカウントにログインできてしまう。</p>
+        <p style="font-size:.85rem;color:#ff5370;margin-top:.5rem">2023年からGitHubは全ユーザーに2FA必須化を段階的に実施中</p>
+      </div>
+      <div class="card">
+        <p class="label green">設定方法</p>
+        <div class="step" data-step="0" style="margin-bottom:.8rem">
+          <h3 style="font-size:1.1rem">1. 認証アプリを用意</h3>
+          <p style="font-size:.9rem;color:#888">Google Authenticator / 1Password / Authy など</p>
+        </div>
+        <div class="step" data-step="1" style="margin-bottom:.8rem">
+          <h3 style="font-size:1.1rem">2. GitHubで有効化</h3>
+          <p style="font-size:.9rem;color:#888">Settings → Password and authentication → Enable 2FA</p>
+        </div>
+        <div class="step" data-step="2" style="margin-bottom:.8rem">
+          <h3 style="font-size:1.1rem">3. リカバリーコード保存</h3>
+          <p style="font-size:.9rem;color:#ff5370">スマホ紛失時のためにリカバリーコードを安全な場所に保管！</p>
+        </div>
+        <div class="step" data-step="3">
+          <h3 style="font-size:1.1rem">4. セキュリティキー（推奨）</h3>
+          <p style="font-size:.9rem;color:#888">YubiKeyなどのハードウェアキーが最も安全</p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="max-width:950px;width:100%;text-align:center">
+      <p style="font-size:.95rem;color:#bbb">多くの企業・OSSプロジェクトでは<strong style="color:#00d2ff">2FA必須</strong>。設定していないとOrganizationに参加できないことも。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 9: Branch Protection ==================== -->
+<div class="slide" id="slide-branchprotect">
+  <h2>Branch Protection Rules</h2>
+  <p style="font-size:1rem;color:#888;margin-bottom:1rem;text-align:center">セキュリティの観点からmainブランチを守る設定</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:950px;width:100%">
+    <div class="card step" data-step="0">
+      <p class="label green">Require pull request reviews</p>
+      <p style="font-size:.9rem;color:#888">直接pushを禁止し、PRレビューを必須にする。悪意あるコードや脆弱なコードが混入するのを防ぐ。</p>
+    </div>
+    <div class="card step" data-step="1">
+      <p class="label purple">Require signed commits</p>
+      <p style="font-size:.9rem;color:#888">署名なしのコミットをブロック。なりすましコミットを防止。</p>
+    </div>
+    <div class="card step" data-step="2">
+      <p class="label orange">Require status checks</p>
+      <p style="font-size:.9rem;color:#888">CIテスト（GitHub Actions）が通らないとマージ不可。セキュリティスキャンを必須にできる。</p>
+    </div>
+    <div class="card step" data-step="3">
+      <p class="label red">Restrict who can push</p>
+      <p style="font-size:.9rem;color:#888">特定のユーザー/チームだけがmainにpush可能。管理者でもルール適用を強制できる。</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:950px;width:100%;margin-top:1rem;text-align:center">
+    <p style="font-size:.9rem;color:#888">Settings → Branches → Add branch protection rule で設定。<br><strong style="color:#00d2ff">Do not allow bypassing the above settings</strong> にチェックを入れると管理者にも適用。</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: SECURITY.md ==================== -->
+<div class="slide" id="slide-securitymd">
+  <h2>SECURITY.md — 脆弱性報告ポリシー</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:900px;width:100%;align-items:center">
+    <div class="cols">
+      <div class="card">
+        <p class="label">SECURITY.md とは？</p>
+        <p style="font-size:.95rem">脆弱性を発見した人に「どこに・どうやって報告すればいいか」を伝えるファイル。<strong style="color:#00d2ff">Responsible Disclosure（責任ある開示）</strong>のガイド。</p>
+        <p style="font-size:.85rem;color:#888;margin-top:.5rem">リポジトリルートまたは .github/ に置く。GitHub Security タブにも表示される。</p>
+      </div>
+      <div class="card" style="border-color:#00d2ff44">
+        <p class="label green">テンプレート</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.8rem;line-height:1.7;color:#888">
+          <span style="color:#c792ea"># Security Policy</span><br><br>
+          <span style="color:#c792ea">## Supported Versions</span><br>
+          | Version | Supported |<br>
+          | 2.x &nbsp;&nbsp;&nbsp;| &#10003; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br>
+          | 1.x &nbsp;&nbsp;&nbsp;| &#10007; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;|<br><br>
+          <span style="color:#c792ea">## Reporting a Vulnerability</span><br>
+          <span style="color:#7fdbca">security@example.com</span> に連絡。<br>
+          公開Issueには書かないでください。<br>
+          48時間以内に返信します。
+        </div>
+      </div>
+    </div>
+    <div class="alert-box info" style="max-width:900px;width:100%">
+      <strong>ポイント:</strong> 脆弱性は公開Issueに書いてはいけない。攻撃者に悪用される前に、非公開で報告→修正→公開の流れが重要。GitHubの<strong>Private vulnerability reporting</strong>機能も活用しよう。
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: GitHub Advanced Security ==================== -->
+<div class="slide" id="slide-ghas">
+  <h2>GitHub Advanced Security</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem;max-width:950px;width:100%;align-items:center">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.2rem;width:100%">
+      <div class="card step" data-step="0" style="text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem;color:#c792ea">&#128269;</div>
+        <p class="label purple">Code Scanning</p>
+        <p style="font-size:.9rem;color:#888">CodeQLエンジンがコードを解析し、SQLインジェクションやXSSなどの脆弱性を自動検出。</p>
+        <p style="font-size:.8rem;color:#c792ea;margin-top:.5rem">PRごとにスキャン実行可能</p>
+      </div>
+      <div class="card step" data-step="1" style="text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem;color:#ff5370">&#128273;</div>
+        <p class="label red">Secret Scanning</p>
+        <p style="font-size:.9rem;color:#888">コード内のAPIキー、トークン、パスワードを自動検出。パートナープログラムで自動無効化も。</p>
+        <p style="font-size:.8rem;color:#ff5370;margin-top:.5rem">公開リポジトリは無料で有効</p>
+      </div>
+      <div class="card step" data-step="2" style="text-align:center">
+        <div style="font-size:2rem;margin-bottom:.5rem;color:#00d2ff">&#128737;</div>
+        <p class="label">Dependency Review</p>
+        <p style="font-size:.9rem;color:#888">PRで追加・変更される依存パッケージの脆弱性をマージ前にチェック。</p>
+        <p style="font-size:.8rem;color:#00d2ff;margin-top:.5rem">危険な依存を事前にブロック</p>
+      </div>
+    </div>
+    <div class="card" style="max-width:950px;width:100%;text-align:center">
+      <p style="font-size:.95rem;color:#bbb">
+        <strong style="color:#ffcb6b">公開リポジトリ:</strong> Secret Scanning & Dependabot は無料<br>
+        <strong style="color:#ffcb6b">プライベートリポジトリ:</strong> GitHub Enterprise で Advanced Security ライセンスが必要<br>
+        <span style="color:#888;font-size:.85rem">まずは無料機能から始めよう！</span>
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: チェックリスト ==================== -->
+<div class="slide" id="slide-checklist">
+  <h2>セキュリティチェックリスト</h2>
+  <p style="font-size:1rem;color:#888;margin-bottom:1.2rem;text-align:center">全ての開発者がやるべきこと</p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label green">個人の設定</p>
+      <ul class="checklist">
+        <li class="step" data-step="0"><span class="check">&#10003;</span> 2FAを有効化する</li>
+        <li class="step" data-step="1"><span class="check">&#10003;</span> SSH鍵を使う（パスワード認証ではなく）</li>
+        <li class="step" data-step="2"><span class="check">&#10003;</span> コミットに署名する</li>
+        <li class="step" data-step="3"><span class="check">&#10003;</span> Personal Access Tokenに最小権限を設定</li>
+        <li class="step" data-step="4"><span class="check">&#10003;</span> 不要なOAuth Appを削除</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="label orange">リポジトリの設定</p>
+      <ul class="checklist">
+        <li class="step" data-step="5"><span class="check">&#10003;</span> .gitignoreで機密ファイルを除外</li>
+        <li class="step" data-step="6"><span class="check">&#10003;</span> Branch Protectionを設定</li>
+        <li class="step" data-step="7"><span class="check">&#10003;</span> Dependabotを有効化</li>
+        <li class="step" data-step="8"><span class="check">&#10003;</span> Secret Scanningを有効化</li>
+        <li class="step" data-step="9"><span class="check">&#10003;</span> SECURITY.mdを作成</li>
+        <li class="step" data-step="10"><span class="check">&#10003;</span> シークレットはGitHub Secretsで管理</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: まとめ ==================== -->
+<div class="slide">
+  <h2>まとめ</h2>
+  <div style="max-width:900px;width:100%">
+    <div class="flow" style="margin-bottom:2rem;flex-wrap:wrap;gap:.8rem" id="summary-flow">
+      <div class="flow-box" style="min-width:140px">
+        <p class="label red" style="font-size:.75rem;margin-bottom:.3rem">防御</p>
+        <p style="font-size:.9rem;color:#e0e0e0">.gitignore<br>git-secrets</p>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-box" style="min-width:140px">
+        <p class="label orange" style="font-size:.75rem;margin-bottom:.3rem">検出</p>
+        <p style="font-size:.9rem;color:#e0e0e0">Dependabot<br>Secret Scanning</p>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-box" style="min-width:140px">
+        <p class="label purple" style="font-size:.75rem;margin-bottom:.3rem">証明</p>
+        <p style="font-size:.9rem;color:#e0e0e0">署名コミット<br>2FA</p>
+      </div>
+      <div class="flow-arrow">+</div>
+      <div class="flow-box" style="min-width:140px">
+        <p class="label green" style="font-size:.75rem;margin-bottom:.3rem">統制</p>
+        <p style="font-size:.9rem;color:#e0e0e0">Branch Protection<br>SECURITY.md</p>
+      </div>
+      <div class="flow-arrow">=</div>
+      <div class="flow-box" style="min-width:140px;border-color:#00d2ff">
+        <p class="label" style="font-size:.75rem;margin-bottom:.3rem">安全な開発</p>
+        <p style="font-size:.9rem;color:#00d2ff;font-weight:bold">Secure SDLC</p>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <h3 style="color:#00d2ff;margin-bottom:1rem">3つの心得</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem">
+        <div>
+          <p style="font-size:1.8rem;margin-bottom:.3rem">&#128274;</p>
+          <p style="font-size:1rem;color:#e0e0e0;font-weight:600">シークレットは<br>絶対にコミットしない</p>
+          <p style="font-size:.85rem;color:#888;margin-top:.3rem">.gitignore + git-secrets</p>
+        </div>
+        <div>
+          <p style="font-size:1.8rem;margin-bottom:.3rem">&#128260;</p>
+          <p style="font-size:1rem;color:#e0e0e0;font-weight:600">依存パッケージは<br>常に最新に</p>
+          <p style="font-size:.85rem;color:#888;margin-top:.3rem">Dependabot + アラート</p>
+        </div>
+        <div>
+          <p style="font-size:1.8rem;margin-bottom:.3rem">&#128272;</p>
+          <p style="font-size:1rem;color:#e0e0e0;font-weight:600">認証を強化し<br>本人を証明する</p>
+          <p style="font-size:.85rem;color:#888;margin-top:.3rem">2FA + 署名コミット</p>
+        </div>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:1.5rem;color:#555;font-size:.9rem">セキュリティは「やるかやらないか」。今日から始めよう。</p>
+  </div>
+</div>
+
+<!-- ==================== Navigation ==================== -->
+<div class="progress">1 / 13</div>
+<div class="nav-hint">← → で移動 | g: 最初 | G: 最後</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+const slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+let cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  /* Steps animation */
+  var steps=slide.querySelectorAll('.step');
+  if(steps.length){
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*500);
+    });
+  }
+  /* Flow boxes animation */
+  if(slide.id==='summary-flow-slide'||slide.querySelectorAll('.flow-box').length){
+    var boxes=slide.querySelectorAll('.flow-box');
+    boxes.forEach(function(b,i){
+      b.classList.remove('active-box');
+      setTimeout(function(){b.classList.add('active-box')},400+i*600);
+    });
+  }
+}
+
+/* ===== Terminal Typing Engine ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: Secrets Management ===== */
+function runSecretsDemo(){
+  typeInTerminal('term-secrets',[
+    {type:'comment',text:'うっかり.envをコミットしてしまった！',pause:0},
+    {type:'prompt',text:'git add .',pause:500},
+    {type:'prompt',text:'git commit -m "add config"',pause:500},
+    {type:'output',text:'[main abc1234] add config',cls:'output',pause:400},
+    {type:'output',text:' 2 files changed: .env, app.js',cls:'output',pause:300},
+    {type:'prompt',text:'git push origin main',pause:500},
+    {type:'output',text:'Enumerating objects: 5, done.',cls:'output',pause:300},
+    {type:'output',text:'To github.com:user/my-app.git',cls:'output',pause:200},
+    {type:'output',text:'   a1b2c3d..abc1234  main -> main',cls:'success',pause:300},
+    {type:'comment',text:'APIキーが公開されてしまった！ すぐに対処する',pause:1000},
+    {type:'prompt',text:'echo ".env" >> .gitignore',pause:500},
+    {type:'prompt',text:'git rm --cached .env',pause:500},
+    {type:'output',text:'rm \'.env\'',cls:'warn',pause:300},
+    {type:'comment',text:'履歴からも完全に削除する',pause:800},
+    {type:'prompt',text:'git filter-branch --force --index-filter "git rm --cached --ignore-unmatch .env" HEAD',pause:500},
+    {type:'output',text:'Rewrite abc1234 (1/3) (0 seconds passed, remaining 0 predicted)',cls:'output',pause:400},
+    {type:'output',text:'Ref \'refs/heads/main\' was rewritten',cls:'info',pause:400},
+    {type:'prompt',text:'git push origin main --force',pause:500},
+    {type:'output',text:'+ abc1234...def5678 main -> main (forced update)',cls:'warn',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'&#10003; 履歴から.envを完全削除。でもAPIキーは必ずローテーション（再発行）すること！',cls:'success',pause:500},
+  ],'btn-secrets');
+}
+
+/* ===== Demo: git-secrets ===== */
+function runGitSecretsDemo(){
+  typeInTerminal('term-gitsecrets',[
+    {type:'comment',text:'git-secretsをインストール',pause:0},
+    {type:'prompt',text:'brew install git-secrets',pause:500},
+    {type:'output',text:'==> Downloading git-secrets...',cls:'output',pause:400},
+    {type:'output',text:'==> Installing git-secrets',cls:'output',pause:300},
+    {type:'output',text:'&#10003; git-secrets 1.3.0 installed',cls:'success',pause:400},
+    {type:'comment',text:'リポジトリにフックを設定',pause:800},
+    {type:'prompt',text:'cd my-project',pause:500},
+    {type:'prompt',text:'git secrets --install',pause:500},
+    {type:'output',text:'&#10003; Installed commit-msg hook to .git/hooks/commit-msg',cls:'success',pause:300},
+    {type:'output',text:'&#10003; Installed pre-commit hook to .git/hooks/pre-commit',cls:'success',pause:300},
+    {type:'output',text:'&#10003; Installed prepare-commit-msg hook to .git/hooks/prepare-commit-msg',cls:'success',pause:300},
+    {type:'comment',text:'AWSのパターンを登録',pause:800},
+    {type:'prompt',text:'git secrets --register-aws',pause:500},
+    {type:'output',text:'OK',cls:'success',pause:300},
+    {type:'comment',text:'うっかりAWSキーをコミットしようとすると...',pause:1000},
+    {type:'prompt',text:'echo "AKIAIOSFODNN7EXAMPLE" > config.txt',pause:500},
+    {type:'prompt',text:'git add config.txt',pause:500},
+    {type:'prompt',text:'git commit -m "add config"',pause:500},
+    {type:'output',text:'config.txt:1:AKIAIOSFODNN7EXAMPLE',cls:'error',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'[ERROR] Matched one or more prohibited patterns',cls:'error',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'Possible mitigations:',cls:'warn',pause:300},
+    {type:'output',text:'- Mark false positives: git secrets --add --allowed ...',cls:'warn',pause:300},
+    {type:'output',text:'- List your configured patterns: git secrets --list',cls:'warn',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'&#10003; コミットがブロックされた！ シークレットの流出を防止',cls:'success',pause:500},
+  ],'btn-gitsecrets');
+}
+
+/* ===== Demo: GPG/SSH Signing ===== */
+function runSigningDemo(){
+  typeInTerminal('term-signing',[
+    {type:'comment',text:'SSH鍵で署名を設定（Git 2.34以降）',pause:0},
+    {type:'prompt',text:'git config --global gpg.format ssh',pause:500},
+    {type:'prompt',text:'git config --global user.signingkey ~/.ssh/id_ed25519.pub',pause:500},
+    {type:'prompt',text:'git config --global commit.gpgsign true',pause:500},
+    {type:'output',text:'&#10003; 設定完了。以降のコミットは全て自動署名',cls:'success',pause:600},
+    {type:'comment',text:'署名付きコミットを作成',pause:800},
+    {type:'prompt',text:'git commit -m "feat: add authentication"',pause:500},
+    {type:'output',text:'[main d7e8f9a] feat: add authentication',cls:'output',pause:400},
+    {type:'output',text:' 1 file changed, 42 insertions(+)',cls:'output',pause:300},
+    {type:'comment',text:'署名を確認',pause:800},
+    {type:'prompt',text:'git log --show-signature -1',pause:500},
+    {type:'output',text:'commit d7e8f9a (HEAD -> main)',cls:'info',pause:300},
+    {type:'output',text:'Good "git" signature for user@example.com with ED25519 key SHA256:abc123...',cls:'success',pause:400},
+    {type:'output',text:'Author: Your Name &lt;user@example.com&gt;',cls:'output',pause:300},
+    {type:'output',text:'Date:   Mon Mar 10 2025 10:30:00',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'    feat: add authentication',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'&#10003; GitHub上では "Verified" バッジが表示される！',cls:'success',pause:500},
+  ],'btn-signing');
+}
+
+/* ===== Init ===== */
+onSlideEnter(0);
+</script>
+</body></html>

@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Issue & PR 活用編 — プロジェクト管理の基本</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* GitHub UI mock */
+.github-ui{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.github-header{background:#161b22;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #30363d}
+.github-header .gh-icon{color:#e0e0e0;font-size:1.3rem}
+.github-header .gh-repo{color:#58a6ff;font-size:.95rem;font-weight:600}
+.github-header .gh-tab{color:#8b949e;font-size:.85rem;padding:6px 12px;border-radius:6px;cursor:default}
+.github-header .gh-tab.active{background:#21262d;color:#e0e0e0}
+.github-body{padding:1.2rem 1.5rem}
+.gh-file{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #21262d}
+.gh-file .icon{color:#8b949e;font-size:1rem}
+.gh-file .name{color:#58a6ff;font-size:.9rem}
+.gh-file .msg{color:#8b949e;font-size:.85rem;flex:1;text-align:right}
+.gh-issue-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid #21262d}
+.gh-issue-row .issue-icon{font-size:1.1rem}
+.gh-issue-row .issue-title{color:#58a6ff;font-size:.95rem;font-weight:500;flex:1}
+.gh-issue-row .issue-meta{color:#8b949e;font-size:.8rem}
+.gh-label{display:inline-block;padding:2px 8px;border-radius:12px;font-size:.75rem;font-weight:600;margin-left:6px}
+.gh-diff-add{background:#1a4721;color:#7ee787;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #27c93f}
+.gh-diff-del{background:#4d1f28;color:#ff7b72;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #ff5370}
+.gh-diff-ctx{background:#161b22;color:#8b949e;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #30363d}
+
+/* Diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'\25B8 ';color:#00d2ff}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Step */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* Kanban */
+.kanban{display:flex;gap:1rem;width:100%;max-width:900px}
+.kanban-col{flex:1;background:#161b22;border:1px solid #30363d;border-radius:8px;min-height:200px}
+.kanban-col-header{padding:10px 12px;font-size:.9rem;font-weight:600;border-bottom:1px solid #30363d;display:flex;align-items:center;gap:6px}
+.kanban-card{background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:10px 12px;margin:8px;font-size:.85rem;color:#c9d1d9;transition:all .3s}
+.kanban-card:hover{border-color:#58a6ff}
+.kanban-card .kc-labels{margin-top:6px}
+
+/* Review status */
+.review-badge{display:inline-block;padding:4px 10px;border-radius:12px;font-size:.8rem;font-weight:600}
+.review-badge.approved{background:#1a472133;color:#7ee787;border:1px solid #27c93f55}
+.review-badge.changes{background:#4d1f2833;color:#ff7b72;border:1px solid #ff537055}
+.review-badge.comment{background:#1a1a2e;color:#8b949e;border:1px solid #30363d}
+
+/* btn */
+.demo-btn{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff55;padding:8px 20px;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;margin:8px 4px;transition:all .2s}
+.demo-btn:hover{background:#00d2ff33;box-shadow:0 0 12px rgba(0,210,255,.2)}
+.demo-btn:disabled{opacity:.4;cursor:default}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label purple">PROJECT MANAGEMENT</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">Issue & PR 活用編</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1.5rem">プロジェクト管理の基本</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
+      <span style="display:inline-flex;align-items:center;gap:6px;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:20px;padding:6px 16px;font-size:.9rem;color:#7fdbca">Issue で課題を管理</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:20px;padding:6px 16px;font-size:.9rem;color:#c792ea">PR でコードをレビュー</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;background:#1a1a2e;border:1px solid #2a2a4a;border-radius:20px;padding:6px 16px;font-size:.9rem;color:#00d2ff">チームで効率よく開発</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">Arrow keys / g / G</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: Issue とは ==================== -->
+<div class="slide" id="slide-what-issue">
+  <h2>Issue とは？</h2>
+  <p style="text-align:center;max-width:700px;margin-bottom:1.5rem">プロジェクトの<strong style="color:#00d2ff">課題・タスク・要望</strong>を記録・追跡する仕組み</p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label red">BEFORE: チャットで管理</p>
+      <div style="font-size:.9rem;line-height:2;color:#ff7b72">
+        「あのバグ直った？」<br>
+        「どのバグ？」<br>
+        「先週言ったやつ」<br>
+        「ログ流れちゃった...」<br>
+        <span style="color:#888">会話が流れて追跡不能</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#00d2ff44">
+      <p class="label green">AFTER: Issue で管理</p>
+      <div style="font-size:.9rem;line-height:2;color:#7ee787">
+        #42 ログインボタン非表示バグ<br>
+        <span style="color:#888">|- 担当: @tanaka</span><br>
+        <span style="color:#888">|- ラベル: bug, priority:high</span><br>
+        <span style="color:#888">|- 状態: In Progress</span><br>
+        <span style="color:#27c93f">誰が・何を・いつまでか明確</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:1.5rem;margin-top:1.5rem;flex-wrap:wrap;justify-content:center">
+    <div style="text-align:center;color:#888;font-size:.9rem"><span style="color:#ff5370;font-size:1.3rem">&#9679;</span><br>Bug Report</div>
+    <div style="text-align:center;color:#888;font-size:.9rem"><span style="color:#00d2ff;font-size:1.3rem">&#9679;</span><br>Feature Request</div>
+    <div style="text-align:center;color:#888;font-size:.9rem"><span style="color:#7fdbca;font-size:1.3rem">&#9679;</span><br>Task Tracking</div>
+    <div style="text-align:center;color:#888;font-size:.9rem"><span style="color:#ffcb6b;font-size:1.3rem">&#9679;</span><br>Discussion</div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: 良いIssueの書き方 ==================== -->
+<div class="slide" id="slide-good-issue">
+  <h2>良い Issue の書き方</h2>
+  <div class="github-ui" style="max-width:850px">
+    <div class="github-header">
+      <span class="gh-icon">&#9432;</span>
+      <span class="gh-repo">New Issue</span>
+    </div>
+    <div class="github-body" style="font-size:.9rem">
+      <div style="margin-bottom:12px">
+        <div style="color:#8b949e;font-size:.8rem;margin-bottom:4px">Title</div>
+        <div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:8px 12px;color:#c9d1d9;font-weight:600">
+          [Bug] ログインボタンが iOS Safari で表示されない
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="color:#8b949e;font-size:.8rem;margin-bottom:4px">Description</div>
+        <div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px;color:#c9d1d9;line-height:1.8">
+          <div style="color:#58a6ff;font-weight:600">## 概要</div>
+          <div style="color:#c9d1d9">ログインページのボタンが iOS Safari 17 で非表示になる</div>
+          <br>
+          <div style="color:#58a6ff;font-weight:600">## 再現手順</div>
+          <div style="color:#c9d1d9">1. iPhone で /login にアクセス<br>2. ページ読み込み完了を待つ<br>3. ログインボタンが表示されない</div>
+          <br>
+          <div style="color:#58a6ff;font-weight:600">## 期待する動作</div>
+          <div style="color:#7ee787">ログインボタンが表示される</div>
+          <div style="color:#58a6ff;font-weight:600;margin-top:8px">## 実際の動作</div>
+          <div style="color:#ff7b72">ボタンが display:none になっている</div>
+          <br>
+          <div style="color:#58a6ff;font-weight:600">## 環境</div>
+          <div style="color:#8b949e">iOS 17.2 / Safari / iPhone 15</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <span class="gh-label" style="background:#d73a4a;color:#fff">bug</span>
+        <span class="gh-label" style="background:#e99695;color:#1a1a2e">priority: high</span>
+        <span style="color:#8b949e;font-size:.8rem;margin-left:auto">Assignee: @tanaka</span>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem;max-width:700px;text-align:center">
+    ポイント: <strong style="color:#00d2ff">[種類] 具体的なタイトル</strong> + 再現手順 + 期待/実際の比較
+  </p>
+</div>
+
+<!-- ==================== Slide 4: Issue テンプレート ==================== -->
+<div class="slide" id="slide-issue-template">
+  <h2>Issue テンプレート</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1rem;font-size:.95rem">テンプレートを用意すれば、誰でも良い Issue が書ける</p>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>issue-templates</span>
+    </div>
+    <div class="terminal-body" id="term-template">
+      <div style="margin:3px 0"><span class="prompt">$ </span><span class="cmd">tree .github/ISSUE_TEMPLATE/</span></div>
+      <div style="margin:3px 0"><span class="output">.github/ISSUE_TEMPLATE/</span></div>
+      <div style="margin:3px 0"><span class="info">|-- bug_report.md</span></div>
+      <div style="margin:3px 0"><span class="info">|-- feature_request.md</span></div>
+      <div style="margin:3px 0"><span class="info">`-- config.yml</span></div>
+    </div>
+  </div>
+  <div class="cols" style="max-width:900px;margin-top:1rem">
+    <div class="card" style="font-family:'Fira Code','SF Mono',monospace;font-size:.8rem;line-height:1.6;overflow:auto;max-height:280px">
+      <p class="label red" style="font-family:-apple-system,sans-serif">bug_report.md</p>
+      <span style="color:#8b949e">---</span><br>
+      <span style="color:#c792ea">name:</span> <span style="color:#c3e88d">Bug Report</span><br>
+      <span style="color:#c792ea">about:</span> <span style="color:#c3e88d">バグの報告</span><br>
+      <span style="color:#c792ea">labels:</span> <span style="color:#c3e88d">bug</span><br>
+      <span style="color:#8b949e">---</span><br>
+      <br>
+      <span style="color:#58a6ff">## 概要</span><br>
+      <span style="color:#8b949e">&lt;!-- バグの簡潔な説明 --&gt;</span><br>
+      <br>
+      <span style="color:#58a6ff">## 再現手順</span><br>
+      <span style="color:#c9d1d9">1. </span><br>
+      <span style="color:#c9d1d9">2. </span><br>
+      <br>
+      <span style="color:#58a6ff">## 期待する動作</span><br>
+      <br>
+      <span style="color:#58a6ff">## 実際の動作</span><br>
+      <br>
+      <span style="color:#58a6ff">## スクリーンショット</span>
+    </div>
+    <div class="card" style="font-family:'Fira Code','SF Mono',monospace;font-size:.8rem;line-height:1.6;overflow:auto;max-height:280px">
+      <p class="label green" style="font-family:-apple-system,sans-serif">feature_request.md</p>
+      <span style="color:#8b949e">---</span><br>
+      <span style="color:#c792ea">name:</span> <span style="color:#c3e88d">Feature Request</span><br>
+      <span style="color:#c792ea">about:</span> <span style="color:#c3e88d">新機能の提案</span><br>
+      <span style="color:#c792ea">labels:</span> <span style="color:#c3e88d">enhancement</span><br>
+      <span style="color:#8b949e">---</span><br>
+      <br>
+      <span style="color:#58a6ff">## 解決したい課題</span><br>
+      <span style="color:#8b949e">&lt;!-- 何に困っている？ --&gt;</span><br>
+      <br>
+      <span style="color:#58a6ff">## 提案する解決策</span><br>
+      <br>
+      <span style="color:#58a6ff">## 代替案</span><br>
+      <br>
+      <span style="color:#58a6ff">## 追加情報</span>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: ラベル運用 ==================== -->
+<div class="slide" id="slide-labels">
+  <h2>ラベル運用</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.2rem;font-size:.95rem">ラベルで Issue を分類し、一目で状況を把握</p>
+  <div class="github-ui" style="max-width:850px">
+    <div class="github-header">
+      <span class="gh-icon">&#9432;</span>
+      <span class="gh-repo">my-app / Issues</span>
+      <span style="flex:1"></span>
+      <span style="color:#8b949e;font-size:.85rem">6 Open</span>
+    </div>
+    <div class="github-body" style="padding:0">
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#27c93f">&#9679;</span>
+        <span class="issue-title">ログインボタンが非表示になるバグ</span>
+        <span class="gh-label" style="background:#d73a4a;color:#fff">bug</span>
+        <span class="gh-label" style="background:#e99695;color:#1a1a2e">priority: high</span>
+        <span class="issue-meta">#42 opened 2h ago</span>
+      </div>
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#27c93f">&#9679;</span>
+        <span class="issue-title">ダークモード対応</span>
+        <span class="gh-label" style="background:#a2eeef;color:#1a1a2e">enhancement</span>
+        <span class="gh-label" style="background:#0075ca;color:#fff">frontend</span>
+        <span class="issue-meta">#41 opened 1d ago</span>
+      </div>
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#27c93f">&#9679;</span>
+        <span class="issue-title">README にインストール手順を追加</span>
+        <span class="gh-label" style="background:#0075ca;color:#fff">documentation</span>
+        <span class="gh-label" style="background:#7057ff;color:#fff">good first issue</span>
+        <span class="issue-meta">#40 opened 2d ago</span>
+      </div>
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#27c93f">&#9679;</span>
+        <span class="issue-title">API レスポンスが遅い</span>
+        <span class="gh-label" style="background:#d73a4a;color:#fff">bug</span>
+        <span class="gh-label" style="background:#fbca04;color:#1a1a2e">priority: medium</span>
+        <span class="gh-label" style="background:#0e8a16;color:#fff">backend</span>
+        <span class="issue-meta">#39 opened 3d ago</span>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;gap:1.2rem;margin-top:1.2rem;flex-wrap:wrap;justify-content:center;max-width:800px">
+    <div class="card" style="padding:.8rem 1rem;text-align:center;flex:none">
+      <span class="gh-label" style="background:#d73a4a;color:#fff;font-size:.85rem">bug</span>
+      <p style="font-size:.8rem;color:#888;margin-top:4px">不具合</p>
+    </div>
+    <div class="card" style="padding:.8rem 1rem;text-align:center;flex:none">
+      <span class="gh-label" style="background:#a2eeef;color:#1a1a2e;font-size:.85rem">enhancement</span>
+      <p style="font-size:.8rem;color:#888;margin-top:4px">機能改善</p>
+    </div>
+    <div class="card" style="padding:.8rem 1rem;text-align:center;flex:none">
+      <span class="gh-label" style="background:#7057ff;color:#fff;font-size:.85rem">good first issue</span>
+      <p style="font-size:.8rem;color:#888;margin-top:4px">初心者歓迎</p>
+    </div>
+    <div class="card" style="padding:.8rem 1rem;text-align:center;flex:none">
+      <span class="gh-label" style="background:#e99695;color:#1a1a2e;font-size:.85rem">priority: high</span>
+      <p style="font-size:.8rem;color:#888;margin-top:4px">緊急度高</p>
+    </div>
+    <div class="card" style="padding:.8rem 1rem;text-align:center;flex:none">
+      <span class="gh-label" style="background:#0075ca;color:#fff;font-size:.85rem">documentation</span>
+      <p style="font-size:.8rem;color:#888;margin-top:4px">ドキュメント</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: Milestone & Project Board ==================== -->
+<div class="slide" id="slide-milestone">
+  <h2>Milestone & Project Board</h2>
+  <div class="cols" style="max-width:1000px;margin-bottom:1.2rem">
+    <div class="card" style="text-align:center">
+      <p class="label">MILESTONE</p>
+      <h3 style="font-size:1.1rem">v1.0 リリース</h3>
+      <div style="background:#21262d;border-radius:6px;height:12px;margin:10px 0;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#27c93f,#00d2ff);height:100%;width:65%;border-radius:6px;transition:width 1s"></div>
+      </div>
+      <p style="font-size:.85rem;color:#888">65% 完了 (13/20 issues)</p>
+      <p style="font-size:.8rem;color:#ffcb6b;margin-top:4px">Due: 2026-04-01</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <p class="label green">MILESTONE</p>
+      <h3 style="font-size:1.1rem">v1.1 機能追加</h3>
+      <div style="background:#21262d;border-radius:6px;height:12px;margin:10px 0;overflow:hidden">
+        <div style="background:linear-gradient(90deg,#27c93f,#00d2ff);height:100%;width:20%;border-radius:6px;transition:width 1s"></div>
+      </div>
+      <p style="font-size:.85rem;color:#888">20% 完了 (4/20 issues)</p>
+      <p style="font-size:.8rem;color:#8b949e;margin-top:4px">Due: 2026-05-15</p>
+    </div>
+  </div>
+  <div class="kanban">
+    <div class="kanban-col">
+      <div class="kanban-col-header"><span style="color:#8b949e">&#9679;</span> Todo <span style="background:#21262d;padding:1px 8px;border-radius:10px;font-size:.75rem;color:#8b949e">3</span></div>
+      <div class="kanban-card">
+        API テスト追加
+        <div class="kc-labels"><span class="gh-label" style="background:#a2eeef;color:#1a1a2e;font-size:.7rem">enhancement</span></div>
+      </div>
+      <div class="kanban-card">
+        エラーハンドリング改善
+        <div class="kc-labels"><span class="gh-label" style="background:#d73a4a;color:#fff;font-size:.7rem">bug</span></div>
+      </div>
+      <div class="kanban-card">
+        CI/CD 設定
+        <div class="kc-labels"><span class="gh-label" style="background:#0075ca;color:#fff;font-size:.7rem">devops</span></div>
+      </div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-col-header"><span style="color:#ffcb6b">&#9679;</span> In Progress <span style="background:#21262d;padding:1px 8px;border-radius:10px;font-size:.75rem;color:#8b949e">2</span></div>
+      <div class="kanban-card" style="border-color:#ffcb6b55">
+        ダークモード対応 #41
+        <div class="kc-labels"><span class="gh-label" style="background:#a2eeef;color:#1a1a2e;font-size:.7rem">enhancement</span></div>
+      </div>
+      <div class="kanban-card" style="border-color:#ffcb6b55">
+        ログインバグ修正 #42
+        <div class="kc-labels"><span class="gh-label" style="background:#d73a4a;color:#fff;font-size:.7rem">bug</span><span class="gh-label" style="background:#e99695;color:#1a1a2e;font-size:.7rem">P:high</span></div>
+      </div>
+    </div>
+    <div class="kanban-col">
+      <div class="kanban-col-header"><span style="color:#27c93f">&#9679;</span> Done <span style="background:#21262d;padding:1px 8px;border-radius:10px;font-size:.75rem;color:#8b949e">4</span></div>
+      <div class="kanban-card" style="opacity:.6">
+        初期セットアップ #1
+      </div>
+      <div class="kanban-card" style="opacity:.6">
+        ユーザー認証 #15
+      </div>
+      <div class="kanban-card" style="opacity:.6">
+        DB スキーマ設計 #20
+      </div>
+      <div class="kanban-card" style="opacity:.6">
+        README 作成 #22
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: Pull Request とは ==================== -->
+<div class="slide" id="slide-what-pr">
+  <h2>Pull Request とは？（詳細）</h2>
+  <p style="text-align:center;max-width:700px;margin-bottom:1.5rem;color:#bbb">単なるマージではない。PR は<strong style="color:#00d2ff">レビュー・議論・記録</strong>の場</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;width:100%">
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#58a6ff">&#128269;</div>
+      <h3 style="font-size:1.1rem">コードレビュー</h3>
+      <p style="font-size:.9rem">チームメンバーがコードを読み、品質を担保。バグの早期発見。</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#c792ea">&#128172;</div>
+      <h3 style="font-size:1.1rem">議論の場</h3>
+      <p style="font-size:.9rem">設計方針や実装方法について、コード上で直接コメント。</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#7fdbca">&#128203;</div>
+      <h3 style="font-size:1.1rem">変更の記録</h3>
+      <p style="font-size:.9rem">なぜこの変更をしたのか、将来の開発者への文書になる。</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#ffcb6b">&#9989;</div>
+      <h3 style="font-size:1.1rem">品質ゲート</h3>
+      <p style="font-size:.9rem">CI テスト通過 + レビュー承認 = マージ可能。品質を守る関門。</p>
+    </div>
+  </div>
+  <div class="flow" style="margin-top:1.5rem" id="pr-flow">
+    <div class="flow-box"><p style="font-size:.85rem;color:#7fdbca">branch作成</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#ffcb6b">commit & push</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea">PR作成</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#58a6ff">レビュー</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#27c93f">マージ</p></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: 良いPRの書き方 ==================== -->
+<div class="slide" id="slide-good-pr">
+  <h2>良い PR の書き方</h2>
+  <div class="github-ui" style="max-width:850px">
+    <div class="github-header">
+      <span class="gh-icon" style="color:#c792ea">&#10227;</span>
+      <span class="gh-repo">Pull Request #48</span>
+      <span style="flex:1"></span>
+      <span class="review-badge approved">Approved</span>
+    </div>
+    <div class="github-body" style="font-size:.9rem">
+      <div style="margin-bottom:12px">
+        <div style="color:#c9d1d9;font-size:1.1rem;font-weight:600;margin-bottom:6px">
+          fix: iOS Safari でログインボタンが非表示になるバグを修正
+        </div>
+        <div style="color:#8b949e;font-size:.8rem">feature/fix-login-btn &#8594; main &nbsp;|&nbsp; Fixes #42</div>
+      </div>
+      <div style="background:#0d1117;border:1px solid #30363d;border-radius:6px;padding:12px;color:#c9d1d9;line-height:1.8;font-size:.85rem">
+        <div style="color:#58a6ff;font-weight:600">## Summary</div>
+        <div>iOS Safari 17 の CSS Grid バグにより、ログインボタンが<br>display:none になる問題を修正</div>
+        <br>
+        <div style="color:#58a6ff;font-weight:600">## Changes</div>
+        <div>- <code>LoginButton.tsx</code>: flexbox レイアウトに変更<br>- <code>login.css</code>: Safari 用フォールバック追加<br>- <code>LoginButton.test.tsx</code>: 表示テスト追加</div>
+        <br>
+        <div style="color:#58a6ff;font-weight:600">## Test Plan</div>
+        <div style="color:#7ee787">- [x] iOS Safari 17 で表示確認<br>- [x] Chrome / Firefox で回帰テスト<br>- [x] 単体テスト追加済み</div>
+        <br>
+        <div style="color:#58a6ff;font-weight:600">## Screenshots</div>
+        <div style="color:#8b949e">[Before / After のスクリーンショットを添付]</div>
+      </div>
+      <div style="margin-top:10px;display:flex;gap:12px;align-items:center;font-size:.8rem;color:#8b949e">
+        <span>3 files changed</span>
+        <span style="color:#7ee787">+45</span>
+        <span style="color:#ff7b72">-12</span>
+        <span style="margin-left:auto">Reviewers: @sato, @yamada</span>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem;max-width:700px;text-align:center">
+    ポイント: <strong style="color:#00d2ff">小さく・分かりやすく・テスト付き</strong> &mdash; レビュアーの負担を減らす
+  </p>
+</div>
+
+<!-- ==================== Slide 9: PR テンプレート ==================== -->
+<div class="slide" id="slide-pr-template">
+  <h2>PR テンプレート</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1rem;font-size:.95rem"><code>.github/pull_request_template.md</code> を配置するだけ</p>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>pull_request_template.md</span>
+    </div>
+    <div class="terminal-body" style="font-size:.85rem;line-height:1.7">
+      <div style="color:#58a6ff;font-weight:600">## Summary</div>
+      <div style="color:#8b949e">&lt;!-- 変更の概要を1-2文で --&gt;</div>
+      <br>
+      <div style="color:#58a6ff;font-weight:600">## Changes</div>
+      <div style="color:#c9d1d9">- </div>
+      <br>
+      <div style="color:#58a6ff;font-weight:600">## Related Issue</div>
+      <div style="color:#8b949e">&lt;!-- Fixes #XX or Relates to #XX --&gt;</div>
+      <br>
+      <div style="color:#58a6ff;font-weight:600">## Test Plan</div>
+      <div style="color:#c9d1d9">- [ ] テスト1<br>- [ ] テスト2</div>
+      <br>
+      <div style="color:#58a6ff;font-weight:600">## Screenshots</div>
+      <div style="color:#8b949e">&lt;!-- 必要に応じて --&gt;</div>
+      <br>
+      <div style="color:#58a6ff;font-weight:600">## Checklist</div>
+      <div style="color:#c9d1d9">- [ ] コードのセルフレビュー済み<br>- [ ] テストを追加/更新済み<br>- [ ] ドキュメントを更新済み</div>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1rem;text-align:center">
+    <p style="font-size:.95rem;color:#bbb">
+      PR を作成すると<strong style="color:#00d2ff">自動でテンプレートが挿入</strong>される<br>
+      <span style="color:#888;font-size:.85rem">チーム全員が同じフォーマットで書ける = レビューしやすい</span>
+    </p>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: PR レビュープロセス ==================== -->
+<div class="slide" id="slide-review">
+  <h2>PR レビュープロセス</h2>
+  <div class="flow" style="margin-bottom:1.5rem;gap:.3rem" id="review-flow">
+    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#c792ea">PR 作成</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#58a6ff">レビュー依頼</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#ffcb6b">コメント</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#ff7b72">修正</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="min-width:100px"><p style="font-size:.8rem;color:#27c93f">承認&マージ</p></div>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>gh CLI で PR 操作</span>
+    </div>
+    <div class="terminal-body" id="term-review"></div>
+  </div>
+  <div style="margin-top:.8rem;display:flex;gap:8px">
+    <button class="demo-btn" id="btn-review" onclick="runReviewDemo()">Demo: PR レビューフロー</button>
+    <button class="demo-btn" onclick="resetTerm('term-review');document.getElementById('btn-review').disabled=false">Reset</button>
+  </div>
+  <div style="display:flex;gap:1rem;margin-top:.8rem;flex-wrap:wrap;justify-content:center">
+    <span class="review-badge comment">Comment: 質問・提案</span>
+    <span class="review-badge approved">Approve: 承認</span>
+    <span class="review-badge changes">Request Changes: 修正要求</span>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: Discussions ==================== -->
+<div class="slide" id="slide-discussions">
+  <h2>GitHub Discussions</h2>
+  <p style="text-align:center;max-width:700px;margin-bottom:1.5rem;color:#bbb">Issue は<strong style="color:#00d2ff">タスク</strong>、Discussion は<strong style="color:#c792ea">会話</strong></p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">Issue を使う場面</p>
+      <ul class="feature-list" style="max-width:none">
+        <li>バグの報告と修正追跡</li>
+        <li>具体的な機能リクエスト</li>
+        <li>明確なアクションアイテム</li>
+        <li>担当者をアサインしたいタスク</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:#c792ea44">
+      <p class="label purple">Discussion を使う場面</p>
+      <ul class="feature-list" style="max-width:none">
+        <li>設計方針の相談・アイデア出し</li>
+        <li>Q&A（使い方の質問）</li>
+        <li>アナウンス・リリースノート</li>
+        <li>コミュニティとの交流</li>
+      </ul>
+    </div>
+  </div>
+  <div class="github-ui" style="max-width:850px;margin-top:1.2rem">
+    <div class="github-header">
+      <span class="gh-icon">&#128172;</span>
+      <span class="gh-repo">Discussions</span>
+      <span class="gh-tab active">General</span>
+      <span class="gh-tab">Q&A</span>
+      <span class="gh-tab">Ideas</span>
+      <span class="gh-tab">Announcements</span>
+    </div>
+    <div class="github-body" style="padding:0">
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#c792ea">&#128172;</span>
+        <span class="issue-title">v2.0 のアーキテクチャどうする？</span>
+        <span style="color:#8b949e;font-size:.8rem">12 replies</span>
+      </div>
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#27c93f">&#10003;</span>
+        <span class="issue-title" style="color:#8b949e">Docker で動かす方法を教えてください</span>
+        <span style="color:#8b949e;font-size:.8rem">Answered</span>
+      </div>
+      <div class="gh-issue-row" style="padding:10px 16px">
+        <span class="issue-icon" style="color:#ffcb6b">&#128161;</span>
+        <span class="issue-title">モバイルアプリ版はどうでしょう？</span>
+        <span style="color:#8b949e;font-size:.8rem">5 replies</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: 自動化 ==================== -->
+<div class="slide" id="slide-automation">
+  <h2>自動化で楽をする</h2>
+  <p style="text-align:center;max-width:700px;margin-bottom:1.2rem;color:#bbb">GitHub Actions + コミットメッセージで<strong style="color:#00d2ff">手作業を減らす</strong></p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card step" data-step="0">
+      <p class="label green">コミットで Issue を自動クローズ</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.8">
+        <span style="color:#7fdbca">$</span> git commit -m <span style="color:#c3e88d">"fix: login button<br>&nbsp;&nbsp;visibility bug<br><br>&nbsp;&nbsp;Fixes #42"</span><br>
+        <br>
+        <span style="color:#888"># PR がマージされると</span><br>
+        <span style="color:#888"># Issue #42 が自動でクローズされる</span>
+      </div>
+      <p style="font-size:.8rem;color:#888;margin-top:8px">キーワード: fixes, closes, resolves + #番号</p>
+    </div>
+    <div class="card step" data-step="1">
+      <p class="label purple">GitHub Actions で自動化</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.8rem;line-height:1.6;color:#c9d1d9">
+        <span style="color:#c792ea">name:</span> Auto Label<br>
+        <span style="color:#c792ea">on:</span><br>
+        &nbsp;&nbsp;<span style="color:#c792ea">issues:</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c792ea">types:</span> <span style="color:#c3e88d">[opened]</span><br>
+        <span style="color:#c792ea">jobs:</span><br>
+        &nbsp;&nbsp;<span style="color:#c792ea">label:</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c792ea">runs-on:</span> <span style="color:#c3e88d">ubuntu-latest</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#c792ea">steps:</span><br>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- <span style="color:#c792ea">uses:</span> <span style="color:#c3e88d">actions/labeler@v5</span>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="max-width:850px;margin-top:1rem">
+    <p class="label orange">その他の自動化アイデア</p>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap">
+      <div style="font-size:.9rem;color:#bbb"><span style="color:#00d2ff">&#8226;</span> PR 作成時にレビュアーを自動アサイン</div>
+      <div style="font-size:.9rem;color:#bbb"><span style="color:#00d2ff">&#8226;</span> Issue のタイトルからラベルを自動付与</div>
+      <div style="font-size:.9rem;color:#bbb"><span style="color:#00d2ff">&#8226;</span> Stale な Issue を自動クローズ</div>
+      <div style="font-size:.9rem;color:#bbb"><span style="color:#00d2ff">&#8226;</span> マージ時に自動デプロイ</div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: まとめ ==================== -->
+<div class="slide" id="slide-summary">
+  <h2>まとめ</h2>
+  <p style="text-align:center;max-width:700px;margin-bottom:1.5rem;color:#bbb">Issue & PR を活用して、<strong style="color:#00d2ff">効率的なチーム開発</strong>を実現しよう</p>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;max-width:900px;width:100%">
+    <div class="card step" data-step="0" style="border-left:3px solid #ff5370">
+      <h3 style="font-size:1rem;color:#ff5370">Issue</h3>
+      <ul class="feature-list" style="max-width:none;font-size:.9rem">
+        <li>テンプレートで品質を統一</li>
+        <li>ラベルで分類・優先度管理</li>
+        <li>Milestone でゴールを明確に</li>
+      </ul>
+    </div>
+    <div class="card step" data-step="1" style="border-left:3px solid #c792ea">
+      <h3 style="font-size:1rem;color:#c792ea">Pull Request</h3>
+      <ul class="feature-list" style="max-width:none;font-size:.9rem">
+        <li>小さく・分かりやすい PR</li>
+        <li>テストプラン + スクショ添付</li>
+        <li>レビューで品質を担保</li>
+      </ul>
+    </div>
+    <div class="card step" data-step="2" style="border-left:3px solid #7fdbca">
+      <h3 style="font-size:1rem;color:#7fdbca">Discussion</h3>
+      <ul class="feature-list" style="max-width:none;font-size:.9rem">
+        <li>Issue と使い分ける</li>
+        <li>Q&A・アイデア出しに活用</li>
+        <li>コミュニティを育てる</li>
+      </ul>
+    </div>
+    <div class="card step" data-step="3" style="border-left:3px solid #00d2ff">
+      <h3 style="font-size:1rem;color:#00d2ff">自動化</h3>
+      <ul class="feature-list" style="max-width:none;font-size:.9rem">
+        <li>コミットで Issue 自動クローズ</li>
+        <li>GitHub Actions で省力化</li>
+        <li>手作業を減らし開発に集中</li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:1.5rem;color:#555;font-size:.9rem;text-align:center">
+    Issue & PR を使いこなせば、一人でもチームでも開発がスムーズに
+  </p>
+</div>
+
+<!-- ==================== Navigation ==================== -->
+<div class="progress"></div>
+<div class="nav-hint">&larr; &rarr; で移動 | g: 最初 | G: 最後</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+var slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+var cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  /* Steps animation */
+  var steps=slide.querySelectorAll('.step');
+  if(steps.length){
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*500);
+    });
+  }
+  /* Flow box animation */
+  if(slide.id==='slide-what-pr'||slide.id==='slide-review'){
+    var boxes=slide.querySelectorAll('.flow-box');
+    boxes.forEach(function(b,i){
+      b.classList.remove('active-box');
+      setTimeout(function(){b.classList.add('active-box')},400+i*600);
+    });
+  }
+  /* Summary cards */
+  if(slide.id==='slide-summary'){
+    var cards=slide.querySelectorAll('.step');
+    cards.forEach(function(c,i){
+      c.classList.remove('visible');
+      setTimeout(function(){c.classList.add('visible')},300+i*400);
+    });
+  }
+}
+
+/* ===== Terminal Typing Engine ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+(line.cls||'output')+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: PR Review Flow ===== */
+function runReviewDemo(){
+  typeInTerminal('term-review',[
+    {type:'comment',text:'PR を作成する',pause:0},
+    {type:'prompt',text:'gh pr create --title "fix: login button bug" --body "Fixes #42"',pause:800},
+    {type:'output',text:'Creating pull request for feature/fix-login-btn into main',cls:'output',pause:500},
+    {type:'output',text:'https://github.com/team/app/pull/48',cls:'info',pause:400},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'レビュアーを指定する',pause:600},
+    {type:'prompt',text:'gh pr edit 48 --add-reviewer sato,yamada',pause:700},
+    {type:'output',text:'Updated pull request #48',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'レビューのステータスを確認',pause:600},
+    {type:'prompt',text:'gh pr status',pause:700},
+    {type:'output',text:'Relevant pull requests in team/app',cls:'info',pause:300},
+    {type:'output',text:'',cls:'output',pause:100},
+    {type:'output',text:'  Current branch',cls:'output',pause:200},
+    {type:'output',text:'    #48  fix: login button bug  [feature/fix-login-btn]',cls:'info',pause:300},
+    {type:'output',text:'    - Checks passing',cls:'success',pause:200},
+    {type:'output',text:'    - Review: 1 approved, 1 changes requested',cls:'warn',pause:400},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'レビューコメントを確認',pause:600},
+    {type:'prompt',text:'gh pr view 48 --comments',pause:700},
+    {type:'output',text:'@sato approved: LGTM!',cls:'success',pause:400},
+    {type:'output',text:'@yamada requested changes: テストケース追加してください',cls:'warn',pause:400},
+    {type:'output',text:'',cls:'output',pause:400},
+    {type:'comment',text:'修正してコミット、再プッシュ',pause:600},
+    {type:'prompt',text:'git add -A && git commit -m "test: add login button test"',pause:700},
+    {type:'prompt',text:'git push',pause:600},
+    {type:'output',text:'Everything up-to-date',cls:'success',pause:300},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'全員が承認したらマージ！',pause:600},
+    {type:'prompt',text:'gh pr merge 48 --squash --delete-branch',pause:800},
+    {type:'output',text:'Merging pull request #48 (fix: login button bug)',cls:'info',pause:400},
+    {type:'output',text:'Deleted branch feature/fix-login-btn',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'Pull request #48 merged successfully!',cls:'success',pause:400},
+  ],'btn-review');
+}
+
+/* ===== Init ===== */
+onSlideEnter(0);
+</script>
+</body></html>

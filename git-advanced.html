@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Git上級編 — プロのGitテクニック</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;min-height:160px;max-height:52vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* Diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.6rem 1rem;text-align:center;min-width:90px;transition:all .5s;font-size:.9rem}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.3rem;padding:0 .2rem}
+
+/* Commit graph */
+.commit-graph{font-family:'Fira Code','SF Mono',monospace;font-size:.85rem;line-height:1.8}
+.commit-node{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:8px;vertical-align:middle}
+.commit-line{display:block;padding-left:6px;border-left:2px solid}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+
+/* Button */
+.demo-btn{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff44;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.9rem;font-family:inherit;transition:all .2s}
+.demo-btn:hover{background:#00d2ff33;border-color:#00d2ff}
+.demo-btn:disabled{opacity:.4;cursor:not-allowed}
+.demo-btn.reset{background:#ff537022;color:#ff5370;border-color:#ff537044}
+.demo-btn.reset:hover{background:#ff537033;border-color:#ff5370}
+.btn-group{display:flex;gap:.8rem;margin-bottom:1rem;justify-content:center}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Step */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* Flowchart */
+.flowchart{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.fc-node{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.5rem 1.2rem;text-align:center;font-size:.85rem;min-width:200px;transition:all .3s}
+.fc-node.decision{border-radius:0;transform:rotate(0deg);border-color:#ffcb6b44;color:#ffcb6b}
+.fc-node.action{border-color:#00d2ff44;color:#00d2ff}
+.fc-node.result{border-color:#7fdbca44;color:#7fdbca}
+.fc-arrow-down{color:#555;font-size:1rem}
+.fc-branch{display:flex;gap:2rem;align-items:flex-start}
+.fc-branch-label{font-size:.75rem;color:#888;text-align:center;margin-bottom:.3rem}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label purple">ADVANCED GIT</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">Git上級編</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1.5rem">プロのGitテクニック</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1.5rem">
+      <span class="label">rebase</span>
+      <span class="label green">cherry-pick</span>
+      <span class="label purple">bisect</span>
+      <span class="label orange">stash</span>
+      <span class="label yellow">worktree</span>
+      <span class="label red">hooks</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">Arrow keys / Space で移動</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: rebase とは ==================== -->
+<div class="slide" id="slide-rebase-intro">
+  <h2>rebase とは</h2>
+  <div class="cols" style="max-width:1050px;gap:2.5rem">
+    <div class="card">
+      <p class="label">git merge</p>
+      <div class="commit-graph" style="margin:.8rem 0">
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">a1b - </span><span style="color:#bbb">初期コミット</span></div>
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">c3d - </span><span style="color:#bbb">main: 機能A</span></div>
+        <div style="padding-left:24px;border-left:2px dashed #c792ea55">
+          <div><span class="commit-node" style="background:#c792ea"></span><span style="color:#888">e5f - </span><span style="color:#bbb">feat: 変更1</span></div>
+          <div><span class="commit-node" style="background:#c792ea"></span><span style="color:#888">g7h - </span><span style="color:#bbb">feat: 変更2</span></div>
+        </div>
+        <div><span class="commit-node" style="background:#ffcb6b"></span><span style="color:#ffcb6b">M - </span><span style="color:#bbb">Merge commit</span></div>
+      </div>
+      <p style="font-size:.85rem;color:#888">履歴にマージコミットが残る。分岐の経緯が見える。</p>
+    </div>
+    <div class="card" style="border-color:#00d2ff44">
+      <p class="label green">git rebase</p>
+      <div class="commit-graph" style="margin:.8rem 0">
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">a1b - </span><span style="color:#bbb">初期コミット</span></div>
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">c3d - </span><span style="color:#bbb">main: 機能A</span></div>
+        <div><span class="commit-node" style="background:#c792ea"></span><span style="color:#888">e5f'- </span><span style="color:#bbb">feat: 変更1</span></div>
+        <div><span class="commit-node" style="background:#c792ea"></span><span style="color:#888">g7h'- </span><span style="color:#bbb">feat: 変更2</span></div>
+      </div>
+      <p style="font-size:.85rem;color:#888">一直線の履歴。コミットが「付け替え」られる。</p>
+    </div>
+  </div>
+  <div style="margin-top:1.5rem;max-width:800px">
+    <div class="cols" style="gap:1.5rem">
+      <div style="text-align:center">
+        <p class="label">merge を使う場面</p>
+        <p style="font-size:.9rem">共有ブランチへの統合。PRマージ。履歴を残したい時。</p>
+      </div>
+      <div style="text-align:center">
+        <p class="label green">rebase を使う場面</p>
+        <p style="font-size:.9rem">featureブランチの更新。きれいな履歴にしたい時。push前。</p>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:1rem;font-size:.85rem;color:#ff5370">注意: push済みのコミットを rebase しない（他人の履歴を壊す）</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: rebase デモ ==================== -->
+<div class="slide">
+  <h2>rebase デモ</h2>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-rebase" onclick="runRebaseDemo()">rebase を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-rebase')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git rebase</span></div>
+    <div class="terminal-body" id="term-rebase"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 4: Interactive rebase ==================== -->
+<div class="slide">
+  <h2>Interactive Rebase</h2>
+  <p style="margin-bottom:1rem;color:#888;max-width:700px;text-align:center">コミットの順序変更・統合・編集ができる最強ツール</p>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-irebase" onclick="runIRebaseDemo()">interactive rebase を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-irebase')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git rebase -i</span></div>
+    <div class="terminal-body" id="term-irebase"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: cherry-pick ==================== -->
+<div class="slide">
+  <h2>cherry-pick</h2>
+  <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">他のブランチから<strong style="color:#00d2ff">特定のコミットだけ</strong>を取り込む</p>
+  <div style="margin:1rem 0">
+    <div class="flow">
+      <div class="flow-box" style="border-color:#c792ea44;color:#c792ea">feature<br><span style="font-size:.75rem;color:#888">abc123</span></div>
+      <div class="flow-arrow">---</div>
+      <div class="flow-box" style="border-color:#ffcb6b44;color:#ffcb6b">cherry-pick</div>
+      <div class="flow-arrow">---&gt;</div>
+      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">main<br><span style="font-size:.75rem;color:#888">abc123'</span></div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-cherry" onclick="runCherryDemo()">cherry-pick を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-cherry')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git cherry-pick</span></div>
+    <div class="terminal-body" id="term-cherry"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: bisect ==================== -->
+<div class="slide">
+  <h2>git bisect</h2>
+  <p style="margin-bottom:1rem;color:#888;max-width:700px;text-align:center">二分探索でバグを導入したコミットを特定する</p>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-bisect" onclick="runBisectDemo()">bisect を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-bisect')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git bisect</span></div>
+    <div class="terminal-body" id="term-bisect"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: stash ==================== -->
+<div class="slide">
+  <h2>git stash</h2>
+  <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">作業中の変更を一時的に退避させる</p>
+  <div style="margin:.8rem 0">
+    <div class="flow">
+      <div class="flow-box" style="border-color:#ff537044;color:#ff5370">作業中の変更</div>
+      <div class="flow-arrow">--&gt;</div>
+      <div class="flow-box" style="border-color:#ffcb6b44;color:#ffcb6b">stash<br><span style="font-size:.75rem">一時退避</span></div>
+      <div class="flow-arrow">--&gt;</div>
+      <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca">別の作業</div>
+      <div class="flow-arrow">--&gt;</div>
+      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">stash pop<br><span style="font-size:.75rem">復元</span></div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-stash" onclick="runStashDemo()">stash を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-stash')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git stash</span></div>
+    <div class="terminal-body" id="term-stash"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: worktree ==================== -->
+<div class="slide">
+  <h2>git worktree</h2>
+  <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">1つのリポジトリから<strong style="color:#00d2ff">複数の作業ディレクトリ</strong>を作る</p>
+  <div style="margin:.8rem 0">
+    <div class="flow">
+      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">my-project/<br><span style="font-size:.75rem;color:#888">main</span></div>
+      <div class="flow-arrow" style="transform:rotate(30deg)">---&gt;</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="flow-box" style="border-color:#c792ea44;color:#c792ea;font-size:.8rem">../my-project-fix/<br><span style="font-size:.7rem;color:#888">hotfix branch</span></div>
+        <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca;font-size:.8rem">../my-project-exp/<br><span style="font-size:.7rem;color:#888">experiment branch</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-worktree" onclick="runWorktreeDemo()">worktree を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-worktree')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git worktree</span></div>
+    <div class="terminal-body" id="term-worktree"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 9: submodule ==================== -->
+<div class="slide">
+  <h2>git submodule</h2>
+  <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">外部リポジトリを自分のリポジトリの中に含める</p>
+  <div style="margin:.8rem 0">
+    <div class="flow">
+      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">my-project/<br><span style="font-size:.75rem;color:#888">メインリポ</span></div>
+      <div class="flow-arrow">contains</div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="flow-box" style="border-color:#c792ea44;color:#c792ea;font-size:.8rem">libs/ui-kit/<br><span style="font-size:.7rem;color:#888">外部リポ A</span></div>
+        <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca;font-size:.8rem">libs/shared/<br><span style="font-size:.7rem;color:#888">外部リポ B</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-submodule" onclick="runSubmoduleDemo()">submodule を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-submodule')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git submodule</span></div>
+    <div class="terminal-body" id="term-submodule"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: git log 上級 ==================== -->
+<div class="slide">
+  <h2>git log 上級テクニック</h2>
+  <p style="margin-bottom:1rem;color:#888;max-width:700px;text-align:center">履歴を自在に検索・可視化する</p>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-logadv" onclick="runLogAdvDemo()">log の高度な使い方</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-logadv')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git log --graph</span></div>
+    <div class="terminal-body" id="term-logadv"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: git diff 上級 ==================== -->
+<div class="slide">
+  <h2>git diff 上級テクニック</h2>
+  <p style="margin-bottom:1rem;color:#888;max-width:700px;text-align:center">変更内容を様々な角度から分析する</p>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-diffadv" onclick="runDiffAdvDemo()">diff の高度な使い方</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-diffadv')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git diff</span></div>
+    <div class="terminal-body" id="term-diffadv"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: reset vs revert ==================== -->
+<div class="slide">
+  <h2>reset vs revert</h2>
+  <div class="cols" style="max-width:1000px;margin-bottom:1rem">
+    <div class="card">
+      <p class="label red">git reset</p>
+      <div class="commit-graph" style="margin:.5rem 0">
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">A</span></div>
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">B</span></div>
+        <div><span class="commit-node" style="background:#ff5370;opacity:.3"></span><span style="color:#555;text-decoration:line-through">C (消える)</span></div>
+      </div>
+      <p style="font-size:.85rem;color:#888">履歴を<strong style="color:#ff5370">書き換える</strong>。push前のみ安全。</p>
+      <p style="font-size:.8rem;color:#666;margin-top:.3rem">--soft: 変更はstageに残る<br>--mixed: 変更はworkingに残る<br>--hard: 変更を全て破棄</p>
+    </div>
+    <div class="card" style="border-color:#7fdbca44">
+      <p class="label green">git revert</p>
+      <div class="commit-graph" style="margin:.5rem 0">
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">A</span></div>
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">B</span></div>
+        <div><span class="commit-node" style="background:#00d2ff"></span><span style="color:#888">C</span></div>
+        <div><span class="commit-node" style="background:#7fdbca"></span><span style="color:#7fdbca">Revert C (新規)</span></div>
+      </div>
+      <p style="font-size:.85rem;color:#888">打ち消すコミットを<strong style="color:#7fdbca">新しく作る</strong>。push後も安全。</p>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-resetrev" onclick="runResetRevertDemo()">両方を実行</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-resetrev')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>reset vs revert</span></div>
+    <div class="terminal-body" id="term-resetrev"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: git hooks ==================== -->
+<div class="slide">
+  <h2>Git Hooks</h2>
+  <p style="margin-bottom:.5rem;color:#888;max-width:700px;text-align:center">Gitの操作に<strong style="color:#00d2ff">自動処理</strong>をフックする</p>
+  <div style="margin:.8rem 0">
+    <div class="flow">
+      <div class="flow-box" style="border-color:#c792ea44;color:#c792ea">git commit</div>
+      <div class="flow-arrow">--&gt;</div>
+      <div class="flow-box" style="border-color:#ffcb6b44;color:#ffcb6b">pre-commit<br><span style="font-size:.7rem">lint / test</span></div>
+      <div class="flow-arrow">--&gt;</div>
+      <div class="flow-box" style="border-color:#7fdbca44;color:#7fdbca">commit-msg<br><span style="font-size:.7rem">メッセージ検証</span></div>
+      <div class="flow-arrow">--&gt;</div>
+      <div class="flow-box" style="border-color:#00d2ff44;color:#00d2ff">完了</div>
+    </div>
+  </div>
+  <div class="btn-group">
+    <button class="demo-btn" id="btn-hooks" onclick="runHooksDemo()">hooks を設定</button>
+    <button class="demo-btn reset" onclick="resetTerm('term-hooks')">リセット</button>
+  </div>
+  <div class="terminal" style="max-width:850px">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>git hooks</span></div>
+    <div class="terminal-body" id="term-hooks"></div>
+  </div>
+</div>
+
+<!-- ==================== Slide 14: .gitattributes ==================== -->
+<div class="slide">
+  <h2>.gitattributes</h2>
+  <p style="margin-bottom:1rem;color:#888;max-width:700px;text-align:center">ファイルの扱い方をリポジトリレベルで制御する</p>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">改行コード制御</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.8rem;line-height:1.8;color:#bbb">
+        <div><span style="color:#7fdbca">*</span> <span style="color:#c792ea">text=auto</span></div>
+        <div><span style="color:#7fdbca">*.sh</span> <span style="color:#c792ea">text eol=lf</span></div>
+        <div><span style="color:#7fdbca">*.bat</span> <span style="color:#c792ea">text eol=crlf</span></div>
+        <div><span style="color:#7fdbca">*.png</span> <span style="color:#c792ea">binary</span></div>
+      </div>
+      <p style="font-size:.8rem;color:#666;margin-top:.5rem">OSの違いによる改行コード問題を防ぐ</p>
+    </div>
+    <div class="card">
+      <p class="label green">diff / merge 戦略</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.8rem;line-height:1.8;color:#bbb">
+        <div><span style="color:#7fdbca">*.min.js</span> <span style="color:#c792ea">-diff</span></div>
+        <div><span style="color:#7fdbca">*.lock</span> <span style="color:#c792ea">-diff merge=ours</span></div>
+        <div><span style="color:#7fdbca">*.md</span> <span style="color:#c792ea">diff=markdown</span></div>
+        <div><span style="color:#7fdbca">*.jpg</span> <span style="color:#c792ea">diff=exif</span></div>
+      </div>
+      <p style="font-size:.8rem;color:#666;margin-top:.5rem">ファイル種別ごとの最適なdiff/merge</p>
+    </div>
+    <div class="card">
+      <p class="label purple">LFS / linguist</p>
+      <div style="font-family:'Fira Code','SF Mono',monospace;font-size:.8rem;line-height:1.8;color:#bbb">
+        <div><span style="color:#7fdbca">*.psd</span> <span style="color:#c792ea">filter=lfs</span></div>
+        <div>&nbsp;&nbsp;<span style="color:#c792ea">diff=lfs merge=lfs</span></div>
+        <div><span style="color:#7fdbca">docs/</span> <span style="color:#c792ea">linguist-docs</span></div>
+        <div><span style="color:#7fdbca">vendor/</span> <span style="color:#c792ea">linguist-vendored</span></div>
+      </div>
+      <p style="font-size:.8rem;color:#666;margin-top:.5rem">大容量ファイルとGitHub統計の制御</p>
+    </div>
+  </div>
+  <p style="margin-top:1rem;font-size:.85rem;color:#888;text-align:center"><code>.gitattributes</code> はリポジトリのルートに置く。チーム全員に適用される。</p>
+</div>
+
+<!-- ==================== Slide 15: まとめ ==================== -->
+<div class="slide" id="slide-summary">
+  <h2>まとめ — いつ何を使う？</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:950px;width:100%">
+    <div class="card step" data-step="0" style="padding:1rem">
+      <p class="label">履歴をきれいにしたい</p>
+      <p style="font-size:.9rem"><code>git rebase</code> / <code>git rebase -i</code><br><span style="color:#666;font-size:.8rem">push前のコミットを整理</span></p>
+    </div>
+    <div class="card step" data-step="1" style="padding:1rem">
+      <p class="label green">特定のコミットだけ欲しい</p>
+      <p style="font-size:.9rem"><code>git cherry-pick</code><br><span style="color:#666;font-size:.8rem">hotfixを別ブランチに適用</span></p>
+    </div>
+    <div class="card step" data-step="2" style="padding:1rem">
+      <p class="label purple">バグの原因を探したい</p>
+      <p style="font-size:.9rem"><code>git bisect</code><br><span style="color:#666;font-size:.8rem">二分探索で効率的に特定</span></p>
+    </div>
+    <div class="card step" data-step="3" style="padding:1rem">
+      <p class="label orange">作業を一旦退避したい</p>
+      <p style="font-size:.9rem"><code>git stash</code><br><span style="color:#666;font-size:.8rem">ブランチ切り替え前に</span></p>
+    </div>
+    <div class="card step" data-step="4" style="padding:1rem">
+      <p class="label yellow">複数ブランチを同時に作業</p>
+      <p style="font-size:.9rem"><code>git worktree</code><br><span style="color:#666;font-size:.8rem">stashよりスムーズ</span></p>
+    </div>
+    <div class="card step" data-step="5" style="padding:1rem">
+      <p class="label red">push済みの変更を戻したい</p>
+      <p style="font-size:.9rem"><code>git revert</code>（安全）<br><span style="color:#666;font-size:.8rem">reset はpush前のみ</span></p>
+    </div>
+    <div class="card step" data-step="6" style="padding:1rem">
+      <p class="label">コード品質を自動保証</p>
+      <p style="font-size:.9rem"><code>git hooks</code><br><span style="color:#666;font-size:.8rem">pre-commitでlint/test</span></p>
+    </div>
+    <div class="card step" data-step="7" style="padding:1rem">
+      <p class="label green">チーム設定を統一</p>
+      <p style="font-size:.9rem"><code>.gitattributes</code><br><span style="color:#666;font-size:.8rem">改行コード・diff・LFS</span></p>
+    </div>
+  </div>
+  <p style="margin-top:1.2rem;color:#555;font-size:.9rem;text-align:center">上級テクニックは「知っているだけ」で差がつく。必要な時に思い出せれば十分。</p>
+</div>
+
+<!-- ==================== Navigation ==================== -->
+<div class="progress"></div>
+<div class="nav-hint">&larr; &rarr; で移動 | g: 最初 | G: 最後 | Space: 次</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+var slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+var cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  if(slide.id==='slide-summary'){
+    var steps=slide.querySelectorAll('.step');
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},200+i*300);
+    });
+  }
+}
+
+/* ===== Terminal Typing Engine ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:2px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.8rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+  // Re-enable all buttons in the same slide
+  var container=document.getElementById(id);
+  var slide=container.closest('.slide');
+  if(slide){
+    var btns=slide.querySelectorAll('.demo-btn:not(.reset)');
+    btns.forEach(function(b){b.disabled=false});
+  }
+}
+
+/* ===== Demo: Rebase ===== */
+function runRebaseDemo(){
+  typeInTerminal('term-rebase',[
+    {type:'comment',text:'現在 feature ブランチにいる。mainが先に進んでいる',pause:0},
+    {type:'prompt',text:'git log --oneline --all --graph',pause:700},
+    {type:'output',text:'* e5f6a7b (HEAD -> feature) feat: 新機能の実装',cls:'info',pause:300},
+    {type:'output',text:'* c3d4e5f feat: 新機能の土台',cls:'info',pause:200},
+    {type:'output',text:'| * b2c3d4e (main) fix: バグ修正',cls:'warn',pause:200},
+    {type:'output',text:'| * a1b2c3d feat: 別の機能追加',cls:'warn',pause:200},
+    {type:'output',text:'|/',cls:'output',pause:100},
+    {type:'output',text:'* 9z8y7x6 初期コミット',cls:'output',pause:400},
+    {type:'comment',text:'featureのコミットをmainの先端に「付け替え」る',pause:800},
+    {type:'prompt',text:'git rebase main',pause:900},
+    {type:'output',text:'Successfully rebased and updated refs/heads/feature.',cls:'success',pause:600},
+    {type:'comment',text:'履歴が一直線になった！',pause:700},
+    {type:'prompt',text:'git log --oneline --all --graph',pause:700},
+    {type:'output',text:"* e5f6a7b' (HEAD -> feature) feat: 新機能の実装",cls:'info',pause:300},
+    {type:'output',text:"* c3d4e5f' feat: 新機能の土台",cls:'info',pause:200},
+    {type:'output',text:'* b2c3d4e (main) fix: バグ修正',cls:'warn',pause:200},
+    {type:'output',text:'* a1b2c3d feat: 別の機能追加',cls:'warn',pause:200},
+    {type:'output',text:'* 9z8y7x6 初期コミット',cls:'output',pause:400},
+    {type:'comment',text:'コミットハッシュが変わっている（新しいコミットとして再作成）',pause:600},
+    {type:'comment',text:'mainにマージすればfast-forwardになる',pause:600},
+    {type:'prompt',text:'git checkout main && git merge feature',pause:800},
+    {type:'output',text:'Fast-forward',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK きれいな一直線の履歴になった',cls:'success',pause:300},
+  ],'btn-rebase');
+}
+
+/* ===== Demo: Interactive Rebase ===== */
+function runIRebaseDemo(){
+  typeInTerminal('term-irebase',[
+    {type:'comment',text:'直近3つのコミットを整理する',pause:0},
+    {type:'prompt',text:'git log --oneline -4',pause:700},
+    {type:'output',text:'f1a2b3c fix: typo修正',cls:'info',pause:300},
+    {type:'output',text:'d4e5f6a feat: ボタンのスタイル調整',cls:'info',pause:200},
+    {type:'output',text:'a7b8c9d feat: ボタンコンポーネント追加',cls:'info',pause:200},
+    {type:'output',text:'1234567 前のコミット',cls:'output',pause:400},
+    {type:'comment',text:'3つのコミットを2つに統合したい',pause:700},
+    {type:'prompt',text:'git rebase -i HEAD~3',pause:800},
+    {type:'comment',text:'エディタが開く。以下のように編集:',pause:600},
+    {type:'output',text:'pick a7b8c9d feat: ボタンコンポーネント追加',cls:'info',pause:400},
+    {type:'output',text:'<span style="color:#ffcb6b">squash</span> d4e5f6a feat: ボタンのスタイル調整',cls:'warn',pause:400},
+    {type:'output',text:'<span style="color:#ffcb6b">squash</span> f1a2b3c fix: typo修正',cls:'warn',pause:400},
+    {type:'comment',text:'pick = そのまま使う / squash = 前のコミットに統合',pause:700},
+    {type:'comment',text:'他にも: reword(メッセージ変更), edit(修正), drop(削除)',pause:600},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'保存すると、コミットメッセージの編集画面:',pause:700},
+    {type:'output',text:'# コミットメッセージを統合:',cls:'output',pause:300},
+    {type:'output',text:'feat: ボタンコンポーネント追加（スタイル調整済み）',cls:'info',pause:500},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'Successfully rebased and updated refs/heads/main.',cls:'success',pause:600},
+    {type:'prompt',text:'git log --oneline -2',pause:700},
+    {type:'output',text:'x9y8z7w feat: ボタンコンポーネント追加（スタイル調整済み）',cls:'info',pause:300},
+    {type:'output',text:'1234567 前のコミット',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK 3コミットが1つにまとまった',cls:'success',pause:300},
+  ],'btn-irebase');
+}
+
+/* ===== Demo: Cherry-pick ===== */
+function runCherryDemo(){
+  typeInTerminal('term-cherry',[
+    {type:'comment',text:'featureブランチにバグ修正コミットがある。mainにも欲しい',pause:0},
+    {type:'prompt',text:'git log --oneline feature',pause:700},
+    {type:'output',text:'f9e8d7c feat: 新しいUI',cls:'info',pause:300},
+    {type:'output',text:'<span style="color:#ffcb6b">abc1234</span> fix: 重大なセキュリティ修正',cls:'warn',pause:300},
+    {type:'output',text:'b6c5d4e feat: API接続',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d 共通の親コミット',cls:'output',pause:400},
+    {type:'comment',text:'abc1234 だけを main に取り込む',pause:700},
+    {type:'prompt',text:'git checkout main',pause:600},
+    {type:'output',text:"Switched to branch 'main'",cls:'success',pause:400},
+    {type:'prompt',text:'git cherry-pick abc1234',pause:800},
+    {type:'output',text:'[main def5678] fix: 重大なセキュリティ修正',cls:'success',pause:500},
+    {type:'output',text:' 1 file changed, 5 insertions(+), 2 deletions(-)',cls:'output',pause:300},
+    {type:'comment',text:'mainにコミットがコピーされた（新しいハッシュ）',pause:700},
+    {type:'prompt',text:'git log --oneline -3',pause:700},
+    {type:'output',text:'def5678 fix: 重大なセキュリティ修正',cls:'success',pause:300},
+    {type:'output',text:'9876543 (前のmainのHEAD)',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d 共通の親コミット',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'comment',text:'複数コミットを一度に: git cherry-pick A B C',pause:500},
+    {type:'comment',text:'範囲指定: git cherry-pick A..C',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK 必要なコミットだけmainに適用完了',cls:'success',pause:300},
+  ],'btn-cherry');
+}
+
+/* ===== Demo: Bisect ===== */
+function runBisectDemo(){
+  typeInTerminal('term-bisect',[
+    {type:'comment',text:'テストが壊れている！ いつから壊れた？ 100コミットある...',pause:0},
+    {type:'prompt',text:'git bisect start',pause:700},
+    {type:'comment',text:'今のHEADはバグあり = bad',pause:500},
+    {type:'prompt',text:'git bisect bad',pause:600},
+    {type:'comment',text:'v1.0のタグでは動いていた = good',pause:500},
+    {type:'prompt',text:'git bisect good v1.0',pause:700},
+    {type:'output',text:'Bisecting: 50 revisions left to test after this (roughly 6 steps)',cls:'info',pause:600},
+    {type:'output',text:'[a1b2c3d] feat: ユーザー認証追加',cls:'output',pause:400},
+    {type:'comment',text:'Gitが中間のコミットをcheckout。テストしてみる',pause:800},
+    {type:'prompt',text:'npm test',pause:700},
+    {type:'output',text:'Tests: 12 passed, 12 total',cls:'success',pause:400},
+    {type:'comment',text:'このコミットでは問題なし = good',pause:500},
+    {type:'prompt',text:'git bisect good',pause:600},
+    {type:'output',text:'Bisecting: 25 revisions left to test (roughly 5 steps)',cls:'info',pause:500},
+    {type:'output',text:'[d4e5f6a] refactor: データベース層のリファクタ',cls:'output',pause:400},
+    {type:'prompt',text:'npm test',pause:700},
+    {type:'output',text:'Tests: 10 passed, 2 failed',cls:'error',pause:400},
+    {type:'comment',text:'ここでは壊れている = bad',pause:500},
+    {type:'prompt',text:'git bisect bad',pause:600},
+    {type:'output',text:'Bisecting: 12 revisions left to test (roughly 4 steps)',cls:'info',pause:500},
+    {type:'comment',text:'...（同様に繰り返す）...',pause:800},
+    {type:'prompt',text:'git bisect bad',pause:500},
+    {type:'output',text:'Bisecting: 3 revisions left to test (roughly 2 steps)',cls:'info',pause:400},
+    {type:'prompt',text:'npm test',pause:600},
+    {type:'output',text:'Tests: 12 passed',cls:'success',pause:300},
+    {type:'prompt',text:'git bisect good',pause:500},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'<span style="color:#ffcb6b">c7d8e9f</span> is the first bad commit',cls:'warn',pause:600},
+    {type:'output',text:'Author: tanaka &lt;tanaka@example.com&gt;',cls:'output',pause:300},
+    {type:'output',text:'Date: Mon Mar 3 14:32:00 2025',cls:'output',pause:200},
+    {type:'output',text:'    refactor: クエリビルダーの変更',cls:'info',pause:400},
+    {type:'comment',text:'100コミットから7回のテストで犯人を特定！ O(log n)',pause:800},
+    {type:'prompt',text:'git bisect reset',pause:600},
+    {type:'output',text:"Previous HEAD position was c7d8e9f... Switched to branch 'main'",cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK バグを導入したコミットを特定。あとは修正するだけ',cls:'success',pause:300},
+  ],'btn-bisect');
+}
+
+/* ===== Demo: Stash ===== */
+function runStashDemo(){
+  typeInTerminal('term-stash',[
+    {type:'comment',text:'機能開発中だけど、急ぎのバグ修正が入った',pause:0},
+    {type:'prompt',text:'git status',pause:600},
+    {type:'output',text:'On branch feature/new-dashboard',cls:'info',pause:300},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   src/dashboard.tsx',cls:'error',pause:200},
+    {type:'output',text:'  modified:   src/chart.tsx',cls:'error',pause:200},
+    {type:'comment',text:'まだcommitしたくない。一旦退避する',pause:700},
+    {type:'prompt',text:'git stash push -m "dashboard作業途中"',pause:700},
+    {type:'output',text:'Saved working directory and index state On feature/new-dashboard: dashboard作業途中',cls:'success',pause:500},
+    {type:'prompt',text:'git status',pause:600},
+    {type:'output',text:'nothing to commit, working tree clean',cls:'success',pause:400},
+    {type:'comment',text:'きれいな状態になった。バグ修正へ',pause:700},
+    {type:'prompt',text:'git checkout main',pause:600},
+    {type:'output',text:"Switched to branch 'main'",cls:'success',pause:400},
+    {type:'comment',text:'（バグ修正してcommit...）',pause:800},
+    {type:'prompt',text:'git checkout feature/new-dashboard',pause:600},
+    {type:'output',text:"Switched to branch 'feature/new-dashboard'",cls:'success',pause:400},
+    {type:'comment',text:'退避した作業を確認',pause:600},
+    {type:'prompt',text:'git stash list',pause:600},
+    {type:'output',text:'stash@{0}: On feature/new-dashboard: dashboard作業途中',cls:'info',pause:400},
+    {type:'comment',text:'復元する',pause:500},
+    {type:'prompt',text:'git stash pop',pause:700},
+    {type:'output',text:'On branch feature/new-dashboard',cls:'info',pause:300},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   src/dashboard.tsx',cls:'error',pause:200},
+    {type:'output',text:'  modified:   src/chart.tsx',cls:'error',pause:200},
+    {type:'output',text:'Dropped refs/stash@{0}',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK 作業が復元された。続きから再開できる',cls:'success',pause:300},
+  ],'btn-stash');
+}
+
+/* ===== Demo: Worktree ===== */
+function runWorktreeDemo(){
+  typeInTerminal('term-worktree',[
+    {type:'comment',text:'mainで作業中だけど、別ブランチも同時に触りたい',pause:0},
+    {type:'prompt',text:'pwd',pause:500},
+    {type:'output',text:'/home/user/my-project',cls:'output',pause:300},
+    {type:'comment',text:'hotfixブランチ用の作業ディレクトリを作る',pause:700},
+    {type:'prompt',text:'git worktree add ../my-project-hotfix hotfix/urgent-fix',pause:800},
+    {type:'output',text:'Preparing worktree (new branch \'hotfix/urgent-fix\')',cls:'info',pause:400},
+    {type:'output',text:'HEAD is now at a1b2c3d feat: latest commit',cls:'success',pause:400},
+    {type:'comment',text:'別ディレクトリにブランチが展開された',pause:600},
+    {type:'prompt',text:'ls ../my-project-hotfix/',pause:600},
+    {type:'output',text:'README.md  src/  package.json  ...',cls:'output',pause:400},
+    {type:'comment',text:'元のディレクトリはそのまま。2つを同時に編集できる',pause:700},
+    {type:'prompt',text:'git worktree list',pause:600},
+    {type:'output',text:'/home/user/my-project          a1b2c3d [main]',cls:'info',pause:300},
+    {type:'output',text:'/home/user/my-project-hotfix   a1b2c3d [hotfix/urgent-fix]',cls:'info',pause:300},
+    {type:'comment',text:'作業が終わったら削除',pause:800},
+    {type:'prompt',text:'git worktree remove ../my-project-hotfix',pause:700},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'prompt',text:'git worktree list',pause:600},
+    {type:'output',text:'/home/user/my-project   a1b2c3d [main]',cls:'info',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK stashと違い、両方のブランチを同時に開ける',cls:'success',pause:300},
+  ],'btn-worktree');
+}
+
+/* ===== Demo: Submodule ===== */
+function runSubmoduleDemo(){
+  typeInTerminal('term-submodule',[
+    {type:'comment',text:'共通UIライブラリを自分のプロジェクトに含める',pause:0},
+    {type:'prompt',text:'git submodule add https://github.com/team/ui-kit.git libs/ui-kit',pause:900},
+    {type:'output',text:'Cloning into \'libs/ui-kit\'...',cls:'output',pause:500},
+    {type:'output',text:'remote: Enumerating objects: 156, done.',cls:'output',pause:400},
+    {type:'output',text:'remote: Total 156 (delta 0), reused 0 (delta 0)',cls:'output',pause:300},
+    {type:'comment',text:'.gitmodulesファイルが作られる',pause:700},
+    {type:'prompt',text:'cat .gitmodules',pause:600},
+    {type:'output',text:'[submodule "libs/ui-kit"]',cls:'info',pause:300},
+    {type:'output',text:'  path = libs/ui-kit',cls:'output',pause:200},
+    {type:'output',text:'  url = https://github.com/team/ui-kit.git',cls:'output',pause:300},
+    {type:'prompt',text:'git add .gitmodules libs/ui-kit',pause:600},
+    {type:'prompt',text:'git commit -m "chore: add ui-kit submodule"',pause:700},
+    {type:'output',text:'[main 4a5b6c7] chore: add ui-kit submodule',cls:'success',pause:400},
+    {type:'comment',text:'submoduleを更新するには:',pause:800},
+    {type:'prompt',text:'git submodule update --remote libs/ui-kit',pause:800},
+    {type:'output',text:'Submodule path \'libs/ui-kit\': checked out \'d8e9f0a\'',cls:'success',pause:500},
+    {type:'comment',text:'cloneする人はこのコマンドが必要:',pause:700},
+    {type:'prompt',text:'git clone --recurse-submodules https://github.com/user/project.git',pause:800},
+    {type:'output',text:'Cloning into \'project\'...',cls:'output',pause:400},
+    {type:'output',text:'Submodule \'libs/ui-kit\' registered for path \'libs/ui-kit\'',cls:'info',pause:400},
+    {type:'output',text:'Cloning into \'libs/ui-kit\'...',cls:'output',pause:300},
+    {type:'output',text:'Submodule path \'libs/ui-kit\': checked out \'d8e9f0a\'',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK submoduleで外部リポを管理できる',cls:'success',pause:300},
+  ],'btn-submodule');
+}
+
+/* ===== Demo: Log Advanced ===== */
+function runLogAdvDemo(){
+  typeInTerminal('term-logadv',[
+    {type:'comment',text:'ブランチ構造を視覚化する',pause:0},
+    {type:'prompt',text:'git log --graph --oneline --all --decorate',pause:800},
+    {type:'output',text:'<span style="color:#ff5370">*</span>   <span style="color:#00d2ff">f1a2b3c</span> (HEAD -> main) Merge branch \'feature/auth\'',cls:'output',pause:400},
+    {type:'output',text:'<span style="color:#ff5370">|\\</span>',cls:'output',pause:200},
+    {type:'output',text:'<span style="color:#ff5370">|</span> <span style="color:#7fdbca">*</span> <span style="color:#00d2ff">d4e5f6a</span> (feature/auth) feat: OAuth追加',cls:'output',pause:300},
+    {type:'output',text:'<span style="color:#ff5370">|</span> <span style="color:#7fdbca">*</span> <span style="color:#00d2ff">a7b8c9d</span> feat: ログイン画面',cls:'output',pause:300},
+    {type:'output',text:'<span style="color:#ff5370">*</span> <span style="color:#00d2ff">1234567</span> fix: ヘッダーの修正',cls:'output',pause:300},
+    {type:'output',text:'<span style="color:#ff5370">*</span> <span style="color:#00d2ff">9876543</span> initial commit',cls:'output',pause:500},
+    {type:'comment',text:'特定の人のコミットだけ見る',pause:700},
+    {type:'prompt',text:'git log --author="tanaka" --oneline --since="2025-01-01"',pause:700},
+    {type:'output',text:'d4e5f6a feat: OAuth追加',cls:'info',pause:300},
+    {type:'output',text:'a7b8c9d feat: ログイン画面',cls:'info',pause:300},
+    {type:'output',text:'9876543 initial commit',cls:'info',pause:400},
+    {type:'comment',text:'コミットメッセージで検索',pause:600},
+    {type:'prompt',text:'git log --grep="fix" --oneline',pause:700},
+    {type:'output',text:'1234567 fix: ヘッダーの修正',cls:'info',pause:300},
+    {type:'comment',text:'特定のファイルの変更履歴',pause:600},
+    {type:'prompt',text:'git log --oneline --follow -- src/auth.ts',pause:700},
+    {type:'output',text:'d4e5f6a feat: OAuth追加',cls:'info',pause:300},
+    {type:'output',text:'a7b8c9d feat: ログイン画面',cls:'info',pause:300},
+    {type:'comment',text:'各行の最終変更者を表示',pause:600},
+    {type:'prompt',text:'git log --format="%h %an %ar %s" -5',pause:700},
+    {type:'output',text:'f1a2b3c tanaka   2 hours ago   Merge branch \'feature/auth\'',cls:'output',pause:300},
+    {type:'output',text:'d4e5f6a tanaka   3 hours ago   feat: OAuth追加',cls:'output',pause:200},
+    {type:'output',text:'a7b8c9d suzuki   1 day ago     feat: ログイン画面',cls:'output',pause:200},
+    {type:'output',text:'1234567 tanaka   2 days ago    fix: ヘッダーの修正',cls:'output',pause:200},
+    {type:'output',text:'9876543 suzuki   1 week ago    initial commit',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK git logは--graphと検索オプションで最強の調査ツール',cls:'success',pause:300},
+  ],'btn-logadv');
+}
+
+/* ===== Demo: Diff Advanced ===== */
+function runDiffAdvDemo(){
+  typeInTerminal('term-diffadv',[
+    {type:'comment',text:'変更のサマリーを見る',pause:0},
+    {type:'prompt',text:'git diff --stat main..feature',pause:700},
+    {type:'output',text:' src/app.ts     | 24 +++++++++++++---------',cls:'output',pause:300},
+    {type:'output',text:' src/utils.ts   |  8 ++++++++',cls:'output',pause:200},
+    {type:'output',text:' src/types.ts   |  3 ++-',cls:'output',pause:200},
+    {type:'output',text:' 3 files changed, 18 insertions(+), 7 deletions(-)',cls:'output',pause:400},
+    {type:'comment',text:'単語レベルでの差分（行単位より見やすい場合がある）',pause:700},
+    {type:'prompt',text:'git diff --word-diff',pause:700},
+    {type:'output',text:'const name = <span style="color:#ff5370">[-"old"-]</span><span style="color:#27c93f">{+"new"+}</span>;',cls:'output',pause:400},
+    {type:'output',text:'const count = <span style="color:#ff5370">[-10-]</span><span style="color:#27c93f">{+20+}</span>;',cls:'output',pause:400},
+    {type:'comment',text:'ステージ済みの変更だけ見る',pause:700},
+    {type:'prompt',text:'git diff --cached',pause:700},
+    {type:'output',text:'--- a/src/app.ts',cls:'output',pause:300},
+    {type:'output',text:'+++ b/src/app.ts',cls:'output',pause:200},
+    {type:'output',text:'<span style="color:#ff5370">-const MAX_RETRIES = 3;</span>',cls:'error',pause:300},
+    {type:'output',text:'<span style="color:#27c93f">+const MAX_RETRIES = 5;</span>',cls:'success',pause:300},
+    {type:'comment',text:'ブランチ間の比較',pause:700},
+    {type:'prompt',text:'git diff main...feature -- "*.ts"',pause:700},
+    {type:'output',text:'(featureブランチがmainから分岐した後の変更だけを表示)',cls:'info',pause:500},
+    {type:'comment',text:'変更があるファイル名だけ表示',pause:600},
+    {type:'prompt',text:'git diff --name-only HEAD~3',pause:600},
+    {type:'output',text:'src/app.ts',cls:'output',pause:200},
+    {type:'output',text:'src/utils.ts',cls:'output',pause:200},
+    {type:'output',text:'src/types.ts',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK diffのオプションで変更を正確に把握できる',cls:'success',pause:300},
+  ],'btn-diffadv');
+}
+
+/* ===== Demo: Reset vs Revert ===== */
+function runResetRevertDemo(){
+  typeInTerminal('term-resetrev',[
+    {type:'comment',text:'=== git reset（履歴を書き換える）===',pause:0},
+    {type:'prompt',text:'git log --oneline -3',pause:600},
+    {type:'output',text:'c3d4e5f fix: typo',cls:'info',pause:200},
+    {type:'output',text:'b2c3d4e feat: 新機能',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d 初期コミット',cls:'output',pause:400},
+    {type:'comment',text:'直前のコミットを取り消す（変更はworkingに残る）',pause:700},
+    {type:'prompt',text:'git reset --mixed HEAD~1',pause:700},
+    {type:'output',text:'Unstaged changes after reset:',cls:'warn',pause:300},
+    {type:'output',text:'M  src/app.ts',cls:'output',pause:300},
+    {type:'prompt',text:'git log --oneline -2',pause:600},
+    {type:'output',text:'b2c3d4e feat: 新機能',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d 初期コミット',cls:'output',pause:300},
+    {type:'comment',text:'c3d4e5f が履歴から消えた（変更は手元に残っている）',pause:800},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'comment',text:'=== git revert（打ち消しコミットを作る）===',pause:700},
+    {type:'prompt',text:'git log --oneline -3',pause:600},
+    {type:'output',text:'c3d4e5f fix: typo',cls:'info',pause:200},
+    {type:'output',text:'b2c3d4e feat: 新機能',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d 初期コミット',cls:'output',pause:400},
+    {type:'comment',text:'直前のコミットを打ち消す（履歴は残る）',pause:700},
+    {type:'prompt',text:'git revert HEAD',pause:700},
+    {type:'output',text:'[main d4e5f6a] Revert "fix: typo"',cls:'success',pause:500},
+    {type:'output',text:'This reverts commit c3d4e5f.',cls:'output',pause:300},
+    {type:'prompt',text:'git log --oneline -4',pause:600},
+    {type:'output',text:'<span style="color:#7fdbca">d4e5f6a</span> Revert "fix: typo"',cls:'success',pause:300},
+    {type:'output',text:'c3d4e5f fix: typo',cls:'info',pause:200},
+    {type:'output',text:'b2c3d4e feat: 新機能',cls:'info',pause:200},
+    {type:'output',text:'a1b2c3d 初期コミット',cls:'output',pause:300},
+    {type:'comment',text:'元のコミットも残っている。push済みでも安全',pause:600},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK push前 = reset、push後 = revert が鉄則',cls:'success',pause:300},
+  ],'btn-resetrev');
+}
+
+/* ===== Demo: Hooks ===== */
+function runHooksDemo(){
+  typeInTerminal('term-hooks',[
+    {type:'comment',text:'pre-commitフックでlintを自動実行する',pause:0},
+    {type:'prompt',text:'ls .git/hooks/',pause:600},
+    {type:'output',text:'applypatch-msg.sample  pre-commit.sample  pre-push.sample ...',cls:'output',pause:400},
+    {type:'comment',text:'.sampleを外せば有効になる。自作してみる',pause:700},
+    {type:'prompt',text:'cat > .git/hooks/pre-commit',pause:600},
+    {type:'output',text:'#!/bin/sh',cls:'output',pause:200},
+    {type:'output',text:'echo "Running lint check..."',cls:'output',pause:200},
+    {type:'output',text:'npx eslint --quiet src/',cls:'output',pause:200},
+    {type:'output',text:'if [ $? -ne 0 ]; then',cls:'output',pause:200},
+    {type:'output',text:'  echo "Lint errors found. Commit aborted."',cls:'output',pause:200},
+    {type:'output',text:'  exit 1',cls:'output',pause:200},
+    {type:'output',text:'fi',cls:'output',pause:300},
+    {type:'prompt',text:'chmod +x .git/hooks/pre-commit',pause:600},
+    {type:'comment',text:'これでcommit時に自動でlintが走る',pause:700},
+    {type:'comment',text:'わざとエラーのあるコードをcommitしてみる',pause:700},
+    {type:'prompt',text:'git commit -m "feat: new feature"',pause:800},
+    {type:'output',text:'Running lint check...',cls:'info',pause:500},
+    {type:'output',text:'src/app.ts:15:3 error  Unexpected console.log  no-console',cls:'error',pause:400},
+    {type:'output',text:'Lint errors found. Commit aborted.',cls:'error',pause:500},
+    {type:'comment',text:'コミットが拒否された！ コードを修正して再試行',pause:800},
+    {type:'prompt',text:'vim src/app.ts',pause:500},
+    {type:'output',text:'(console.logを削除...)',cls:'output',pause:500},
+    {type:'prompt',text:'git add src/app.ts && git commit -m "feat: new feature"',pause:800},
+    {type:'output',text:'Running lint check...',cls:'info',pause:500},
+    {type:'output',text:'[main 5a6b7c8] feat: new feature',cls:'success',pause:500},
+    {type:'comment',text:'チームで共有するなら husky + lint-staged がおすすめ',pause:600},
+    {type:'prompt',text:'npx husky init',pause:600},
+    {type:'output',text:'husky - Git hooks installed',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'OK hooksでコード品質を自動的に保証できる',cls:'success',pause:300},
+  ],'btn-hooks');
+}
+
+/* ===== Init ===== */
+onSlideEnter(0);
+</script>
+</body></html>

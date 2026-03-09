@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>アプリ開発編 — プロジェクト構成からデプロイまで</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+button{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff44;padding:.5rem 1.2rem;border-radius:6px;cursor:pointer;font-size:.9rem;transition:all .2s}
+button:hover{background:#00d2ff33}
+button:disabled{opacity:.4;cursor:not-allowed}
+</style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide active" id="slide-title">
+  <div style="text-align:center">
+    <p style="font-size:1.1rem;color:#c792ea;margin-bottom:1rem;letter-spacing:.1em">WEB DEVELOPMENT WORKSHOP</p>
+    <h1 style="font-size:3.2rem;margin-bottom:.8rem">アプリ開発編</h1>
+    <p style="font-size:1.4rem;color:#7fdbca;margin-bottom:2rem">プロジェクト構成からデプロイまで</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem">
+      <span class="label">package.json</span>
+      <span class="label green">npm</span>
+      <span class="label purple">Vite</span>
+      <span class="label orange">React</span>
+      <span class="label red">Deploy</span>
+    </div>
+    <p style="color:#555;font-size:.95rem">→ キーで次へ進む</p>
+  </div>
+</div>
+
+<!-- Slide 2: モダンWeb開発の全体像 -->
+<div class="slide" id="slide-overview">
+  <h2>モダンWeb開発の全体像</h2>
+  <p style="text-align:center;margin-bottom:2rem;color:#888">ファイルを書いてからユーザーに届くまで</p>
+  <div class="flow" id="flow-overview" style="margin-bottom:2rem">
+    <div class="flow-box" id="fo-1">
+      <p class="label" style="margin:0;font-size:.75rem">Step 1</p>
+      <h3 style="font-size:1rem;margin:.3rem 0">HTML/CSS/JS</h3>
+      <p style="font-size:.8rem;color:#888">コードを書く</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="fo-2">
+      <p class="label purple" style="margin:0;font-size:.75rem">Step 2</p>
+      <h3 style="font-size:1rem;margin:.3rem 0">フレームワーク</h3>
+      <p style="font-size:.8rem;color:#888">React / Vue / Svelte</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="fo-3">
+      <p class="label orange" style="margin:0;font-size:.75rem">Step 3</p>
+      <h3 style="font-size:1rem;margin:.3rem 0">ビルド</h3>
+      <p style="font-size:.8rem;color:#888">Vite / Webpack</p>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box" id="fo-4">
+      <p class="label green" style="margin:0;font-size:.75rem">Step 4</p>
+      <h3 style="font-size:1rem;margin:.3rem 0">デプロイ</h3>
+      <p style="font-size:.8rem;color:#888">Vercel / GitHub Pages</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;text-align:center">
+    <p style="font-size:.95rem">昔はHTMLファイルをサーバーに置くだけだった。<br>今は<code>npm</code>でパッケージ管理、<code>Vite</code>でビルド、<code>Vercel</code>で自動デプロイが主流。</p>
+  </div>
+</div>
+
+<!-- Slide 3: package.json とは -->
+<div class="slide" id="slide-package-json">
+  <h2>package.json とは</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">プロジェクトの「設計図」兼「レシピ」</p>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.2">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>package.json</span>
+      </div>
+      <div class="terminal-body" id="term-pkg"></div>
+    </div>
+    <div style="flex:.8;display:flex;flex-direction:column;gap:.8rem;justify-content:center">
+      <div class="card step" id="pkg-s1">
+        <p class="label" style="font-size:.75rem">name / version</p>
+        <p style="font-size:.85rem;color:#888">プロジェクト名とバージョン</p>
+      </div>
+      <div class="card step" id="pkg-s2">
+        <p class="label green" style="font-size:.75rem">scripts</p>
+        <p style="font-size:.85rem;color:#888">よく使うコマンドのショートカット。<code>npm run dev</code> で起動</p>
+      </div>
+      <div class="card step" id="pkg-s3">
+        <p class="label purple" style="font-size:.75rem">dependencies</p>
+        <p style="font-size:.85rem;color:#888">本番で使うライブラリ（React等）</p>
+      </div>
+      <div class="card step" id="pkg-s4">
+        <p class="label orange" style="font-size:.75rem">devDependencies</p>
+        <p style="font-size:.85rem;color:#888">開発時だけ使うツール（Vite等）</p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem">
+    <button onclick="runPkgDemo()" id="btn-pkg">▶ package.json を見てみよう</button>
+  </div>
+</div>
+
+<!-- Slide 4: npm / yarn / pnpm -->
+<div class="slide" id="slide-pkg-mgr">
+  <h2>パッケージマネージャー</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">npm / yarn / pnpm — ライブラリを管理するツール</p>
+  <div class="cols" style="max-width:1050px">
+    <div style="flex:.6;display:flex;flex-direction:column;gap:.8rem">
+      <div class="card">
+        <p class="label" style="font-size:.75rem">npm</p>
+        <p style="font-size:.85rem;color:#888">Node.js標準。最も普及。初心者はまずこれ。</p>
+      </div>
+      <div class="card">
+        <p class="label purple" style="font-size:.75rem">yarn</p>
+        <p style="font-size:.85rem;color:#888">Facebookが開発。npmの高速版として登場。</p>
+      </div>
+      <div class="card">
+        <p class="label orange" style="font-size:.75rem">pnpm</p>
+        <p style="font-size:.85rem;color:#888">ディスク効率が最高。monorepo向き。</p>
+      </div>
+    </div>
+    <div class="terminal" style="flex:1">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — npm を使ってみよう</span>
+      </div>
+      <div class="terminal-body" id="term-npm"></div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runNpmDemo()" id="btn-npm">▶ npm init &amp; install デモ</button>
+    <button onclick="resetTerm('term-npm');document.getElementById('btn-npm').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- Slide 5: プロジェクト構成 -->
+<div class="slide" id="slide-structure">
+  <h2>プロジェクト構成</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">よくあるフォルダ構造を理解しよう</p>
+  <div class="cols" style="max-width:1100px">
+    <div class="card" style="flex:1">
+      <p class="label green" style="font-size:.75rem">src/</p>
+      <h3 style="font-size:1.1rem">ソースコード</h3>
+      <p style="font-size:.85rem;color:#888">自分が書くコード。コンポーネント、スタイル、ロジックなど。ここが主戦場。</p>
+    </div>
+    <div class="card" style="flex:1">
+      <p class="label" style="font-size:.75rem">public/</p>
+      <h3 style="font-size:1.1rem">静的ファイル</h3>
+      <p style="font-size:.85rem;color:#888">画像やfavicon。ビルド時にそのままコピーされる。加工されない。</p>
+    </div>
+    <div class="card" style="flex:1">
+      <p class="label purple" style="font-size:.75rem">dist/</p>
+      <h3 style="font-size:1.1rem">ビルド出力</h3>
+      <p style="font-size:.85rem;color:#888"><code>npm run build</code> で生成。本番用の最適化済みファイル。</p>
+    </div>
+    <div class="card" style="flex:1">
+      <p class="label red" style="font-size:.75rem">node_modules/</p>
+      <h3 style="font-size:1.1rem">依存パッケージ</h3>
+      <p style="font-size:.85rem;color:#888"><code>npm install</code> で入る。数万ファイル。Gitには入れない。</p>
+    </div>
+  </div>
+  <div class="terminal" style="max-width:600px;margin-top:1.5rem">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>ディレクトリ構成</span>
+    </div>
+    <div class="terminal-body" style="min-height:auto;font-size:.85rem;line-height:1.5">
+      <span class="info">my-app/</span><br>
+      <span class="output">├── <span class="info">src/</span>          ← 自分のコード</span><br>
+      <span class="output">├── <span class="info">public/</span>       ← 静的ファイル</span><br>
+      <span class="output">├── <span class="warn">dist/</span>         ← ビルド出力</span><br>
+      <span class="output">├── <span class="error">node_modules/</span> ← 依存（Git管理外）</span><br>
+      <span class="output">├── package.json</span><br>
+      <span class="output">├── vite.config.js</span><br>
+      <span class="output">└── .gitignore</span>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: ビルドツール -->
+<div class="slide" id="slide-build">
+  <h2>ビルドツール — Vite / Webpack</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">ソースコードを本番用に変換するツール</p>
+  <div class="cols" style="max-width:1050px">
+    <div style="flex:.7;display:flex;flex-direction:column;gap:.8rem;justify-content:center">
+      <div class="card">
+        <p class="label purple" style="font-size:.75rem">ビルドとは？</p>
+        <p style="font-size:.85rem;color:#888">JSXやTypeScriptなどブラウザが理解できないコードを、<br>普通のHTML/CSS/JSに変換＆最適化すること。</p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:1rem">Vite（推奨）</h3>
+        <p style="font-size:.85rem;color:#888">爆速。開発サーバーの起動が一瞬。2024年以降のデファクトスタンダード。</p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:1rem">Webpack</h3>
+        <p style="font-size:.85rem;color:#888">老舗。設定が複雑だが何でもできる。既存プロジェクトでよく見る。</p>
+      </div>
+    </div>
+    <div class="terminal" style="flex:1">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — npm run build</span>
+      </div>
+      <div class="terminal-body" id="term-build"></div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runBuildDemo()" id="btn-build">▶ ビルドを実行してみよう</button>
+    <button onclick="resetTerm('term-build');document.getElementById('btn-build').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- Slide 7: 開発サーバー -->
+<div class="slide" id="slide-devserver">
+  <h2>開発サーバー &amp; HMR</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">コードを書きながらリアルタイムで確認</p>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.2">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — dev server</span>
+      </div>
+      <div class="terminal-body" id="term-dev"></div>
+    </div>
+    <div style="flex:.8;display:flex;flex-direction:column;gap:.8rem;justify-content:center">
+      <div class="card">
+        <p class="label green" style="font-size:.75rem">開発サーバーとは</p>
+        <p style="font-size:.85rem;color:#888">ローカルでWebアプリを動かす仮のサーバー。<code>localhost:5173</code> でアクセス。</p>
+      </div>
+      <div class="card">
+        <p class="label orange" style="font-size:.75rem">HMR</p>
+        <p style="font-size:.85rem;color:#888">Hot Module Replacement。コードを保存すると、ページ全体をリロードせずに変更箇所だけ即座に反映される。</p>
+      </div>
+      <div class="card" style="border-color:#7fdbca44">
+        <p style="font-size:.85rem;color:#7fdbca;text-align:center">保存するだけで画面が変わる。<br>開発効率が劇的に上がる。</p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runDevDemo()" id="btn-dev">▶ 開発サーバーを起動</button>
+    <button onclick="resetTerm('term-dev');document.getElementById('btn-dev').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- Slide 8: フレームワーク選び -->
+<div class="slide" id="slide-framework">
+  <h2>フレームワーク選び</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">目的と好みに合わせて選ぼう</p>
+  <div class="cols" style="max-width:1100px">
+    <div class="card" style="border-top:3px solid #61dafb">
+      <div style="text-align:center;margin-bottom:.8rem">
+        <p style="font-size:2rem">⚛</p>
+        <h3 style="color:#61dafb;font-size:1.2rem">React</h3>
+      </div>
+      <ul class="feature-list" style="max-width:none">
+        <li>Meta（Facebook）製</li>
+        <li>最大のエコシステム</li>
+        <li>求人数No.1</li>
+        <li>JSXで書く</li>
+        <li>学習コストは中程度</li>
+      </ul>
+      <p class="label" style="margin-top:.8rem;font-size:.75rem">初心者に一番おすすめ</p>
+    </div>
+    <div class="card" style="border-top:3px solid #42b883">
+      <div style="text-align:center;margin-bottom:.8rem">
+        <p style="font-size:2rem">🟢</p>
+        <h3 style="color:#42b883;font-size:1.2rem">Vue</h3>
+      </div>
+      <ul class="feature-list" style="max-width:none">
+        <li>直感的なテンプレート構文</li>
+        <li>学習コストが低い</li>
+        <li>日本語ドキュメント充実</li>
+        <li>SFC（単一ファイルコンポーネント）</li>
+        <li>段階的に導入可能</li>
+      </ul>
+      <p class="label green" style="margin-top:.8rem;font-size:.75rem">日本語の情報が豊富</p>
+    </div>
+    <div class="card" style="border-top:3px solid #ff3e00">
+      <div style="text-align:center;margin-bottom:.8rem">
+        <p style="font-size:2rem">🔥</p>
+        <h3 style="color:#ff3e00;font-size:1.2rem">Svelte</h3>
+      </div>
+      <ul class="feature-list" style="max-width:none">
+        <li>コンパイラ方式で超軽量</li>
+        <li>仮想DOMなし</li>
+        <li>記述量が少ない</li>
+        <li>SvelteKit でフルスタック</li>
+        <li>急成長中</li>
+      </ul>
+      <p class="label orange" style="margin-top:.8rem;font-size:.75rem">パフォーマンス重視</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: 実践: プロジェクト作成デモ -->
+<div class="slide" id="slide-create-project">
+  <h2>実践: プロジェクト作成</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">Vite + React でプロジェクトをゼロから作る</p>
+  <div class="terminal" style="max-width:950px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — プロジェクト作成</span>
+    </div>
+    <div class="terminal-body" id="term-create"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runCreateDemo()" id="btn-create">▶ プロジェクトを作成する</button>
+    <button onclick="resetTerm('term-create');document.getElementById('btn-create').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- Slide 10: Git連携 -->
+<div class="slide" id="slide-git">
+  <h2>Git連携</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">プロジェクトをGitで管理してGitHubにpush</p>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.3">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — Git + GitHub</span>
+      </div>
+      <div class="terminal-body" id="term-git"></div>
+    </div>
+    <div style="flex:.7;display:flex;flex-direction:column;gap:.8rem;justify-content:center">
+      <div class="card">
+        <p class="label" style="font-size:.75rem">.gitignore</p>
+        <p style="font-size:.85rem;color:#888"><code>node_modules/</code> と <code>dist/</code> はGit管理から除外。これ超大事。</p>
+      </div>
+      <div class="card">
+        <p class="label green" style="font-size:.75rem">初回push</p>
+        <p style="font-size:.85rem;color:#888">GitHub上にリポジトリを作って、ローカルと紐付けてpush。</p>
+      </div>
+      <div class="card" style="border-color:#ffcb6b44">
+        <p style="font-size:.85rem;color:#ffcb6b;text-align:center">Vite は <code>npm create</code> 時に<br><code>.gitignore</code> を自動生成してくれる</p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runGitDemo()" id="btn-git">▶ Git連携デモ</button>
+    <button onclick="resetTerm('term-git');document.getElementById('btn-git').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- Slide 11: デプロイ方法の比較 -->
+<div class="slide" id="slide-deploy-compare">
+  <h2>デプロイ方法の比較</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">アプリを世界に公開する方法</p>
+  <div class="cols" style="max-width:1100px">
+    <div class="card" style="border-top:3px solid #24292e">
+      <div style="text-align:center;margin-bottom:.8rem">
+        <h3 style="color:#e0e0e0;font-size:1.2rem">GitHub Pages</h3>
+      </div>
+      <ul class="feature-list" style="max-width:none">
+        <li>無料（パブリックリポジトリ）</li>
+        <li>静的サイト専用</li>
+        <li>GitHub Actionsと連携</li>
+        <li>カスタムドメイン対応</li>
+      </ul>
+      <p class="label" style="margin-top:.8rem;font-size:.75rem">静的サイト向き</p>
+    </div>
+    <div class="card" style="border-top:3px solid #00d2ff">
+      <div style="text-align:center;margin-bottom:.8rem">
+        <h3 style="color:#00d2ff;font-size:1.2rem">Vercel</h3>
+      </div>
+      <ul class="feature-list" style="max-width:none">
+        <li>pushするだけで自動デプロイ</li>
+        <li>プレビューURL自動生成</li>
+        <li>サーバーレス関数対応</li>
+        <li>Next.jsとの相性抜群</li>
+      </ul>
+      <p class="label green" style="margin-top:.8rem;font-size:.75rem">一番おすすめ</p>
+    </div>
+    <div class="card" style="border-top:3px solid #00c7b7">
+      <div style="text-align:center;margin-bottom:.8rem">
+        <h3 style="color:#00c7b7;font-size:1.2rem">Netlify</h3>
+      </div>
+      <ul class="feature-list" style="max-width:none">
+        <li>ドラッグ&ドロップでデプロイ</li>
+        <li>フォーム処理が標準搭載</li>
+        <li>サーバーレス関数対応</li>
+        <li>CMSとの連携が簡単</li>
+      </ul>
+      <p class="label purple" style="margin-top:.8rem;font-size:.75rem">手軽さNo.1</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 12: 実践: デプロイデモ -->
+<div class="slide" id="slide-deploy-demo">
+  <h2>実践: ビルド &amp; デプロイ</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">Viteでビルドして公開するまでの流れ</p>
+  <div class="terminal" style="max-width:950px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Build &amp; Deploy</span>
+    </div>
+    <div class="terminal-body" id="term-deploy"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runDeployDemo()" id="btn-deploy">▶ デプロイの流れを見る</button>
+    <button onclick="resetTerm('term-deploy');document.getElementById('btn-deploy').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- Slide 13: 環境変数 -->
+<div class="slide" id="slide-env">
+  <h2>環境変数 — .env ファイル</h2>
+  <p style="text-align:center;margin-bottom:1.5rem">APIキーなどの秘密情報を安全に管理する</p>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>.env ファイルの例</span>
+      </div>
+      <div class="terminal-body" style="min-height:auto;font-size:.9rem">
+        <div><span class="info"># .env（Git管理しない！）</span></div>
+        <div><span class="warn">VITE_API_KEY</span><span class="output">=sk-abc123xyz789</span></div>
+        <div><span class="warn">VITE_API_URL</span><span class="output">=https://api.example.com</span></div>
+        <div><span class="warn">DATABASE_URL</span><span class="output">=postgres://user:pass@db:5432</span></div>
+        <div style="margin-top:.8rem"><span class="info"># .gitignore に追加</span></div>
+        <div><span class="error">.env</span></div>
+        <div><span class="error">.env.local</span></div>
+        <div><span class="error">.env.*.local</span></div>
+      </div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:.8rem;justify-content:center">
+      <div class="card">
+        <p class="label red" style="font-size:.75rem">絶対にやってはいけないこと</p>
+        <p style="font-size:.85rem;color:#888">APIキーやパスワードをコードに直書き → GitHubに公開 → 悪用される。実際によくある事故。</p>
+      </div>
+      <div class="card">
+        <p class="label green" style="font-size:.75rem">正しい方法</p>
+        <p style="font-size:.85rem;color:#888"><code>.env</code> ファイルに書いて <code>.gitignore</code> で除外。Viteでは <code>VITE_</code> プレフィックスで参照可能。</p>
+      </div>
+      <div class="card">
+        <p class="label yellow" style="font-size:.75rem">コード内での使い方</p>
+        <div class="terminal-body" style="padding:.5rem;min-height:auto;font-size:.8rem;background:#0a0a15;border-radius:6px;margin-top:.3rem">
+          <span class="info">// Viteの場合</span><br>
+          <span class="cmd">const apiKey = <span class="warn">import.meta.env</span>.VITE_API_KEY</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 14: まとめ -->
+<div class="slide" id="slide-summary">
+  <h2>まとめ</h2>
+  <p style="text-align:center;margin-bottom:2rem;color:#888">今日学んだことの振り返り</p>
+  <div class="cols" style="max-width:1000px;flex-wrap:wrap">
+    <div class="card" style="flex:1;min-width:280px">
+      <p class="label" style="font-size:.75rem">プロジェクト管理</p>
+      <ul class="feature-list" style="max-width:none">
+        <li><code>package.json</code> = プロジェクトの設計図</li>
+        <li><code>npm install</code> で依存関係を一発導入</li>
+        <li><code>src/</code> にコード、<code>dist/</code> がビルド出力</li>
+      </ul>
+    </div>
+    <div class="card" style="flex:1;min-width:280px">
+      <p class="label green" style="font-size:.75rem">開発フロー</p>
+      <ul class="feature-list" style="max-width:none">
+        <li><code>npm run dev</code> で開発サーバー起動</li>
+        <li>HMRで保存 → 即反映</li>
+        <li><code>npm run build</code> で本番用にビルド</li>
+      </ul>
+    </div>
+    <div class="card" style="flex:1;min-width:280px">
+      <p class="label purple" style="font-size:.75rem">デプロイ & セキュリティ</p>
+      <ul class="feature-list" style="max-width:none">
+        <li>Vercel / Netlify で自動デプロイ</li>
+        <li><code>.env</code> に秘密情報を隔離</li>
+        <li><code>.gitignore</code> で漏洩防止</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="max-width:600px;margin-top:1.5rem;text-align:center;border-color:#00d2ff44">
+    <p style="color:#00d2ff;font-size:1.1rem">まずは <code>npm create vite@latest</code> で<br>プロジェクトを作ってみよう！</p>
+  </div>
+</div>
+
+<div class="progress">1 / 14</div>
+<div class="nav-hint">&larr; &rarr; キーで移動</div>
+
+<script>
+/* ===== Terminal animation engine ===== */
+function typeInTerminal(id,lines,btnId){
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var el=document.getElementById(id);el.innerHTML='';var delay=0;
+  lines.forEach(function(l){delay+=l.pause||500;setTimeout(function(){var div=document.createElement('div');if(l.type==='prompt'){div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+l.text+'</span>'}else if(l.type==='comment'){div.innerHTML='<span class="info"># '+l.text+'</span>'}else{div.innerHTML='<span class="'+(l.cls||'output')+'">'+l.text+'</span>'}el.appendChild(div);el.scrollTop=el.scrollHeight},delay)});
+  setTimeout(function(){if(btnId)document.getElementById(btnId).disabled=false},delay+500);
+}
+
+function resetTerm(id){document.getElementById(id).innerHTML=''}
+
+/* ===== Slide 2: Flow animation ===== */
+function animateOverviewFlow(){
+  var boxes=['fo-1','fo-2','fo-3','fo-4'];
+  boxes.forEach(function(b){document.getElementById(b).classList.remove('active-box')});
+  boxes.forEach(function(b,i){
+    setTimeout(function(){document.getElementById(b).classList.add('active-box')},i*600);
+  });
+}
+
+/* ===== Slide 3: package.json demo ===== */
+function runPkgDemo(){
+  var steps=['pkg-s1','pkg-s2','pkg-s3','pkg-s4'];
+  steps.forEach(function(s){document.getElementById(s).classList.remove('visible')});
+  typeInTerminal('term-pkg',[
+    {type:'comment',text:'典型的な package.json',pause:300},
+    {type:'prompt',text:'cat package.json',pause:500},
+    {text:'{',cls:'output',pause:300},
+    {text:'  <span class="warn">"name"</span>: <span class="success">"my-app"</span>,',cls:'output',pause:400},
+    {text:'  <span class="warn">"version"</span>: <span class="success">"1.0.0"</span>,',cls:'output',pause:400},
+    {text:'  <span class="warn">"scripts"</span>: {',cls:'output',pause:400},
+    {text:'    <span class="warn">"dev"</span>: <span class="success">"vite"</span>,',cls:'output',pause:300},
+    {text:'    <span class="warn">"build"</span>: <span class="success">"vite build"</span>,',cls:'output',pause:300},
+    {text:'    <span class="warn">"preview"</span>: <span class="success">"vite preview"</span>',cls:'output',pause:300},
+    {text:'  },',cls:'output',pause:300},
+    {text:'  <span class="warn">"dependencies"</span>: {',cls:'output',pause:400},
+    {text:'    <span class="warn">"react"</span>: <span class="success">"^19.0.0"</span>,',cls:'output',pause:300},
+    {text:'    <span class="warn">"react-dom"</span>: <span class="success">"^19.0.0"</span>',cls:'output',pause:300},
+    {text:'  },',cls:'output',pause:300},
+    {text:'  <span class="warn">"devDependencies"</span>: {',cls:'output',pause:400},
+    {text:'    <span class="warn">"vite"</span>: <span class="success">"^6.0.0"</span>,',cls:'output',pause:300},
+    {text:'    <span class="warn">"@vitejs/plugin-react"</span>: <span class="success">"^4.0.0"</span>',cls:'output',pause:300},
+    {text:'  }',cls:'output',pause:200},
+    {text:'}',cls:'output',pause:200}
+  ],'btn-pkg');
+  steps.forEach(function(s,i){
+    setTimeout(function(){document.getElementById(s).classList.add('visible')},1500+i*1200);
+  });
+}
+
+/* ===== Slide 4: npm demo ===== */
+function runNpmDemo(){
+  typeInTerminal('term-npm',[
+    {type:'comment',text:'新しいプロジェクトを初期化',pause:300},
+    {type:'prompt',text:'npm init -y',pause:600},
+    {text:'Wrote to /home/user/my-app/package.json',cls:'success',pause:500},
+    {text:'',pause:300},
+    {type:'comment',text:'Reactをインストール',pause:400},
+    {type:'prompt',text:'npm install react react-dom',pause:600},
+    {text:'',pause:300},
+    {text:'added 3 packages in 2s',cls:'success',pause:500},
+    {text:'',pause:200},
+    {text:'3 packages are looking for funding',cls:'output',pause:300},
+    {text:'  run `npm fund` for details',cls:'output',pause:300},
+    {text:'',pause:300},
+    {type:'comment',text:'開発用ツールをインストール（-D = devDependencies）',pause:400},
+    {type:'prompt',text:'npm install -D vite @vitejs/plugin-react',pause:600},
+    {text:'',pause:300},
+    {text:'added 42 packages in 4s',cls:'success',pause:500},
+    {text:'',pause:300},
+    {type:'comment',text:'インストール済みパッケージを確認',pause:400},
+    {type:'prompt',text:'npm list --depth=0',pause:500},
+    {text:'my-app@1.0.0',cls:'info',pause:300},
+    {text:'├── react@19.0.0',cls:'output',pause:200},
+    {text:'├── react-dom@19.0.0',cls:'output',pause:200},
+    {text:'├── @vitejs/plugin-react@4.3.0',cls:'output',pause:200},
+    {text:'└── vite@6.0.0',cls:'output',pause:200}
+  ],'btn-npm');
+}
+
+/* ===== Slide 6: Build demo ===== */
+function runBuildDemo(){
+  typeInTerminal('term-build',[
+    {type:'comment',text:'本番用にビルドする',pause:300},
+    {type:'prompt',text:'npm run build',pause:600},
+    {text:'',pause:400},
+    {text:'vite v6.0.0 building for production...',cls:'info',pause:600},
+    {text:'transforming...',cls:'output',pause:500},
+    {text:'✓ 143 modules transformed.',cls:'success',pause:600},
+    {text:'rendering chunks...',cls:'output',pause:400},
+    {text:'computing gzip size...',cls:'output',pause:400},
+    {text:'',pause:300},
+    {text:'dist/index.html                  0.46 kB │ gzip:  0.30 kB',cls:'output',pause:300},
+    {text:'dist/assets/index-DiwrgTda.css   1.39 kB │ gzip:  0.72 kB',cls:'output',pause:300},
+    {text:'dist/assets/index-CdTmg4bN.js  143.36 kB │ gzip: 46.09 kB',cls:'output',pause:300},
+    {text:'',pause:300},
+    {text:'✓ built in 1.23s',cls:'success',pause:500},
+    {text:'',pause:300},
+    {type:'comment',text:'dist/ フォルダに出力された！',pause:400},
+    {type:'prompt',text:'ls dist/',pause:500},
+    {text:'assets/    index.html',cls:'output',pause:300},
+    {text:'',pause:200},
+    {type:'comment',text:'この dist/ をサーバーに置けば公開できる',pause:400}
+  ],'btn-build');
+}
+
+/* ===== Slide 7: Dev server demo ===== */
+function runDevDemo(){
+  typeInTerminal('term-dev',[
+    {type:'comment',text:'開発サーバーを起動',pause:300},
+    {type:'prompt',text:'npm run dev',pause:600},
+    {text:'',pause:400},
+    {text:'  <span class="info">VITE</span> v6.0.0  ready in <span class="success">150 ms</span>',cls:'output',pause:500},
+    {text:'',pause:200},
+    {text:'  ➜  Local:   <span class="info">http://localhost:5173/</span>',cls:'output',pause:400},
+    {text:'  ➜  Network: <span class="output">http://192.168.1.10:5173/</span>',cls:'output',pause:300},
+    {text:'  ➜  press <span class="warn">h + enter</span> to show help',cls:'output',pause:300},
+    {text:'',pause:600},
+    {type:'comment',text:'ブラウザで http://localhost:5173 を開くとアプリが表示される',pause:500},
+    {text:'',pause:400},
+    {type:'comment',text:'ファイルを編集して保存すると...',pause:600},
+    {text:'<span class="warn">2:34:56 PM</span> [vite] hmr update /src/App.jsx',cls:'output',pause:500},
+    {text:'',pause:300},
+    {text:'↑ HMR: ページをリロードせずに変更が即反映された！',cls:'success',pause:500},
+    {text:'',pause:400},
+    {type:'comment',text:'Ctrl+C で停止',pause:400}
+  ],'btn-dev');
+}
+
+/* ===== Slide 9: Create project demo ===== */
+function runCreateDemo(){
+  typeInTerminal('term-create',[
+    {type:'comment',text:'Vite + React でプロジェクトを作成',pause:300},
+    {type:'prompt',text:'npm create vite@latest my-app -- --template react',pause:700},
+    {text:'',pause:500},
+    {text:'Scaffolding project in /home/user/my-app...',cls:'info',pause:600},
+    {text:'',pause:300},
+    {text:'Done. Now run:',cls:'success',pause:500},
+    {text:'',pause:200},
+    {text:'  cd my-app',cls:'output',pause:300},
+    {text:'  npm install',cls:'output',pause:300},
+    {text:'  npm run dev',cls:'output',pause:300},
+    {text:'',pause:500},
+    {type:'comment',text:'指示通りにやってみよう',pause:400},
+    {type:'prompt',text:'cd my-app',pause:400},
+    {text:'',pause:200},
+    {type:'prompt',text:'npm install',pause:600},
+    {text:'',pause:400},
+    {text:'added 45 packages in 5s',cls:'success',pause:600},
+    {text:'',pause:300},
+    {type:'prompt',text:'npm run dev',pause:600},
+    {text:'',pause:400},
+    {text:'  <span class="info">VITE</span> v6.0.0  ready in <span class="success">148 ms</span>',cls:'output',pause:500},
+    {text:'',pause:200},
+    {text:'  ➜  Local:   <span class="info">http://localhost:5173/</span>',cls:'output',pause:400},
+    {text:'',pause:300},
+    {text:'プロジェクト作成完了！ブラウザでアクセスしてみよう',cls:'success',pause:500}
+  ],'btn-create');
+}
+
+/* ===== Slide 10: Git demo ===== */
+function runGitDemo(){
+  typeInTerminal('term-git',[
+    {type:'comment',text:'Gitリポジトリを初期化',pause:300},
+    {type:'prompt',text:'git init',pause:500},
+    {text:'Initialized empty Git repository in /home/user/my-app/.git/',cls:'success',pause:500},
+    {text:'',pause:300},
+    {type:'comment',text:'.gitignore を確認（Viteが自動生成済み）',pause:400},
+    {type:'prompt',text:'cat .gitignore',pause:500},
+    {text:'node_modules',cls:'output',pause:200},
+    {text:'dist',cls:'output',pause:200},
+    {text:'.env',cls:'output',pause:200},
+    {text:'.env.local',cls:'output',pause:200},
+    {text:'',pause:400},
+    {type:'comment',text:'最初のコミット',pause:300},
+    {type:'prompt',text:'git add .',pause:400},
+    {type:'prompt',text:'git commit -m "initial commit"',pause:500},
+    {text:'[main (root-commit) a1b2c3d] initial commit',cls:'success',pause:400},
+    {text:' 12 files changed, 250 insertions(+)',cls:'output',pause:300},
+    {text:'',pause:400},
+    {type:'comment',text:'GitHubにリモートリポジトリを紐付け',pause:400},
+    {type:'prompt',text:'git remote add origin https://github.com/user/my-app.git',pause:500},
+    {text:'',pause:300},
+    {type:'comment',text:'pushする',pause:300},
+    {type:'prompt',text:'git push -u origin main',pause:600},
+    {text:'Enumerating objects: 15, done.',cls:'output',pause:300},
+    {text:'Counting objects: 100% (15/15), done.',cls:'output',pause:300},
+    {text:'Writing objects: 100% (15/15), 3.42 KiB, done.',cls:'output',pause:300},
+    {text:'Branch \'main\' set up to track remote branch \'main\'.',cls:'success',pause:400},
+    {text:'',pause:200},
+    {text:'GitHubにコードが公開された！',cls:'success',pause:400}
+  ],'btn-git');
+}
+
+/* ===== Slide 12: Deploy demo ===== */
+function runDeployDemo(){
+  typeInTerminal('term-deploy',[
+    {type:'comment',text:'Step 1: 本番ビルド',pause:300},
+    {type:'prompt',text:'npm run build',pause:600},
+    {text:'vite v6.0.0 building for production...',cls:'info',pause:500},
+    {text:'✓ 143 modules transformed.',cls:'success',pause:500},
+    {text:'✓ built in 1.23s',cls:'success',pause:400},
+    {text:'',pause:400},
+    {type:'comment',text:'Step 2: Vercelにデプロイ（CLIの場合）',pause:400},
+    {type:'prompt',text:'npx vercel --prod',pause:700},
+    {text:'',pause:400},
+    {text:'Vercel CLI 37.0.0',cls:'output',pause:300},
+    {text:'🔍  Inspecting project settings...',cls:'info',pause:500},
+    {text:'📦  Building...',cls:'info',pause:600},
+    {text:'✅  Production build completed',cls:'success',pause:500},
+    {text:'🔗  Deploying to production...',cls:'info',pause:600},
+    {text:'',pause:300},
+    {text:'✅ Production: <span class="info">https://my-app.vercel.app</span>',cls:'success',pause:500},
+    {text:'',pause:400},
+    {type:'comment',text:'または GitHub連携なら push するだけで自動デプロイ！',pause:500},
+    {type:'prompt',text:'git push origin main',pause:500},
+    {text:'→ Vercelが自動検知 → ビルド → デプロイ',cls:'success',pause:500},
+    {text:'→ PRごとにプレビューURLも自動生成',cls:'info',pause:400}
+  ],'btn-deploy');
+}
+
+/* ===== Navigation ===== */
+var cur=0,slides=document.querySelectorAll('.slide');
+function go(i){if(i<0||i>=slides.length)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');document.querySelector('.progress').textContent=(cur+1)+' / '+slides.length;if(typeof onSlideEnter==='function')onSlideEnter(cur)}
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' ')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='g')go(0);else if(e.key==='G')go(slides.length-1)});
+
+/* ===== Slide enter hooks ===== */
+function onSlideEnter(idx){
+  var slideId=slides[idx].id;
+  if(slideId==='slide-overview') animateOverviewFlow();
+}
+</script>
+</body>
+</html>

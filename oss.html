@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>OSS参加編 — オープンソースに貢献する</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* GitHub UI mock */
+.github-ui{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.github-header{background:#161b22;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #30363d}
+.github-header .gh-icon{color:#e0e0e0;font-size:1.3rem}
+.github-header .gh-repo{color:#58a6ff;font-size:.95rem;font-weight:600}
+.github-body{padding:1.2rem 1.5rem}
+.gh-file{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #21262d}
+.gh-file .icon{color:#8b949e;font-size:1rem}
+.gh-file .name{color:#58a6ff;font-size:.9rem}
+.gh-file .msg{color:#8b949e;font-size:.85rem;flex:1;text-align:right}
+
+/* Diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:100px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'\25B8 ';color:#00d2ff}
+
+/* Table */
+.oss-table{border-collapse:collapse;width:100%;max-width:900px;font-size:.95rem}
+.oss-table th{background:#1a1a2e;color:#00d2ff;padding:.7rem 1rem;text-align:left;border:1px solid #2a2a4a}
+.oss-table td{padding:.7rem 1rem;border:1px solid #2a2a4a;color:#bbb}
+.oss-table tr:hover td{background:#1a1a2e44}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Step reveal */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* Checklist */
+.checklist{list-style:none;max-width:700px}
+.checklist li{padding:.45rem 0;font-size:1rem;color:#bbb}
+.checklist li::before{content:'\2610 ';color:#00d2ff;font-size:1.1rem}
+.checklist li.checked::before{content:'\2611 ';color:#27c93f}
+
+/* Button */
+button{background:#00d2ff22;color:#00d2ff;border:1px solid #00d2ff44;border-radius:6px;padding:.5rem 1.2rem;cursor:pointer;font-size:.9rem;font-family:inherit}
+button:hover{background:#00d2ff33}
+button:disabled{opacity:.4;cursor:default}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label">OPEN SOURCE GUIDE</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">OSS参加編</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1.5rem">オープンソースに貢献する</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:1rem;flex-wrap:wrap">
+      <span style="display:inline-block;background:linear-gradient(135deg,#c792ea33,#00d2ff33);border:1px solid #c792ea55;border-radius:20px;padding:4px 14px;font-size:.85rem;color:#c792ea">初心者でも今日からできるOSSへの第一歩</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">Arrow keys / Space で操作</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: OSSとは ==================== -->
+<div class="slide">
+  <h2>OSSとは？</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">OPEN SOURCE SOFTWARE</p>
+      <p style="font-size:.95rem">ソースコードが<strong style="color:#00d2ff">公開</strong>されていて、誰でも自由に閲覧・利用・改変・再配布できるソフトウェア。</p>
+      <p style="font-size:.9rem;color:#888;margin-top:.8rem">世界中の開発者が協力して作り上げる、ソフトウェア開発のムーブメント。</p>
+    </div>
+    <div class="card" style="border-color:#00d2ff44">
+      <p class="label green">有名なOSSの例</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.9rem;line-height:2.2">
+        <span style="color:#ffcb6b">Linux</span> <span style="color:#555">— OSの核。サーバーの90%以上</span><br>
+        <span style="color:#61dafb">React</span> <span style="color:#555">— Meta発のUIライブラリ</span><br>
+        <span style="color:#007acc">VS Code</span> <span style="color:#555">— Microsoft発のエディタ</span><br>
+        <span style="color:#f05032">Git</span> <span style="color:#555">— バージョン管理ツール自体も</span><br>
+        <span style="color:#3776ab">Python</span> <span style="color:#555">— プログラミング言語</span>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1.5rem;color:#888;max-width:700px;text-align:center">普段使っているツールの多くがOSS。私たちは既にOSSの恩恵を受けている。</p>
+</div>
+
+<!-- ==================== Slide 3: なぜOSSに参加するか ==================== -->
+<div class="slide" id="slide-why">
+  <h2>なぜOSSに参加するのか？</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;width:100%">
+    <div class="card step" data-step="0" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#00d2ff">01</div>
+      <h3>スキルアップ</h3>
+      <p style="font-size:.9rem">実際のプロジェクトのコードを読み、プロの書き方を学べる。コードレビューも受けられる。</p>
+    </div>
+    <div class="card step" data-step="1" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#00d2ff">02</div>
+      <h3>ポートフォリオ</h3>
+      <p style="font-size:.9rem">GitHubのContribution履歴が公開される。就職・転職時に実力を証明できる。</p>
+    </div>
+    <div class="card step" data-step="2" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#00d2ff">03</div>
+      <h3>コミュニティ</h3>
+      <p style="font-size:.9rem">世界中の開発者とつながれる。メンターが見つかることも。</p>
+    </div>
+    <div class="card step" data-step="3" style="text-align:center">
+      <div style="font-size:2rem;margin-bottom:.5rem;color:#00d2ff">04</div>
+      <h3>恩返し (Giving Back)</h3>
+      <p style="font-size:.9rem">自分が使っているツールをより良くする。次の開発者の助けになる。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 4: Fork & Clone ==================== -->
+<div class="slide" id="slide-fork">
+  <h2>Fork & Clone</h2>
+  <div class="cols" style="max-width:1000px;margin-bottom:1.5rem">
+    <div class="card" style="text-align:center">
+      <p class="label">FORK</p>
+      <p style="font-size:.9rem">他人のリポジトリを<strong style="color:#00d2ff">自分のGitHubアカウント</strong>にコピーする操作。GitHub上のボタンで行う。</p>
+      <div style="margin-top:.8rem;font-size:.85rem;color:#888">
+        <span style="color:#58a6ff">facebook/react</span> → <span style="color:#7fdbca">あなた/react</span>
+      </div>
+    </div>
+    <div class="card" style="text-align:center">
+      <p class="label green">CLONE</p>
+      <p style="font-size:.9rem">リポジトリを<strong style="color:#7fdbca">ローカルPC</strong>にダウンロードする操作。<code>git clone</code>コマンドで行う。</p>
+      <div style="margin-top:.8rem;font-size:.85rem;color:#888">
+        GitHub上のリポジトリ → PCの中
+      </div>
+    </div>
+  </div>
+  <div class="terminal" id="term-fork">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — fork & clone</span>
+    </div>
+    <div class="terminal-body" id="term-fork-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermFork()" id="btn-fork">&#9654; 実行してみる</button>
+    <button onclick="resetTerm('term-fork-body');document.getElementById('btn-fork').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: Contribution ワークフロー ==================== -->
+<div class="slide" id="slide-workflow">
+  <h2>Contribution ワークフロー</h2>
+  <div class="flow" style="margin-bottom:2rem" id="oss-flow">
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Fork</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Clone</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Branch</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Code</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Commit</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box"><p style="font-size:.85rem;color:#c792ea;font-weight:600">Push</p></div>
+    <div class="flow-arrow">&#8594;</div>
+    <div class="flow-box" style="border-color:#27c93f55"><p style="font-size:.85rem;color:#27c93f;font-weight:600">PR</p></div>
+  </div>
+  <div class="terminal" id="term-workflow">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — full contribution flow</span>
+    </div>
+    <div class="terminal-body" id="term-workflow-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermWorkflow()" id="btn-workflow">&#9654; フロー全体を実行</button>
+    <button onclick="resetTerm('term-workflow-body');document.getElementById('btn-workflow').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: 良い最初のContribution ==================== -->
+<div class="slide" id="slide-first">
+  <h2>良い最初のContribution</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label green">探し方</p>
+      <ul class="feature-list">
+        <li>GitHubで <code>good first issue</code> ラベルを検索</li>
+        <li><code>help wanted</code> ラベルも初心者向け</li>
+        <li><span style="color:#58a6ff">github.com/explore</span> でトレンドを確認</li>
+        <li>自分が使っているツールのリポジトリを見る</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="label orange">おすすめの始め方</p>
+      <ul class="feature-list">
+        <li><strong style="color:#7fdbca">ドキュメントの修正</strong> — 誤字・分かりにくい説明</li>
+        <li><strong style="color:#7fdbca">タイポ修正</strong> — コードやコメントの誤字</li>
+        <li><strong style="color:#7fdbca">テスト追加</strong> — カバレッジの向上</li>
+        <li><strong style="color:#7fdbca">翻訳</strong> — 日本語への翻訳</li>
+        <li><strong style="color:#7fdbca">バグ報告</strong> — Issueを立てるだけでも貢献</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1.2rem;text-align:center">
+    <p style="font-size:.9rem;color:#888">コードを書かなくてもOSSに貢献できる。まずは小さな一歩から。</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: CLA ==================== -->
+<div class="slide">
+  <h2>CLA (Contributor License Agreement)</h2>
+  <div style="max-width:800px;width:100%">
+    <div class="card" style="margin-bottom:1.5rem">
+      <p class="label purple">CLAとは？</p>
+      <p style="font-size:.95rem">コントリビューターが、自分の提出したコードに対する権利関係を明確にするための<strong style="color:#c792ea">法的合意書</strong>。</p>
+      <p style="font-size:.9rem;color:#888;margin-top:.5rem">初回のPull Request時にサインを求められることがある。</p>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <p class="label">なぜ必要？</p>
+        <ul class="feature-list">
+          <li>コードの著作権の帰属を明確にする</li>
+          <li>プロジェクトが安全にコードを使えるようにする</li>
+          <li>ライセンス変更時のトラブルを防ぐ</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="label green">CLAがあるプロジェクト例</p>
+        <ul class="feature-list">
+          <li><span style="color:#58a6ff">React (Meta)</span> — CLA必須</li>
+          <li><span style="color:#58a6ff">Kubernetes (Google)</span> — CLA必須</li>
+          <li><span style="color:#58a6ff">Angular (Google)</span> — CLA必須</li>
+        </ul>
+        <p style="font-size:.85rem;color:#888;margin-top:.5rem">大企業主導のOSSに多い。CLAbot が自動で確認する。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: ライセンス選び ==================== -->
+<div class="slide">
+  <h2>ライセンス選び</h2>
+  <p style="font-size:.9rem;color:#888;margin-bottom:1.2rem">OSSに参加する際、ライセンスの理解は重要。自分のプロジェクトを公開するときにも必要。</p>
+  <table class="oss-table">
+    <thead>
+      <tr>
+        <th>ライセンス</th>
+        <th>商用利用</th>
+        <th>改変</th>
+        <th>再配布</th>
+        <th>ソース公開義務</th>
+        <th>特徴</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong style="color:#00d2ff">MIT</strong></td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">なし</td>
+        <td style="font-size:.85rem">最もシンプル。著作権表示のみ必要</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#00d2ff">Apache 2.0</strong></td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">なし</td>
+        <td style="font-size:.85rem">特許保護あり。企業での利用に安心</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ff5370">GPL v3</strong></td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#ff5370">あり (コピーレフト)</td>
+        <td style="font-size:.85rem">派生物もGPLにする必要あり</td>
+      </tr>
+      <tr>
+        <td><strong style="color:#ffcb6b">BSD</strong></td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">OK</td>
+        <td style="color:#27c93f">なし</td>
+        <td style="font-size:.85rem">MITに近い。歴史的に古い</td>
+      </tr>
+    </tbody>
+  </table>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem;max-width:700px;text-align:center">迷ったら <strong style="color:#00d2ff">MIT</strong> が一番扱いやすい。企業向けなら <strong style="color:#00d2ff">Apache 2.0</strong>。</p>
+</div>
+
+<!-- ==================== Slide 9: CONTRIBUTING.md ==================== -->
+<div class="slide" id="slide-contributing">
+  <h2>CONTRIBUTING.md を読む</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">CONTRIBUTING.md とは？</p>
+      <p style="font-size:.95rem">プロジェクトへの貢献方法を説明する<strong style="color:#00d2ff">ガイドライン文書</strong>。PR を出す前に<strong style="color:#ff5370">必ず読む</strong>こと。</p>
+      <p style="font-size:.85rem;color:#888;margin-top:.8rem">リポジトリのルートに置かれていることが多い。</p>
+    </div>
+    <div class="card" style="border-color:#00d2ff44">
+      <p class="label green">よくある記載内容</p>
+      <ul class="feature-list">
+        <li>開発環境のセットアップ手順</li>
+        <li>コーディングスタイル・規約</li>
+        <li>コミットメッセージの書き方</li>
+        <li>テストの実行方法</li>
+        <li>PR のテンプレート・ルール</li>
+        <li>Issue の報告方法</li>
+      </ul>
+    </div>
+  </div>
+  <div class="github-ui" style="max-width:700px;margin-top:1.2rem">
+    <div class="github-header">
+      <span class="gh-icon">&#128025;</span>
+      <span class="gh-repo">awesome-project / awesome-lib</span>
+    </div>
+    <div class="github-body">
+      <div class="gh-file"><span class="icon">&#128196;</span><span class="name">CONTRIBUTING.md</span><span class="msg">Update contribution guidelines</span></div>
+      <div class="gh-file"><span class="icon">&#128196;</span><span class="name">CODE_OF_CONDUCT.md</span><span class="msg">Add code of conduct</span></div>
+      <div class="gh-file"><span class="icon">&#128196;</span><span class="name">LICENSE</span><span class="msg">MIT License</span></div>
+      <div class="gh-file"><span class="icon">&#128196;</span><span class="name">README.md</span><span class="msg">Update docs</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: コミュニケーション ==================== -->
+<div class="slide" id="slide-communication">
+  <h2>コミュニケーション</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:950px;width:100%">
+    <div class="card step" data-step="0">
+      <p class="label">Issue のエチケット</p>
+      <ul class="feature-list">
+        <li>既存のIssueを<strong style="color:#7fdbca">検索してから</strong>新規作成</li>
+        <li>再現手順を具体的に書く</li>
+        <li>環境情報 (OS, バージョン) を記載</li>
+        <li>テンプレートがあれば従う</li>
+      </ul>
+    </div>
+    <div class="card step" data-step="1">
+      <p class="label green">PR の書き方</p>
+      <ul class="feature-list">
+        <li><strong style="color:#7fdbca">何を</strong>変えたか、<strong style="color:#7fdbca">なぜ</strong>変えたか</li>
+        <li>関連 Issue を <code>#123</code> で参照</li>
+        <li>スクリーンショットがあれば添付</li>
+        <li>小さい PR ほどレビューされやすい</li>
+      </ul>
+    </div>
+    <div class="card step" data-step="2">
+      <p class="label orange">レビューへの対応</p>
+      <ul class="feature-list">
+        <li>フィードバックに<strong style="color:#7fdbca">感謝</strong>する</li>
+        <li>指摘には真摯に対応・修正する</li>
+        <li>分からない点は質問してOK</li>
+        <li>議論が長引いたら妥協点を探す</li>
+      </ul>
+    </div>
+    <div class="card step" data-step="3">
+      <p class="label purple">心がけ</p>
+      <ul class="feature-list">
+        <li>メンテナーはボランティアが多い</li>
+        <li>返信に時間がかかるのは普通</li>
+        <li>英語が苦手でも丁寧に書けばOK</li>
+        <li>「Thank you」を忘れずに</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: Code of Conduct ==================== -->
+<div class="slide">
+  <h2>Code of Conduct (行動規範)</h2>
+  <div style="max-width:800px;width:100%">
+    <div class="card" style="margin-bottom:1.5rem;text-align:center">
+      <p class="label red">CODE_OF_CONDUCT.md</p>
+      <p style="font-size:1rem">プロジェクトに参加する全ての人が守るべき<strong style="color:#ff5370">行動ルール</strong>を定めた文書。</p>
+      <p style="font-size:.9rem;color:#888;margin-top:.5rem">健全で包摂的なコミュニティを維持するために存在する。</p>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <p class="label green">推奨される行動</p>
+        <ul class="feature-list">
+          <li>建設的なフィードバック</li>
+          <li>異なる視点や経験の尊重</li>
+          <li>コミュニティにとって最善なことへの注力</li>
+          <li>他のメンバーへの共感</li>
+        </ul>
+      </div>
+      <div class="card">
+        <p class="label red">禁止される行動</p>
+        <ul class="feature-list">
+          <li>ハラスメント・差別的発言</li>
+          <li>個人攻撃・侮辱的コメント</li>
+          <li>他者のプライバシー侵害</li>
+          <li>プロフェッショナルでない行動</li>
+        </ul>
+      </div>
+    </div>
+    <p style="margin-top:1rem;color:#888;font-size:.9rem;text-align:center">多くのプロジェクトが <span style="color:#58a6ff">Contributor Covenant</span> をベースに採用している。</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: 自分のOSSプロジェクトを始める ==================== -->
+<div class="slide" id="slide-start-oss">
+  <h2>自分のOSSプロジェクトを始める</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">必要なファイル チェックリスト</p>
+      <ul class="checklist" id="oss-checklist">
+        <li><code>README.md</code> — プロジェクトの説明・使い方</li>
+        <li><code>LICENSE</code> — ライセンス (MIT等)</li>
+        <li><code>CONTRIBUTING.md</code> — 貢献ガイドライン</li>
+        <li><code>CODE_OF_CONDUCT.md</code> — 行動規範</li>
+        <li><code>.gitignore</code> — 不要ファイルの除外</li>
+        <li>Issue テンプレート — バグ報告・機能要望</li>
+        <li>PR テンプレート — 統一されたPR形式</li>
+      </ul>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:1rem">
+        <p class="label green">良い README の構成</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.8;color:#888">
+          <span style="color:#00d2ff"># プロジェクト名</span><br>
+          <span style="color:#7fdbca">## 概要</span> — 何をするツールか<br>
+          <span style="color:#7fdbca">## インストール</span> — 導入方法<br>
+          <span style="color:#7fdbca">## 使い方</span> — 基本的な使用例<br>
+          <span style="color:#7fdbca">## 貢献方法</span> — リンク<br>
+          <span style="color:#7fdbca">## ライセンス</span> — MIT等
+        </div>
+      </div>
+      <div class="card">
+        <p class="label orange">Tips</p>
+        <ul class="feature-list">
+          <li>GitHub の「Use this template」機能を活用</li>
+          <li><code>gh repo create</code> でCLIから作成も可能</li>
+          <li>CI/CD (GitHub Actions) を早めに設定</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: まとめ ==================== -->
+<div class="slide" id="slide-summary">
+  <h2>まとめ — 今日からOSSに貢献しよう</h2>
+  <div style="max-width:700px;width:100%">
+    <div class="card" style="margin-bottom:1.5rem">
+      <p class="label green">今日からできる3ステップ</p>
+      <div style="display:flex;flex-direction:column;gap:1rem;margin-top:.5rem">
+        <div class="step" data-step="0" style="display:flex;align-items:center;gap:1rem">
+          <span style="font-size:1.8rem;color:#00d2ff;font-weight:bold;min-width:2.5rem;text-align:center">1</span>
+          <div>
+            <p style="font-size:1rem;color:#e0e0e0"><strong>興味のあるプロジェクトを見つける</strong></p>
+            <p style="font-size:.85rem;color:#888">普段使っているツール、GitHub Explore、awesome リスト</p>
+          </div>
+        </div>
+        <div class="step" data-step="1" style="display:flex;align-items:center;gap:1rem">
+          <span style="font-size:1.8rem;color:#00d2ff;font-weight:bold;min-width:2.5rem;text-align:center">2</span>
+          <div>
+            <p style="font-size:1rem;color:#e0e0e0"><strong>CONTRIBUTING.md を読み、good first issue を探す</strong></p>
+            <p style="font-size:.85rem;color:#888">ドキュメント修正、タイポ修正、翻訳でもOK</p>
+          </div>
+        </div>
+        <div class="step" data-step="2" style="display:flex;align-items:center;gap:1rem">
+          <span style="font-size:1.8rem;color:#00d2ff;font-weight:bold;min-width:2.5rem;text-align:center">3</span>
+          <div>
+            <p style="font-size:1rem;color:#e0e0e0"><strong>Fork して、ブランチを切って、PR を出す</strong></p>
+            <p style="font-size:.85rem;color:#888">小さな変更でも立派な貢献。恐れずに行動しよう。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="text-align:center;border-color:#00d2ff44">
+      <p style="font-size:1.1rem;color:#00d2ff;font-weight:600">Every expert was once a beginner.</p>
+      <p style="font-size:.9rem;color:#888;margin-top:.5rem">全てのエキスパートも、かつては初心者だった。まずは最初の一歩を踏み出そう。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Navigation ==================== -->
+<div class="progress">1 / 13</div>
+<div class="nav-hint">&larr; &rarr; で移動 | g: 最初 | G: 最後</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+var slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+var cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  /* Step reveal animation */
+  if(slide.id==='slide-why'||slide.id==='slide-communication'||slide.id==='slide-summary'){
+    var steps=slide.querySelectorAll('.step');
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*500);
+    });
+  }
+  /* Flow diagram animation */
+  if(slide.id==='slide-workflow'){
+    var boxes=slide.querySelectorAll('.flow-box');
+    boxes.forEach(function(b,i){
+      b.classList.remove('active-box');
+      setTimeout(function(){b.classList.add('active-box')},300+i*400);
+    });
+  }
+  /* Checklist animation */
+  if(slide.id==='slide-start-oss'){
+    var items=document.querySelectorAll('#oss-checklist li');
+    items.forEach(function(li,i){
+      li.classList.remove('checked');
+      setTimeout(function(){li.classList.add('checked')},400+i*350);
+    });
+  }
+}
+
+/* ===== Terminal Typing Engine ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: Fork & Clone ===== */
+function runTermFork(){
+  typeInTerminal('term-fork-body',[
+    {type:'comment',text:'GitHub上で Fork ボタンをクリック（ブラウザ操作）',pause:0},
+    {type:'output',text:'Forking facebook/react to your-name/react ...',cls:'info',pause:600},
+    {type:'output',text:'Fork complete!',cls:'success',pause:500},
+    {type:'prompt',text:'git clone git@github.com:your-name/react.git',pause:700},
+    {type:'output',text:'Cloning into \'react\'...',cls:'output',pause:500},
+    {type:'output',text:'remote: Enumerating objects: 234567, done.',cls:'output',pause:400},
+    {type:'output',text:'Receiving objects: 100% (234567/234567), 198.5 MiB',cls:'output',pause:400},
+    {type:'output',text:'Resolving deltas: 100%, done.',cls:'success',pause:300},
+    {type:'prompt',text:'cd react',pause:600},
+    {type:'prompt',text:'git remote -v',pause:500},
+    {type:'output',text:'origin  git@github.com:your-name/react.git (fetch)',cls:'output',pause:300},
+    {type:'output',text:'origin  git@github.com:your-name/react.git (push)',cls:'output',pause:200},
+    {type:'comment',text:'upstream (元のリポジトリ) も追加しておく',pause:500},
+    {type:'prompt',text:'git remote add upstream git@github.com:facebook/react.git',pause:600},
+    {type:'output',text:'upstream added successfully',cls:'success',pause:300},
+    {type:'comment',text:'これで元リポジトリの最新変更も取得できる',pause:400}
+  ],'btn-fork');
+}
+
+/* ===== Demo: Full Workflow ===== */
+function runTermWorkflow(){
+  typeInTerminal('term-workflow-body',[
+    {type:'comment',text:'1. 最新のmainを取得',pause:0},
+    {type:'prompt',text:'git checkout main',pause:500},
+    {type:'prompt',text:'git pull upstream main',pause:500},
+    {type:'output',text:'Already up to date.',cls:'success',pause:400},
+    {type:'comment',text:'2. 作業ブランチを作成',pause:500},
+    {type:'prompt',text:'git checkout -b fix/typo-in-readme',pause:600},
+    {type:'output',text:'Switched to a new branch \'fix/typo-in-readme\'',cls:'success',pause:400},
+    {type:'comment',text:'3. ファイルを修正',pause:500},
+    {type:'prompt',text:'vim README.md',pause:500},
+    {type:'output',text:'... editing ...',cls:'output',pause:400},
+    {type:'comment',text:'4. 変更をコミット',pause:500},
+    {type:'prompt',text:'git add README.md',pause:500},
+    {type:'prompt',text:'git commit -m "fix: correct typo in installation section"',pause:600},
+    {type:'output',text:'[fix/typo-in-readme abc1234] fix: correct typo in installation section',cls:'success',pause:400},
+    {type:'output',text:' 1 file changed, 1 insertion(+), 1 deletion(-)',cls:'output',pause:200},
+    {type:'comment',text:'5. 自分のForkにpush',pause:500},
+    {type:'prompt',text:'git push origin fix/typo-in-readme',pause:600},
+    {type:'output',text:'Enumerating objects: 5, done.',cls:'output',pause:300},
+    {type:'output',text:'To github.com:your-name/react.git',cls:'output',pause:200},
+    {type:'output',text:' * [new branch]  fix/typo-in-readme -> fix/typo-in-readme',cls:'success',pause:300},
+    {type:'comment',text:'6. GitHubでPull Requestを作成（ブラウザ操作）',pause:500},
+    {type:'output',text:'Pull Request #12345 created successfully!',cls:'info',pause:400}
+  ],'btn-workflow');
+}
+</script>
+</body></html>

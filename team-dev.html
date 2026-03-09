@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>チーム開発編 — 複数人でのGit運用</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+</style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<div class="slide active">
+  <div style="text-align:center">
+    <span class="label purple">Git / GitHub</span>
+    <h1 style="font-size:3.2rem;margin-top:.5rem">チーム開発編</h1>
+    <p style="font-size:1.4rem;color:#7fdbca;margin-top:1rem">複数人でのGit運用</p>
+    <div style="margin-top:2.5rem;display:flex;gap:1.5rem;justify-content:center">
+      <div class="flow-box" style="min-width:80px"><span style="font-size:1.5rem">👤</span><br><small style="color:#888">1人</small></div>
+      <div class="flow-arrow" style="font-size:2rem">→</div>
+      <div class="flow-box active-box" style="min-width:80px"><span style="font-size:1.5rem">👥</span><br><small style="color:#888">チーム</small></div>
+    </div>
+    <p style="margin-top:2rem;color:#555;font-size:.95rem">ブランチ戦略・コードレビュー・保護ルール</p>
+  </div>
+</div>
+
+<!-- Slide 2: なぜチーム開発にルールが必要か -->
+<div class="slide">
+  <h2>なぜチーム開発にルールが必要か</h2>
+  <div class="cols">
+    <div class="card">
+      <h3>👤 1人で開発する場合</h3>
+      <ul class="feature-list">
+        <li>自由にコミット・プッシュできる</li>
+        <li>ブランチを切らなくても問題ない</li>
+        <li>コンフリクトは発生しない</li>
+        <li>自分のペースで進められる</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>👥 チームで開発する場合</h3>
+      <ul class="feature-list">
+        <li style="color:#ff5370">同じファイルを同時に編集 → <strong>コンフリクト</strong></li>
+        <li style="color:#ff5370">他人の変更を上書き → <strong>作業消失</strong></li>
+        <li style="color:#ff5370">何が変わったか分からない → <strong>混乱</strong></li>
+        <li style="color:#ff5370">バグがどこで入ったか不明 → <strong>原因追跡が困難</strong></li>
+      </ul>
+    </div>
+  </div>
+  <p style="margin-top:1.5rem;text-align:center;color:#ffcb6b;font-size:1.1rem">
+    ルールを決めておけば、これらの問題を防げる
+  </p>
+</div>
+
+<!-- Slide 3: GitHub Flow -->
+<div class="slide">
+  <h2>ブランチ戦略: GitHub Flow</h2>
+  <span class="label green">シンプル・初心者向け</span>
+  <div class="flow" style="margin:1.5rem 0">
+    <div class="flow-box active-box"><strong>main</strong><br><small style="color:#888">本番環境</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box"><strong>feature branch</strong><br><small style="color:#888">機能開発</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box"><strong>Pull Request</strong><br><small style="color:#888">レビュー依頼</small></div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-box active-box"><strong>merge to main</strong><br><small style="color:#888">本番反映</small></div>
+  </div>
+  <div class="terminal" style="max-width:800px;margin-top:1rem">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>GitHub Flow デモ</span></div>
+    <div class="terminal-body" id="term-ghflow"></div>
+  </div>
+  <button id="btn-ghflow" onclick="typeInTerminal('term-ghflow',[
+    {type:'comment',text:'1. mainから新しいブランチを作成',pause:300},
+    {type:'prompt',text:'git checkout -b feature/add-login',pause:600},
+    {text:'Switched to a new branch \'feature/add-login\'',cls:'success',pause:500},
+    {type:'comment',text:'2. コードを書いてコミット',pause:500},
+    {type:'prompt',text:'git add . &amp;&amp; git commit -m \"feat: ログイン機能を追加\"',pause:600},
+    {text:'[feature/add-login abc1234] feat: ログイン機能を追加',cls:'output',pause:500},
+    {type:'comment',text:'3. リモートにプッシュ',pause:500},
+    {type:'prompt',text:'git push -u origin feature/add-login',pause:600},
+    {text:'Branch \'feature/add-login\' set up to track remote branch.',cls:'success',pause:500},
+    {type:'comment',text:'4. Pull Requestを作成 → レビュー → マージ',pause:500},
+    {type:'prompt',text:'gh pr create --title \"ログイン機能を追加\"',pause:600},
+    {text:'https://github.com/team/project/pull/42',cls:'info',pause:400},
+    {text:'✓ これがGitHub Flowの基本サイクルです！',cls:'success',pause:300}
+  ],'btn-ghflow')" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.5rem;border-radius:6px;cursor:pointer;font-size:.9rem">▶ デモを実行</button>
+</div>
+
+<!-- Slide 4: Git Flow -->
+<div class="slide">
+  <h2>ブランチ戦略: Git Flow</h2>
+  <span class="label orange">大規模プロジェクト向け</span>
+  <div style="display:flex;flex-direction:column;gap:.6rem;margin:1rem 0;max-width:900px;width:100%">
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div style="width:140px;text-align:right"><span class="label red">main</span></div>
+      <div style="flex:1;height:4px;background:#ff5370;border-radius:2px;position:relative">
+        <div style="position:absolute;top:-8px;right:0;width:20px;height:20px;background:#ff5370;border-radius:50%"></div>
+      </div>
+      <small style="color:#888;width:100px">本番リリース</small>
+    </div>
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div style="width:140px;text-align:right"><span class="label">develop</span></div>
+      <div style="flex:1;height:4px;background:#00d2ff;border-radius:2px"></div>
+      <small style="color:#888;width:100px">開発の統合先</small>
+    </div>
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div style="width:140px;text-align:right"><span class="label green">feature/*</span></div>
+      <div style="flex:1;height:4px;background:#7fdbca;border-radius:2px;margin:0 20%"></div>
+      <small style="color:#888;width:100px">機能開発</small>
+    </div>
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div style="width:140px;text-align:right"><span class="label yellow">release/*</span></div>
+      <div style="flex:1;height:4px;background:#ffcb6b;border-radius:2px;margin-left:60%"></div>
+      <small style="color:#888;width:100px">リリース準備</small>
+    </div>
+    <div style="display:flex;align-items:center;gap:.8rem">
+      <div style="width:140px;text-align:right"><span class="label red">hotfix/*</span></div>
+      <div style="flex:1;height:4px;background:#ff5370;border-radius:2px;margin:0 70% 0 10%"></div>
+      <small style="color:#888;width:100px">緊急修正</small>
+    </div>
+  </div>
+  <div class="cols" style="max-width:900px;margin-top:1rem">
+    <div class="card" style="text-align:center">
+      <h3>GitHub Flow を選ぶ場合</h3>
+      <p>小〜中規模チーム<br>継続的デプロイ<br>シンプルさ重視</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <h3>Git Flow を選ぶ場合</h3>
+      <p>大規模チーム<br>バージョン管理が必要<br>リリースサイクルが長い</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 5: 命名規則 -->
+<div class="slide">
+  <h2>命名規則</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <h3>ブランチ名の規則</h3>
+      <div style="margin:.8rem 0">
+        <span class="label green">feature/</span>
+        <p style="font-size:.95rem">新機能の開発<br><code>feature/add-login</code><br><code>feature/user-profile</code></p>
+      </div>
+      <div style="margin:.8rem 0">
+        <span class="label orange">bugfix/</span>
+        <p style="font-size:.95rem">バグの修正<br><code>bugfix/fix-header-layout</code><br><code>bugfix/login-validation</code></p>
+      </div>
+      <div style="margin:.8rem 0">
+        <span class="label red">hotfix/</span>
+        <p style="font-size:.95rem">緊急の修正<br><code>hotfix/security-patch</code><br><code>hotfix/crash-on-startup</code></p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>コミットメッセージの規則</h3>
+      <p style="margin-bottom:.6rem;color:#00d2ff;font-size:.9rem">Conventional Commits</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.9rem;line-height:2.2">
+        <div><span class="label green" style="width:60px;text-align:center;display:inline-block">feat:</span> 新機能を追加</div>
+        <div><span class="label orange" style="width:60px;text-align:center;display:inline-block">fix:</span> バグを修正</div>
+        <div><span class="label purple" style="width:60px;text-align:center;display:inline-block">docs:</span> ドキュメント変更</div>
+        <div><span class="label" style="width:60px;text-align:center;display:inline-block">style:</span> コードスタイル修正</div>
+        <div><span class="label yellow" style="width:60px;text-align:center;display:inline-block">refactor:</span> リファクタリング</div>
+        <div><span class="label red" style="width:60px;text-align:center;display:inline-block">test:</span> テスト追加・修正</div>
+      </div>
+      <div style="margin-top:1rem;background:#0a0a15;padding:.8rem;border-radius:6px">
+        <small style="color:#888">例:</small><br>
+        <code style="font-size:.85rem">feat: ユーザー登録フォームを追加</code><br>
+        <code style="font-size:.85rem">fix: メール送信時のエラーを修正</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: コードレビュー -->
+<div class="slide">
+  <h2>コードレビュー</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="card">
+      <h3>コードレビューとは？</h3>
+      <p>他のメンバーが書いたコードを確認し、<br>フィードバックを送るプロセス</p>
+      <div style="margin-top:1rem">
+        <h3>なぜ必要か</h3>
+        <ul class="feature-list">
+          <li>バグの早期発見</li>
+          <li>コード品質の向上</li>
+          <li>知識の共有・チーム学習</li>
+          <li>一貫性のあるコードベース</li>
+        </ul>
+      </div>
+    </div>
+    <div class="card" style="background:#12121f;border-color:#333">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:.8rem;border-bottom:1px solid #2a2a4a">
+        <div>
+          <span class="label green">Open</span>
+          <strong style="margin-left:.5rem;color:#e0e0e0">feat: ログイン機能を追加</strong>
+        </div>
+        <small style="color:#888">#42</small>
+      </div>
+      <div style="margin-bottom:.8rem">
+        <small style="color:#888">Reviewers</small><br>
+        <span style="color:#ffcb6b">● tanaka</span> — <small style="color:#888">レビュー待ち</small>
+      </div>
+      <div style="background:#1a1a2e;border-radius:8px;padding:1rem;margin:.5rem 0">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem">
+          <div style="width:28px;height:28px;background:#c792ea;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#fff">T</div>
+          <strong style="font-size:.9rem;color:#e0e0e0">tanaka</strong>
+          <small style="color:#888">commented 2 hours ago</small>
+        </div>
+        <p style="font-size:.9rem;color:#bbb">パスワードのバリデーションを追加した方がよさそうです。<br>最低8文字のチェックはありますか？</p>
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.8rem">
+        <span style="background:#27c93f22;color:#27c93f;padding:.3rem .8rem;border-radius:4px;font-size:.8rem;cursor:pointer">✓ Approve</span>
+        <span style="background:#ff537022;color:#ff5370;padding:.3rem .8rem;border-radius:4px;font-size:.8rem;cursor:pointer">✗ Request changes</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 7: コードレビュー デモ -->
+<div class="slide">
+  <h2>コードレビュー デモ</h2>
+  <span class="label">gh CLIでPR作成からマージまで</span>
+  <div class="terminal" style="margin-top:1rem">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>コードレビュー フロー</span></div>
+    <div class="terminal-body" id="term-review"></div>
+  </div>
+  <button id="btn-review" onclick="typeInTerminal('term-review',[
+    {type:'comment',text:'1. Pull Requestを作成',pause:300},
+    {type:'prompt',text:'gh pr create --title \"feat: 検索機能を追加\" --body \"検索バーとフィルタリング機能\"',pause:700},
+    {text:'https://github.com/team/project/pull/43',cls:'info',pause:600},
+    {type:'comment',text:'2. レビュアーを指定',pause:500},
+    {type:'prompt',text:'gh pr edit 43 --add-reviewer tanaka,suzuki',pause:600},
+    {text:'Updated pull request #43',cls:'success',pause:600},
+    {type:'comment',text:'3. レビュアーがコメント → 修正対応',pause:500},
+    {type:'prompt',text:'git add . &amp;&amp; git commit -m \"fix: レビュー指摘を修正\"',pause:600},
+    {text:'[feature/search f5e6a7b] fix: レビュー指摘を修正',cls:'output',pause:400},
+    {type:'prompt',text:'git push',pause:500},
+    {text:'Everything up-to-date',cls:'output',pause:600},
+    {type:'comment',text:'4. Approveされたらマージ',pause:500},
+    {type:'prompt',text:'gh pr merge 43 --squash --delete-branch',pause:700},
+    {text:'✓ Squashed and merged pull request #43',cls:'success',pause:400},
+    {text:'✓ Deleted branch feature/search',cls:'success',pause:300},
+    {type:'comment',text:'5. ローカルのmainを最新に',pause:500},
+    {type:'prompt',text:'git checkout main &amp;&amp; git pull',pause:600},
+    {text:'Already on \'main\'. Fast-forward to latest.',cls:'success',pause:300}
+  ],'btn-review')" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.5rem;border-radius:6px;cursor:pointer;font-size:.9rem">▶ デモを実行</button>
+</div>
+
+<!-- Slide 8: CODEOWNERS -->
+<div class="slide">
+  <h2>CODEOWNERS</h2>
+  <span class="label purple">自動レビュアー割り当て</span>
+  <div class="cols" style="max-width:1000px;margin-top:1rem">
+    <div class="card">
+      <h3>CODEOWNERSとは？</h3>
+      <p>特定のファイルやディレクトリに対して、<strong style="color:#00d2ff">自動的にレビュアーを割り当てる</strong>仕組み</p>
+      <ul class="feature-list" style="margin-top:1rem">
+        <li>PRを作ると自動でレビュー依頼が飛ぶ</li>
+        <li>担当領域を明確にできる</li>
+        <li>レビュー漏れを防止できる</li>
+        <li><code>.github/CODEOWNERS</code> に設置</li>
+      </ul>
+    </div>
+    <div class="terminal" style="max-width:500px">
+      <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>.github/CODEOWNERS</span></div>
+      <div class="terminal-body" style="font-size:.85rem">
+        <div><span class="info"># デフォルトのオーナー</span></div>
+        <div><span class="cmd">*       @team-lead</span></div>
+        <div>&nbsp;</div>
+        <div><span class="info"># フロントエンド</span></div>
+        <div><span class="cmd">src/components/  @frontend-team</span></div>
+        <div><span class="cmd">src/styles/      @frontend-team</span></div>
+        <div>&nbsp;</div>
+        <div><span class="info"># バックエンド</span></div>
+        <div><span class="cmd">src/api/         @backend-team</span></div>
+        <div><span class="cmd">src/database/    @db-admin</span></div>
+        <div>&nbsp;</div>
+        <div><span class="info"># インフラ・CI/CD</span></div>
+        <div><span class="cmd">.github/         @devops-team</span></div>
+        <div><span class="cmd">Dockerfile       @devops-team</span></div>
+        <div>&nbsp;</div>
+        <div><span class="info"># ドキュメント</span></div>
+        <div><span class="cmd">docs/            @tech-writer</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: Protected Branches -->
+<div class="slide">
+  <h2>Protected Branches</h2>
+  <span class="label red">mainブランチを守る</span>
+  <div class="cols" style="max-width:1050px;margin-top:1rem">
+    <div class="card">
+      <h3>何から守るのか？</h3>
+      <ul class="feature-list">
+        <li>レビューなしの直接マージ</li>
+        <li>CIテストが失敗した状態でのマージ</li>
+        <li><code>git push --force</code> による履歴破壊</li>
+        <li>ブランチの誤った削除</li>
+      </ul>
+    </div>
+    <div class="card" style="background:#12121f">
+      <div style="border-bottom:1px solid #2a2a4a;padding-bottom:.6rem;margin-bottom:1rem">
+        <small style="color:#888">Settings → Branches → Branch protection rules</small><br>
+        <strong style="color:#e0e0e0">main</strong>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border-radius:3px;background:#00d2ff;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0f0f1a">✓</div>
+          <span style="font-size:.9rem">Require a pull request before merging</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem;margin-left:1.5rem">
+          <div style="width:18px;height:18px;border-radius:3px;background:#00d2ff;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0f0f1a">✓</div>
+          <span style="font-size:.85rem;color:#aaa">Require approvals: <strong style="color:#ffcb6b">1</strong></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border-radius:3px;background:#00d2ff;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0f0f1a">✓</div>
+          <span style="font-size:.9rem">Require status checks to pass</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem;margin-left:1.5rem">
+          <div style="width:18px;height:18px;border-radius:3px;background:#00d2ff;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0f0f1a">✓</div>
+          <span style="font-size:.85rem;color:#aaa">CI / test suite</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border-radius:3px;background:#00d2ff;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0f0f1a">✓</div>
+          <span style="font-size:.9rem">Do not allow force pushes</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:.6rem">
+          <div style="width:18px;height:18px;border-radius:3px;background:#00d2ff;display:flex;align-items:center;justify-content:center;font-size:.7rem;color:#0f0f1a">✓</div>
+          <span style="font-size:.9rem">Do not allow deletions</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 10: Protected Branches デモ -->
+<div class="slide">
+  <h2>Protected Branches デモ</h2>
+  <span class="label red">直接プッシュは拒否される</span>
+  <div class="terminal" style="margin-top:1rem">
+    <div class="terminal-bar"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div><span>ブランチ保護の動作</span></div>
+    <div class="terminal-body" id="term-protect"></div>
+  </div>
+  <button id="btn-protect" onclick="typeInTerminal('term-protect',[
+    {type:'comment',text:'mainに直接プッシュしてみる...',pause:300},
+    {type:'prompt',text:'git checkout main',pause:500},
+    {text:'Switched to branch \'main\'',cls:'output',pause:400},
+    {type:'prompt',text:'echo \"直接変更\" >> README.md',pause:400},
+    {type:'prompt',text:'git add . &amp;&amp; git commit -m \"直接変更\"',pause:500},
+    {text:'[main d4e5f6a] 直接変更',cls:'output',pause:400},
+    {type:'prompt',text:'git push origin main',pause:700},
+    {text:'remote: error: GH006: Protected branch update failed.',cls:'error',pause:300},
+    {text:'remote: error: Required status check \"ci/test\" is expected.',cls:'error',pause:300},
+    {text:'remote: error: At least 1 approving review is required.',cls:'error',pause:300},
+    {text:'! [remote rejected] main -> main (protected branch hook declined)',cls:'error',pause:600},
+    {type:'comment',text:'✗ 拒否された！正しい方法でやり直す:',pause:600},
+    {type:'prompt',text:'git reset HEAD~1',pause:500},
+    {text:'Unstaged changes after reset.',cls:'output',pause:400},
+    {type:'prompt',text:'git checkout -b feature/update-readme',pause:500},
+    {text:'Switched to a new branch \'feature/update-readme\'',cls:'success',pause:400},
+    {type:'prompt',text:'git add . &amp;&amp; git commit -m \"docs: READMEを更新\"',pause:500},
+    {text:'[feature/update-readme a1b2c3d] docs: READMEを更新',cls:'output',pause:400},
+    {type:'prompt',text:'git push -u origin feature/update-readme',pause:600},
+    {text:'✓ ブランチ経由なら問題なくプッシュできる！',cls:'success',pause:300}
+  ],'btn-protect')" style="margin-top:.8rem;background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.5rem 1.5rem;border-radius:6px;cursor:pointer;font-size:.9rem">▶ デモを実行</button>
+</div>
+
+<!-- Slide 11: Collaborators & Permissions -->
+<div class="slide">
+  <h2>Collaborators &amp; Permissions</h2>
+  <span class="label">アクセス権限の管理</span>
+  <div class="cols" style="max-width:1000px;margin-top:1rem">
+    <div class="card">
+      <h3>リポジトリの権限レベル</h3>
+      <div style="margin-top:1rem;display:flex;flex-direction:column;gap:.8rem">
+        <div style="display:flex;align-items:center;gap:1rem">
+          <span class="label" style="min-width:80px;text-align:center">Read</span>
+          <p style="font-size:.9rem">コードの閲覧・Issue作成<br><small style="color:#666">外部コントリビューター向け</small></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem">
+          <span class="label green" style="min-width:80px;text-align:center">Write</span>
+          <p style="font-size:.9rem">プッシュ・PR作成・マージ<br><small style="color:#666">開発メンバー向け</small></p>
+        </div>
+        <div style="display:flex;align-items:center;gap:1rem">
+          <span class="label purple" style="min-width:80px;text-align:center">Admin</span>
+          <p style="font-size:.9rem">設定変更・メンバー管理<br><small style="color:#666">プロジェクトリーダー向け</small></p>
+        </div>
+      </div>
+    </div>
+    <div class="card" style="background:#12121f">
+      <div style="border-bottom:1px solid #2a2a4a;padding-bottom:.6rem;margin-bottom:1rem">
+        <small style="color:#888">Settings → Collaborators</small>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.8rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem;background:#1a1a2e;border-radius:6px">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;background:#00d2ff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#0f0f1a;font-weight:bold">Y</div>
+            <div><strong style="font-size:.9rem">yamada</strong><br><small style="color:#888">Owner</small></div>
+          </div>
+          <span class="label purple" style="font-size:.75rem">Admin</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem;background:#1a1a2e;border-radius:6px">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;background:#7fdbca;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#0f0f1a;font-weight:bold">T</div>
+            <div><strong style="font-size:.9rem">tanaka</strong><br><small style="color:#888">Member</small></div>
+          </div>
+          <span class="label green" style="font-size:.75rem">Write</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem;background:#1a1a2e;border-radius:6px">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;background:#c792ea;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#0f0f1a;font-weight:bold">S</div>
+            <div><strong style="font-size:.9rem">suzuki</strong><br><small style="color:#888">Member</small></div>
+          </div>
+          <span class="label green" style="font-size:.75rem">Write</span>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:.5rem;background:#1a1a2e;border-radius:6px">
+          <div style="display:flex;align-items:center;gap:.5rem">
+            <div style="width:32px;height:32px;background:#f78c6c;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:#0f0f1a;font-weight:bold">E</div>
+            <div><strong style="font-size:.9rem">external-dev</strong><br><small style="color:#888">Outside collaborator</small></div>
+          </div>
+          <span class="label" style="font-size:.75rem">Read</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 12: チーム開発の1日 -->
+<div class="slide">
+  <h2>チーム開発の1日</h2>
+  <span class="label yellow">日常のワークフロー</span>
+  <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:1.2rem;max-width:800px;width:100%">
+    <div class="step visible" style="display:flex;align-items:center;gap:1rem" id="day-1">
+      <div style="width:60px;text-align:center;color:#888;font-size:.85rem">9:00</div>
+      <div class="flow-box active-box" style="flex:1;text-align:left;padding:.6rem 1rem">
+        <code>git pull origin main</code>
+        <small style="color:#888;display:block;margin-top:.2rem">最新のmainを取得してスタート</small>
+      </div>
+    </div>
+    <div style="margin-left:30px;color:#333;font-size:1.2rem">↓</div>
+    <div class="step visible" style="display:flex;align-items:center;gap:1rem" id="day-2">
+      <div style="width:60px;text-align:center;color:#888;font-size:.85rem">9:05</div>
+      <div class="flow-box" style="flex:1;text-align:left;padding:.6rem 1rem">
+        <code>git checkout -b feature/...</code>
+        <small style="color:#888;display:block;margin-top:.2rem">作業ブランチを作成</small>
+      </div>
+    </div>
+    <div style="margin-left:30px;color:#333;font-size:1.2rem">↓</div>
+    <div class="step visible" style="display:flex;align-items:center;gap:1rem" id="day-3">
+      <div style="width:60px;text-align:center;color:#888;font-size:.85rem">9:10〜</div>
+      <div class="flow-box" style="flex:1;text-align:left;padding:.6rem 1rem">
+        <span style="color:#7fdbca">コードを書く → commit → push</span>
+        <small style="color:#888;display:block;margin-top:.2rem">こまめにコミット、適度にプッシュ</small>
+      </div>
+    </div>
+    <div style="margin-left:30px;color:#333;font-size:1.2rem">↓</div>
+    <div class="step visible" style="display:flex;align-items:center;gap:1rem" id="day-4">
+      <div style="width:60px;text-align:center;color:#888;font-size:.85rem">16:00</div>
+      <div class="flow-box" style="flex:1;text-align:left;padding:.6rem 1rem">
+        <code>gh pr create</code>
+        <small style="color:#888;display:block;margin-top:.2rem">Pull Requestを作成してレビュー依頼</small>
+      </div>
+    </div>
+    <div style="margin-left:30px;color:#333;font-size:1.2rem">↓</div>
+    <div class="step visible" style="display:flex;align-items:center;gap:1rem" id="day-5">
+      <div style="width:60px;text-align:center;color:#888;font-size:.85rem">17:00</div>
+      <div class="flow-box" style="flex:1;text-align:left;padding:.6rem 1rem">
+        <span style="color:#ffcb6b">レビュー → 修正 → Approve</span>
+        <small style="color:#888;display:block;margin-top:.2rem">チームメンバーがコードをレビュー</small>
+      </div>
+    </div>
+    <div style="margin-left:30px;color:#333;font-size:1.2rem">↓</div>
+    <div class="step visible" style="display:flex;align-items:center;gap:1rem" id="day-6">
+      <div style="width:60px;text-align:center;color:#888;font-size:.85rem">17:30</div>
+      <div class="flow-box active-box" style="flex:1;text-align:left;padding:.6rem 1rem">
+        <code>gh pr merge --squash</code>
+        <small style="color:#27c93f;display:block;margin-top:.2rem">mainにマージして完了！</small>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 13: まとめ -->
+<div class="slide">
+  <h2>まとめ — チーム開発のルール</h2>
+  <div style="max-width:800px;width:100%;margin-top:1rem">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+      <div class="card" style="text-align:center">
+        <span class="label green" style="font-size:1rem;margin-bottom:.5rem">ブランチ戦略</span>
+        <p style="font-size:.95rem">mainには直接コミットしない<br>feature branchで作業する</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <span class="label" style="font-size:1rem;margin-bottom:.5rem">命名規則</span>
+        <p style="font-size:.95rem"><code>feature/</code> <code>bugfix/</code> <code>hotfix/</code><br><code>feat:</code> <code>fix:</code> <code>docs:</code></p>
+      </div>
+      <div class="card" style="text-align:center">
+        <span class="label purple" style="font-size:1rem;margin-bottom:.5rem">コードレビュー</span>
+        <p style="font-size:.95rem">PRを通じてレビューを受ける<br>品質と知識共有を担保</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <span class="label red" style="font-size:1rem;margin-bottom:.5rem">ブランチ保護</span>
+        <p style="font-size:.95rem">レビュー必須・CI必須<br>force push禁止</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <span class="label orange" style="font-size:1rem;margin-bottom:.5rem">CODEOWNERS</span>
+        <p style="font-size:.95rem">担当領域を明確化<br>自動レビュアー割り当て</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <span class="label yellow" style="font-size:1rem;margin-bottom:.5rem">権限管理</span>
+        <p style="font-size:.95rem">Read / Write / Admin<br>最小権限の原則</p>
+      </div>
+    </div>
+    <p style="text-align:center;margin-top:1.5rem;color:#00d2ff;font-size:1.15rem">
+      ルールを守ることで、チーム全員が安心して開発できる
+    </p>
+  </div>
+</div>
+
+<div class="progress">1 / 13</div>
+<div class="nav-hint">&larr; &rarr; キーで移動</div>
+
+<script>
+function typeInTerminal(id,lines,btnId){
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var el=document.getElementById(id);el.innerHTML='';var delay=0;
+  lines.forEach(function(l){delay+=l.pause||500;setTimeout(function(){var div=document.createElement('div');if(l.type==='prompt'){div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+l.text+'</span>'}else if(l.type==='comment'){div.innerHTML='<span class="info"># '+l.text+'</span>'}else{div.innerHTML='<span class="'+(l.cls||'output')+'">'+l.text+'</span>'}el.appendChild(div);el.scrollTop=el.scrollHeight},delay)});
+  setTimeout(function(){if(btnId)document.getElementById(btnId).disabled=false},delay+500);
+}
+var cur=0,slides=document.querySelectorAll('.slide');
+function go(i){if(i<0||i>=slides.length)return;slides[cur].classList.remove('active');cur=i;slides[cur].classList.add('active');document.querySelector('.progress').textContent=(cur+1)+' / '+slides.length}
+document.addEventListener('keydown',function(e){if(e.key==='ArrowRight'||e.key===' ')go(cur+1);else if(e.key==='ArrowLeft')go(cur-1);else if(e.key==='g')go(0);else if(e.key==='G')go(slides.length-1)});
+</script>
+</body>
+</html>
