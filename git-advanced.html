@@ -106,7 +106,50 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   </div>
 </div>
 
-<!-- ==================== Slide 2: rebase とは ==================== -->
+<!-- ==================== Slide 2: Outline ==================== -->
+<div class="slide">
+  <h2>この編の全体像</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem;font-size:1.1rem">ゴール: <span style="color:#00d2ff">Gitの内部動作を理解し、複雑な状況でも的確に対処できるようになる</span></p>
+  <div style="max-width:1000px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card" style="border-left:3px solid #00d2ff">
+      <span class="label">1</span>
+      <h3 style="font-size:1.1rem">rebase</h3>
+      <p style="font-size:.85rem">履歴を整理する<br><span style="color:#7fdbca">→ きれいなコミットログを作る</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #7fdbca">
+      <span class="label green">2</span>
+      <h3 style="font-size:1.1rem">cherry-pick & bisect</h3>
+      <p style="font-size:.85rem">必要なコミットだけ取り出す / バグの原因を特定する<br><span style="color:#7fdbca">→ ピンポイントで操作する力</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #c792ea">
+      <span class="label purple">3</span>
+      <h3 style="font-size:1.1rem">stash & worktree</h3>
+      <p style="font-size:.85rem">作業を中断・並行する<br><span style="color:#7fdbca">→ 柔軟な作業切り替え</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #f78c6c">
+      <span class="label orange">4</span>
+      <h3 style="font-size:1.1rem">submodule</h3>
+      <p style="font-size:.85rem">外部リポジトリの取り込み<br><span style="color:#7fdbca">→ 安全に外部コードを管理</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ffcb6b">
+      <span class="label yellow">5</span>
+      <h3 style="font-size:1.1rem">log & diff 上級</h3>
+      <p style="font-size:.85rem">変更履歴を読み解く<br><span style="color:#7fdbca">→ 正確に履歴を追う力をつける</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ff5370">
+      <span class="label red">6</span>
+      <h3 style="font-size:1.1rem">reset vs revert</h3>
+      <p style="font-size:.85rem">「取り消し」の正しい使い分け<br><span style="color:#7fdbca">→ 安全に履歴を操作する</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #00d2ff;grid-column:1 / -1;max-width:490px;justify-self:center">
+      <span class="label">7</span>
+      <h3 style="font-size:1.1rem">hooks & gitattributes</h3>
+      <p style="font-size:.85rem">Gitの動作をカスタマイズする<br><span style="color:#7fdbca">→ チーム全体の品質を底上げ</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: rebase とは ==================== -->
 <div class="slide" id="slide-rebase-intro">
   <h2>rebase とは</h2>
   <div class="cols" style="max-width:1050px;gap:2.5rem">

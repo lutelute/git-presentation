@@ -123,7 +123,45 @@ button:disabled{opacity:.4;cursor:default}
   </div>
 </div>
 
-<!-- ==================== Slide 2: なぜセキュリティが重要か ==================== -->
+<!-- ==================== Slide 2: Outline ==================== -->
+<div class="slide">
+  <h2>この編の全体像</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem;font-size:1.1rem">ゴール: <span style="color:#00d2ff">開発中のセキュリティリスクを理解し、事故を未然に防ぐ習慣を身につける</span></p>
+  <div style="max-width:1000px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card" style="border-left:3px solid #ff5370">
+      <span class="label red">Section 1</span>
+      <h3 style="font-size:1.1rem">なぜセキュリティが重要か</h3>
+      <p style="font-size:.85rem">実際の事故事例と対策の概要<br><span style="color:#7fdbca">→ 実際の事故例で危機感を持つ</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #00d2ff">
+      <span class="label">Section 2</span>
+      <h3 style="font-size:1.1rem">Secrets管理</h3>
+      <p style="font-size:.85rem">.env・環境変数・.gitignoreの使い方<br><span style="color:#7fdbca">→ APIキーを漏洩させない具体的な方法</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #7fdbca">
+      <span class="label green">Section 3</span>
+      <h3 style="font-size:1.1rem">自動防御ツール</h3>
+      <p style="font-size:.85rem">git-secrets / Dependabotの導入と設定<br><span style="color:#7fdbca">→ git-secrets / Dependabotで人間のミスを機械が防ぐ</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #c792ea">
+      <span class="label purple">Section 4</span>
+      <h3 style="font-size:1.1rem">署名と認証</h3>
+      <p style="font-size:.85rem">GPG署名・2FA・SSH鍵の設定<br><span style="color:#7fdbca">→ 「本人が書いた」ことを証明する仕組み</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #f78c6c">
+      <span class="label orange">Section 5</span>
+      <h3 style="font-size:1.1rem">保護と監視</h3>
+      <p style="font-size:.85rem">ブランチ保護・Advanced Security<br><span style="color:#7fdbca">→ ブランチ保護 / Advanced Securityで組織的に守る</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ffcb6b">
+      <span class="label yellow">Section 6</span>
+      <h3 style="font-size:1.1rem">チェックリスト</h3>
+      <p style="font-size:.85rem">セキュリティ対策の確認項目<br><span style="color:#7fdbca">→ 今日からできるセキュリティ対策一覧</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: なぜセキュリティが重要か ==================== -->
 <div class="slide">
   <h2>なぜセキュリティが重要か？</h2>
   <div class="cols" style="max-width:1050px">
@@ -686,7 +724,7 @@ button:disabled{opacity:.4;cursor:default}
   <button class="anim-btn" onclick="togglePause()" id="btn-pause" title="P キー">⏸ 一時停止</button>
   <button class="anim-btn" onclick="skipAnim()" title="S キー">⏭ スキップ</button>
 </div>
-<div class="progress">1 / 14</div>
+<div class="progress">1 / 15</div>
 <div class="nav-hint">← → で移動 | g: 最初 | G: 最後</div>
 
 <script>

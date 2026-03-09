@@ -105,7 +105,35 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   </div>
 </div>
 
-<!-- ==================== Slide 2: GitHub Pages とは ==================== -->
+<!-- ==================== Slide 2: Outline ==================== -->
+<div class="slide">
+  <h2>この編の全体像</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem;font-size:1.1rem">ゴール: <span style="color:#00d2ff">GitHubの便利ツールを理解し、コードを書く以外の作業を自動化・効率化できるようになる</span></p>
+  <div style="max-width:1000px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card" style="border-left:3px solid #7fdbca">
+      <span class="label green">HOSTING</span>
+      <h3 style="font-size:1.1rem">GitHub Pages</h3>
+      <p style="font-size:.85rem">リポジトリから無料で静的サイトを公開。設定・カスタムドメイン・デプロイの流れ<br><span style="color:#7fdbca">→ コードを書いたら世界に公開できる。サーバー不要で即デプロイ</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #f78c6c">
+      <span class="label orange">CI/CD</span>
+      <h3 style="font-size:1.1rem">GitHub Actions</h3>
+      <p style="font-size:.85rem">YAMLでワークフローを定義し、テスト・ビルド・デプロイを自動実行<br><span style="color:#7fdbca">→ pushするだけでテスト・デプロイが自動実行される。手作業ミスをなくす</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #c792ea">
+      <span class="label purple">VERSIONING</span>
+      <h3 style="font-size:1.1rem">Releases</h3>
+      <p style="font-size:.85rem">セマンティックバージョニングでタグ付け。バイナリやアセットを添付して配布<br><span style="color:#7fdbca">→ ユーザーにバージョンごとの成果物を配布できる。変更履歴も明確に</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ffcb6b">
+      <span class="label yellow">MANAGEMENT</span>
+      <h3 style="font-size:1.1rem">Packages &amp; Projects</h3>
+      <p style="font-size:.85rem">npm/Dockerのパッケージ管理と、カンバンボードによるタスク管理を一元化<br><span style="color:#7fdbca">→ コード・パッケージ・タスクをGitHub上で完結。ツール分散を防ぐ</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 3: GitHub Pages とは ==================== -->
 <div class="slide">
   <p class="label green">HOSTING</p>
   <h2>GitHub Pages とは</h2>
@@ -566,7 +594,7 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
   <button class="anim-btn" onclick="togglePause()" id="btn-pause" title="P キー">⏸ 一時停止</button>
   <button class="anim-btn" onclick="skipAnim()" title="S キー">⏭ スキップ</button>
 </div>
-<div class="progress">1 / 14</div>
+<div class="progress">1 / 15</div>
 <div class="nav-hint">← → キーで移動</div>
 
 <script>

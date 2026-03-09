@@ -77,7 +77,40 @@ button:disabled{opacity:.4;cursor:not-allowed}
   </div>
 </div>
 
-<!-- Slide 2: モダンWeb開発の全体像 -->
+<!-- Slide 2: Outline -->
+<div class="slide" id="slide-outline">
+  <h2>この編の全体像</h2>
+  <p style="text-align:center;color:#888;margin-bottom:1.5rem;font-size:1.1rem">ゴール: <span style="color:#00d2ff">モダンなWeb開発のプロジェクト構成を理解し、ゼロからデプロイまで一人で完走できるようになる</span></p>
+  <div style="max-width:1000px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div class="card" style="border-left:3px solid #00d2ff">
+      <span class="label">FOUNDATION</span>
+      <h3 style="font-size:1.1rem">開発環境の理解</h3>
+      <p style="font-size:.85rem">package.json / npm / yarn の役割と使い方<br><span style="color:#7fdbca">→ なぜパッケージ管理が必要か？ライブラリを手動管理する地獄から脱出する</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #7fdbca">
+      <span class="label green">STRUCTURE</span>
+      <h3 style="font-size:1.1rem">プロジェクト構成</h3>
+      <p style="font-size:.85rem">src/ dist/ public/ node_modules/ の役割<br><span style="color:#7fdbca">→ 各フォルダが何をしているか理解すれば、迷わず開発できる</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #c792ea">
+      <span class="label purple">BUILD</span>
+      <h3 style="font-size:1.1rem">ビルドと開発</h3>
+      <p style="font-size:.85rem">Vite / 開発サーバー / HMR / フレームワーク選び<br><span style="color:#7fdbca">→ なぜビルドが必要か？ブラウザが理解できる形に変換＆最適化する</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #f78c6c">
+      <span class="label orange">PRACTICE</span>
+      <h3 style="font-size:1.1rem">実践: 作成〜デプロイ</h3>
+      <p style="font-size:.85rem">プロジェクト作成 → Git連携 → Vercel/Netlifyでデプロイ<br><span style="color:#7fdbca">→ 実際に手を動かして、ゼロから公開までの流れを体験する</span></p>
+    </div>
+    <div class="card" style="border-left:3px solid #ff5370;grid-column:1 / -1">
+      <span class="label red">SECURITY</span>
+      <h3 style="font-size:1.1rem">安全な運用: 環境変数</h3>
+      <p style="font-size:.85rem">.env ファイルでAPIキーや秘密情報を管理。.gitignore で漏洩防止<br><span style="color:#7fdbca">→ 秘密情報をGitHubに公開してしまう事故を防ぐ。これを知らないと本当に危険</span></p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 3: モダンWeb開発の全体像 -->
 <div class="slide" id="slide-overview">
   <h2>モダンWeb開発の全体像</h2>
   <p style="text-align:center;margin-bottom:2rem;color:#888">ファイルを書いてからユーザーに届くまで</p>
@@ -600,7 +633,7 @@ button:disabled{opacity:.4;cursor:not-allowed}
   <button class="anim-btn" onclick="togglePause()" id="btn-pause" title="P キー">⏸ 一時停止</button>
   <button class="anim-btn" onclick="skipAnim()" title="S キー">⏭ スキップ</button>
 </div>
-<div class="progress">1 / 15</div>
+<div class="progress">1 / 16</div>
 <div class="nav-hint">&larr; &rarr; キーで移動</div>
 
 <script>
