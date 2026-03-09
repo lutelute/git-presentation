@@ -86,6 +86,19 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
 .timeline-item::before{content:'';position:absolute;left:14px;top:6px;width:14px;height:14px;border-radius:50%;background:#2a2a4a;border:2px solid #0f0f1a;transition:all .5s;z-index:1}
 .timeline-item.done::before{background:#00d2ff;box-shadow:0 0 10px rgba(0,210,255,.4)}
 .timeline-item.active-item::before{background:#ffcb6b;box-shadow:0 0 10px rgba(255,203,107,.4)}
+/* Step progress bar */
+.step-progress{display:flex;align-items:center;justify-content:center;gap:0;margin-bottom:1.2rem;width:100%;max-width:900px}
+.step-progress .sp-item{display:flex;align-items:center;gap:0}
+.step-progress .sp-node{padding:.3rem .7rem;border-radius:6px;font-size:.7rem;font-weight:600;background:#1a1a2e;border:1.5px solid #2a2a4a;color:#666;transition:all .3s;white-space:nowrap}
+.step-progress .sp-node.sp-done{background:#00d2ff15;border-color:#00d2ff55;color:#00d2ff}
+.step-progress .sp-node.sp-active{background:#ffcb6b22;border-color:#ffcb6b;color:#ffcb6b;box-shadow:0 0 10px rgba(255,203,107,.2)}
+.step-progress .sp-arrow{color:#333;font-size:.8rem;padding:0 .3rem}
+.step-progress .sp-arrow.sp-done{color:#00d2ff55}
+
+/* Branch visualization */
+.branch-viz{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;padding:1rem;min-width:220px}
+.branch-viz svg text{font-family:-apple-system,BlinkMacSystemFont,sans-serif}
+
 .anim-controls{position:fixed;bottom:3rem;right:1.5rem;display:none;gap:.5rem;z-index:200}
 .anim-controls.show{display:flex}
 .anim-btn{background:#1a1a2e;border:1px solid #2a2a4a;color:#00d2ff;padding:.4rem .8rem;border-radius:6px;cursor:pointer;font-size:.85rem;transition:all .2s;font-family:inherit}
@@ -603,38 +616,72 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
 
 <!-- ==================== Slide 15: 個人開発 STEP1 — 初期化 (DEMO) ==================== -->
 <div class="slide" id="slide-project-init">
+  <div class="step-progress"><div class="sp-item"><span class="sp-node sp-active">1 初期化</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">2 開発</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">3 公開</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">4 機能追加</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">5 マージ</span></div></div>
   <h2>STEP 1 — プロジェクト初期化</h2>
-  <div class="terminal">
-    <div class="terminal-bar">
-      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-      <span>Terminal — Project Setup</span>
+  <div class="cols" style="max-width:1100px;align-items:flex-start">
+    <div style="flex:1.3">
+      <div class="terminal" style="max-width:100%">
+        <div class="terminal-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <span>Terminal — Project Setup</span>
+        </div>
+        <div class="terminal-body" id="term-project-init"></div>
+      </div>
     </div>
-    <div class="terminal-body" id="term-project-init"></div>
+    <div style="flex:.7" id="step1-viz">
+      <div class="branch-viz" style="text-align:center;padding:1.2rem">
+        <p style="color:#666;font-size:.75rem;margin-bottom:.8rem">プロジェクト構造</p>
+        <div id="s1-tree" style="text-align:left;font-family:'Fira Code',monospace;font-size:.85rem;color:#555">
+          <p style="color:#666">まだ何もない...</p>
+        </div>
+      </div>
+    </div>
   </div>
-  <div style="margin-top:1rem;display:flex;gap:.8rem">
+  <div style="margin-top:.8rem;display:flex;gap:.8rem">
     <button onclick="runProjectInit()" id="btn-pinit">▶ プロジェクト開始</button>
-    <button onclick="resetTerm('term-project-init');document.getElementById('btn-pinit').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+    <button onclick="resetStep1()" style="background:#2a2a4a;color:#888">リセット</button>
   </div>
 </div>
 
 <!-- ==================== Slide 16: 個人開発 STEP2 — 開発サイクル (DEMO) ==================== -->
 <div class="slide" id="slide-project-dev">
+  <div class="step-progress"><div class="sp-item"><span class="sp-node sp-done">1 初期化</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-active">2 開発</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">3 公開</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">4 機能追加</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">5 マージ</span></div></div>
   <h2>STEP 2 — 開発してコミットを重ねる</h2>
-  <div class="terminal">
-    <div class="terminal-bar">
-      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-      <span>Terminal — Development Cycle</span>
+  <div class="cols" style="max-width:1100px;align-items:flex-start">
+    <div style="flex:1.3">
+      <div class="terminal" style="max-width:100%">
+        <div class="terminal-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <span>Terminal — Development Cycle</span>
+        </div>
+        <div class="terminal-body" id="term-project-dev"></div>
+      </div>
     </div>
-    <div class="terminal-body" id="term-project-dev"></div>
+    <div style="flex:.7" id="step2-viz">
+      <div class="branch-viz" style="padding:1.2rem">
+        <p style="color:#666;font-size:.75rem;margin-bottom:.8rem;text-align:center">コミット履歴（main）</p>
+        <svg id="s2-graph" viewBox="0 0 180 200" style="width:100%">
+          <line x1="90" y1="30" x2="90" y2="190" stroke="#2a2a4a" stroke-width="2" stroke-dasharray="4"/>
+          <circle id="s2-c0" cx="90" cy="40" r="8" fill="#2a2a4a" stroke="#333" stroke-width="1.5"/>
+          <text x="110" y="44" fill="#555" font-size="10">init</text>
+          <circle id="s2-c1" cx="90" cy="90" r="8" fill="#2a2a4a" stroke="#333" stroke-width="1.5"/>
+          <text id="s2-t1" x="110" y="94" fill="#555" font-size="10"></text>
+          <circle id="s2-c2" cx="90" cy="140" r="8" fill="#2a2a4a" stroke="#333" stroke-width="1.5"/>
+          <text id="s2-t2" x="110" y="144" fill="#555" font-size="10"></text>
+          <text x="90" y="185" fill="#00d2ff" font-size="11" text-anchor="middle" font-weight="bold">main</text>
+        </svg>
+      </div>
+    </div>
   </div>
-  <div style="margin-top:1rem;display:flex;gap:.8rem">
+  <div style="margin-top:.8rem;display:flex;gap:.8rem">
     <button onclick="runProjectDev()" id="btn-pdev">▶ 開発サイクルを見る</button>
-    <button onclick="resetTerm('term-project-dev');document.getElementById('btn-pdev').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+    <button onclick="resetStep2()" style="background:#2a2a4a;color:#888">リセット</button>
   </div>
 </div>
 
 <!-- ==================== Slide 17: 個人開発 STEP3 — GitHub公開 (DEMO) ==================== -->
 <div class="slide" id="slide-project-publish">
+  <div class="step-progress"><div class="sp-item"><span class="sp-node sp-done">1 初期化</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-done">2 開発</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-active">3 公開</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">4 機能追加</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">5 マージ</span></div></div>
   <h2>STEP 3 — GitHubに公開</h2>
   <div class="cols" style="max-width:1050px">
     <div class="terminal" style="flex:1.3">
@@ -662,22 +709,66 @@ ul.feature-list li::before{content:'▸ ';color:#00d2ff}
 
 <!-- ==================== Slide 18: 個人開発 STEP4 — ブランチ作成 & 開発 (DEMO) ==================== -->
 <div class="slide" id="slide-project-feature">
+  <div class="step-progress"><div class="sp-item"><span class="sp-node sp-done">1 初期化</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-done">2 開発</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-done">3 公開</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-active">4 機能追加</span></div><span class="sp-arrow">→</span><div class="sp-item"><span class="sp-node">5 マージ</span></div></div>
   <h2>STEP 4 — ブランチで新機能を開発</h2>
-  <div class="terminal">
-    <div class="terminal-bar">
-      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-      <span>Terminal — Feature Branch: Create & Develop</span>
+  <div class="cols" style="max-width:1100px;align-items:flex-start">
+    <div style="flex:1.3">
+      <div class="terminal" style="max-width:100%">
+        <div class="terminal-bar">
+          <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+          <span>Terminal — Feature Branch</span>
+        </div>
+        <div class="terminal-body" id="term-project-feat"></div>
+      </div>
     </div>
-    <div class="terminal-body" id="term-project-feat"></div>
+    <div style="flex:.7" id="step4-viz">
+      <div class="branch-viz" style="padding:1rem">
+        <p style="color:#666;font-size:.75rem;margin-bottom:.5rem;text-align:center">ブランチの様子</p>
+        <svg id="s4-graph" viewBox="0 0 200 260" style="width:100%">
+          <!-- main branch line -->
+          <line x1="60" y1="30" x2="60" y2="240" stroke="#00d2ff" stroke-width="2.5" id="s4-main-line"/>
+          <!-- main commits -->
+          <circle cx="60" cy="40" r="7" fill="#00d2ff"/>
+          <text x="12" y="44" fill="#00d2ff" font-size="9" font-weight="bold">main</text>
+          <circle cx="60" cy="80" r="7" fill="#00d2ff"/>
+          <text x="75" y="84" fill="#888" font-size="9">init</text>
+          <circle cx="60" cy="120" r="7" fill="#00d2ff"/>
+          <text x="75" y="124" fill="#888" font-size="9">add todo</text>
+          <!-- feature branch (hidden initially) -->
+          <g id="s4-feature" style="opacity:0;transition:opacity .6s">
+            <path d="M60,120 Q90,140 140,150" stroke="#c792ea" stroke-width="2.5" fill="none"/>
+            <line x1="140" y1="150" x2="140" y2="230" stroke="#c792ea" stroke-width="2.5"/>
+            <circle cx="140" cy="150" r="7" fill="#c792ea"/>
+            <text x="155" y="154" fill="#c792ea" font-size="9" font-weight="bold">feature/</text>
+            <text x="155" y="166" fill="#c792ea" font-size="9" font-weight="bold">dark-mode</text>
+          </g>
+          <!-- feature commits (hidden initially) -->
+          <g id="s4-fc1" style="opacity:0;transition:opacity .5s">
+            <circle cx="140" cy="195" r="7" fill="#c792ea"/>
+            <text x="155" y="199" fill="#888" font-size="9">dark mode</text>
+          </g>
+          <!-- HEAD indicator -->
+          <g id="s4-head-main" style="transition:opacity .3s">
+            <rect x="5" y="112" width="38" height="16" rx="3" fill="#ffcb6b22" stroke="#ffcb6b" stroke-width="1"/>
+            <text x="24" y="124" fill="#ffcb6b" font-size="8" text-anchor="middle" font-weight="bold">HEAD</text>
+          </g>
+          <g id="s4-head-feat" style="opacity:0;transition:opacity .3s">
+            <rect x="95" y="187" width="38" height="16" rx="3" fill="#ffcb6b22" stroke="#ffcb6b" stroke-width="1"/>
+            <text x="114" y="199" fill="#ffcb6b" font-size="8" text-anchor="middle" font-weight="bold">HEAD</text>
+          </g>
+        </svg>
+      </div>
+    </div>
   </div>
-  <div style="margin-top:1rem;display:flex;gap:.8rem">
+  <div style="margin-top:.8rem;display:flex;gap:.8rem">
     <button onclick="runProjectFeature()" id="btn-pfeat">▶ ブランチで開発</button>
-    <button onclick="resetTerm('term-project-feat');document.getElementById('btn-pfeat').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+    <button onclick="resetStep4()" style="background:#2a2a4a;color:#888">リセット</button>
   </div>
 </div>
 
 <!-- ==================== Slide 19: 個人開発 STEP5 — 確認 & マージ (DEMO) ==================== -->
 <div class="slide" id="slide-project-merge">
+  <div class="step-progress"><div class="sp-item"><span class="sp-node sp-done">1 初期化</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-done">2 開発</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-done">3 公開</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-done">4 機能追加</span></div><span class="sp-arrow sp-done">→</span><div class="sp-item"><span class="sp-node sp-active">5 マージ</span></div></div>
   <h2>STEP 5 — 変更を確認してマージ</h2>
   <div class="cols" style="max-width:1050px">
     <div class="terminal" style="flex:1.3">
@@ -1854,6 +1945,25 @@ function runProjectInit(){
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'✓ プロジェクトの土台が完成！',cls:'success',pause:400},
   ],'btn-pinit');
+  /* Sync right-side tree visualization */
+  var tree=document.getElementById('s1-tree');
+  /* 0+700 = mkdir */
+  setTimeout(function(){tree.innerHTML='<p style="color:#ffcb6b">my-todo-app/</p>'},700);
+  /* +700 = git init → .git appears */
+  setTimeout(function(){tree.innerHTML='<p style="color:#ffcb6b">my-todo-app/</p><p style="padding-left:1rem;color:#555">.git/</p>'},1400);
+  /* +500+700 = .gitignore */
+  setTimeout(function(){tree.innerHTML+='<p style="padding-left:1rem;color:#7fdbca">.gitignore</p>'},2600);
+  /* +700+500 = README */
+  setTimeout(function(){tree.innerHTML+='<p style="padding-left:1rem;color:#7fdbca">README.md</p>'},3800);
+  /* +700+500 = index.html */
+  setTimeout(function(){tree.innerHTML+='<p style="padding-left:1rem;color:#7fdbca">index.html</p>'},4500);
+  /* +200+200+300+700+700+800 = commit done → show commit hash */
+  setTimeout(function(){tree.innerHTML+='<p style="margin-top:.8rem;color:#00d2ff;font-size:.8rem">commit: 1a2b3c4</p><p style="color:#888;font-size:.75rem">feat: initial project setup</p>'},7400);
+}
+function resetStep1(){
+  resetTerm('term-project-init');
+  document.getElementById('btn-pinit').disabled=false;
+  document.getElementById('s1-tree').innerHTML='<p style="color:#666">まだ何もない...</p>';
 }
 
 /* ===== Demo: Project Dev Cycle ===== */
@@ -1881,6 +1991,28 @@ function runProjectDev(){
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'✓ 3つのコミットで開発を進めた！',cls:'success',pause:400},
   ],'btn-pdev');
+  /* Sync commit graph: cumulative pauses */
+  /* First commit done at: 0+500+600+600+800+500 = 3000ms */
+  setTimeout(function(){
+    document.getElementById('s2-c1').setAttribute('fill','#00d2ff');
+    document.getElementById('s2-t1').textContent='styling';
+    var line=document.getElementById('s2-graph').querySelector('line');
+    line.setAttribute('stroke','#00d2ff55');
+  },3000);
+  /* Second commit done at: 3000+300+800+500+600+600+800+500 = 7100ms */
+  setTimeout(function(){
+    document.getElementById('s2-c2').setAttribute('fill','#00d2ff');
+    document.getElementById('s2-t2').textContent='todo CRUD';
+  },7100);
+}
+function resetStep2(){
+  resetTerm('term-project-dev');
+  document.getElementById('btn-pdev').disabled=false;
+  document.getElementById('s2-c1').setAttribute('fill','#2a2a4a');
+  document.getElementById('s2-c2').setAttribute('fill','#2a2a4a');
+  document.getElementById('s2-t1').textContent='';
+  document.getElementById('s2-t2').textContent='';
+  document.getElementById('s2-graph').querySelector('line').setAttribute('stroke','#2a2a4a');
 }
 
 /* ===== Demo: Project Publish ===== */
@@ -1993,6 +2125,25 @@ function runProjectFeature(){
     {type:'output',text:'',cls:'output',pause:200},
     {type:'output',text:'✓ featureブランチでの開発完了！次は確認してマージ →',cls:'success',pause:400},
   ],'btn-pfeat');
+  /* Sync branch visualization */
+  /* git checkout -b at: 0+600+400+700+800 = 2500ms → show feature branch, move HEAD */
+  setTimeout(function(){
+    document.getElementById('s4-feature').style.opacity='1';
+    document.getElementById('s4-head-main').style.opacity='0';
+    document.getElementById('s4-head-feat').style.opacity='1';
+  },2500);
+  /* commit at: 2500+500+600+800+500+600+700+500+600+600+500+600+700+700+300+200+200+200+700+800+500 ≈ cumulative large → simplify: feature commit appears ~12000ms */
+  setTimeout(function(){
+    document.getElementById('s4-fc1').style.opacity='1';
+  },12000);
+}
+function resetStep4(){
+  resetTerm('term-project-feat');
+  document.getElementById('btn-pfeat').disabled=false;
+  document.getElementById('s4-feature').style.opacity='0';
+  document.getElementById('s4-fc1').style.opacity='0';
+  document.getElementById('s4-head-main').style.opacity='1';
+  document.getElementById('s4-head-feat').style.opacity='0';
 }
 
 /* ===== Demo: Project Merge ===== */
