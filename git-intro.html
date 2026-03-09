@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Git & GitHub 入門 — AIと一緒に学ぶ</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;background:#0f0f1a;color:#e0e0e0;overflow:hidden}
+.slide{display:none;flex-direction:column;justify-content:center;align-items:center;height:100vh;padding:2.5rem 4rem;position:absolute;top:0;left:0;width:100%}
+.slide.active{display:flex;animation:fadeIn .35s cubic-bezier(.33,1,.68,1)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+h1{font-size:2.8rem;color:#00d2ff;margin-bottom:.5rem;text-align:center}
+h2{font-size:2rem;color:#00d2ff;margin-bottom:1.2rem;text-align:center;width:100%}
+h3{font-size:1.4rem;color:#7fdbca;margin-bottom:.8rem}
+p{font-size:1.05rem;line-height:1.7;color:#bbb}
+code{background:#1e1e30;padding:.15em .4em;border-radius:3px;font-family:'Fira Code','SF Mono',monospace;color:#7fdbca;font-size:.9em}
+.label{display:inline-block;background:#00d2ff22;color:#00d2ff;padding:.2em .7em;border-radius:4px;font-size:.85rem;margin-bottom:.8rem;font-weight:600}
+.label.green{background:#7fdbca22;color:#7fdbca}
+.label.purple{background:#c792ea22;color:#c792ea}
+.label.orange{background:#f78c6c22;color:#f78c6c}
+.label.red{background:#ff537022;color:#ff5370}
+.label.yellow{background:#ffcb6b22;color:#ffcb6b}
+.progress{position:fixed;bottom:1rem;right:1.5rem;font-size:.85rem;color:#555;z-index:100}
+.nav-hint{position:fixed;bottom:1rem;left:1.5rem;font-size:.8rem;color:#444;z-index:100}
+.card{background:#1a1a2e;border:1px solid #2a2a4a;border-radius:12px;padding:1.5rem}
+.cols{display:flex;gap:2rem;width:100%;max-width:1100px}
+.cols>*{flex:1}
+
+/* Terminal */
+.terminal{background:#0a0a15;border:1px solid #2a2a4a;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.terminal-bar{background:#1a1a2e;padding:8px 12px;display:flex;align-items:center;gap:6px}
+.terminal-bar .dot{width:10px;height:10px;border-radius:50%}
+.terminal-bar .dot.r{background:#ff5f56}.terminal-bar .dot.y{background:#ffbd2e}.terminal-bar .dot.g{background:#27c93f}
+.terminal-bar span{color:#666;font-size:.8rem;margin-left:8px}
+.terminal-body{padding:1.2rem 1.5rem;font-family:'Fira Code','SF Mono',monospace;font-size:.95rem;min-height:180px;max-height:55vh;overflow-y:auto;line-height:1.6}
+.terminal-body .prompt{color:#7fdbca}
+.terminal-body .cmd{color:#e0e0e0}
+.terminal-body .output{color:#888}
+.terminal-body .success{color:#27c93f}
+.terminal-body .error{color:#ff5370}
+.terminal-body .info{color:#00d2ff}
+.terminal-body .warn{color:#ffcb6b}
+
+/* GitHub UI mock */
+.github-ui{background:#0d1117;border:1px solid #30363d;border-radius:10px;overflow:hidden;width:100%;max-width:900px}
+.github-header{background:#161b22;padding:10px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #30363d}
+.github-header .gh-icon{color:#e0e0e0;font-size:1.3rem}
+.github-header .gh-repo{color:#58a6ff;font-size:.95rem;font-weight:600}
+.github-body{padding:1.2rem 1.5rem}
+.gh-file{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #21262d}
+.gh-file .icon{color:#8b949e;font-size:1rem}
+.gh-file .name{color:#58a6ff;font-size:.9rem}
+.gh-file .msg{color:#8b949e;font-size:.85rem;flex:1;text-align:right}
+.gh-commit{display:flex;align-items:center;gap:8px;padding:6px 0}
+.gh-commit .hash{color:#58a6ff;font-family:'Fira Code',monospace;font-size:.85rem}
+.gh-commit .cm{color:#c9d1d9;font-size:.9rem}
+.gh-diff-add{background:#1a4721;color:#7ee787;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #27c93f}
+.gh-diff-del{background:#4d1f28;color:#ff7b72;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #ff5370}
+.gh-diff-ctx{background:#161b22;color:#8b949e;padding:2px 8px;font-family:'Fira Code',monospace;font-size:.85rem;border-left:3px solid #30363d}
+
+/* Diagram */
+.flow{display:flex;align-items:center;gap:0;justify-content:center;flex-wrap:wrap}
+.flow-box{background:#1a1a2e;border:2px solid #2a2a4a;border-radius:10px;padding:.8rem 1.2rem;text-align:center;min-width:120px;transition:all .5s}
+.flow-box.active-box{border-color:#00d2ff;box-shadow:0 0 20px rgba(0,210,255,.3)}
+.flow-arrow{color:#555;font-size:1.5rem;padding:0 .3rem}
+
+/* Lists */
+ul.feature-list{list-style:none;max-width:700px}
+ul.feature-list li{padding:.5rem 0;font-size:1.05rem;color:#bbb;border-bottom:1px solid #1a1a2e}
+ul.feature-list li::before{content:'▸ ';color:#00d2ff}
+
+/* Animation */
+.bounce{animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-12px)}}
+.pulse{animation:pulse 2s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.05)}}
+
+/* Highlight step */
+.step{opacity:.3;transition:opacity .5s,transform .5s;transform:translateX(-5px)}
+.step.visible{opacity:1;transform:translateX(0)}
+
+/* AI badge */
+.ai-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#c792ea33,#00d2ff33);border:1px solid #c792ea55;border-radius:20px;padding:4px 14px;font-size:.85rem;color:#c792ea}
+
+/* Timeline */
+.timeline{position:relative;max-width:700px;width:100%}
+.timeline::before{content:'';position:absolute;left:20px;top:0;bottom:0;width:2px;background:#2a2a4a}
+.timeline-item{position:relative;padding-left:50px;margin-bottom:1rem}
+.timeline-item::before{content:'';position:absolute;left:14px;top:6px;width:14px;height:14px;border-radius:50%;background:#2a2a4a;border:2px solid #0f0f1a;transition:all .5s;z-index:1}
+.timeline-item.done::before{background:#00d2ff;box-shadow:0 0 10px rgba(0,210,255,.4)}
+.timeline-item.active-item::before{background:#ffcb6b;box-shadow:0 0 10px rgba(255,203,107,.4)}
+</style></head><body>
+
+<!-- ==================== Slide 1: Title ==================== -->
+<div class="slide active">
+  <div style="text-align:center">
+    <p class="label">BEGINNER'S GUIDE</p>
+    <h1 style="font-size:3rem;margin-bottom:1rem">Git & GitHub 入門</h1>
+    <p style="font-size:1.4rem;color:#888;margin-bottom:1.5rem">AIと一緒に学ぶバージョン管理</p>
+    <div style="display:flex;gap:1.5rem;justify-content:center;margin-top:1rem">
+      <span class="ai-badge">Claude がGitを使う理由も解説</span>
+    </div>
+    <p style="margin-top:3rem;color:#555;font-size:.9rem">→ キーで次へ</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 2: Gitとは ==================== -->
+<div class="slide">
+  <h2>Gitとは？</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">WITHOUT GIT</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.9rem;color:#ff5370;line-height:2">
+        report_final.docx<br>
+        report_final2.docx<br>
+        report_final_本当にfinal.docx<br>
+        report_final_提出用v3.docx<br>
+        report_本当に最終版.docx<br>
+        <span style="color:#888">😱 どれが最新？</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#00d2ff44">
+      <p class="label green">WITH GIT</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.9rem;color:#7fdbca;line-height:2">
+        report.docx<br>
+        <span style="color:#888">├─ commit 1: 初稿作成</span><br>
+        <span style="color:#888">├─ commit 2: 図を追加</span><br>
+        <span style="color:#888">├─ commit 3: レビュー反映</span><br>
+        <span style="color:#888">└─ commit 4: 最終修正</span><br>
+        <span style="color:#27c93f">✓ 全ての履歴が残る！</span>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1.5rem;color:#888;max-width:700px;text-align:center">Gitは<strong style="color:#00d2ff">バージョン管理システム</strong>。ファイルの変更履歴を全て記録し、いつでも過去の状態に戻れる。</p>
+</div>
+
+<!-- ==================== Slide 3: なぜ必要？ ==================== -->
+<div class="slide">
+  <h2>なぜGitが必要なのか？</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;width:100%">
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">🕐</div>
+      <h3>履歴管理</h3>
+      <p style="font-size:.95rem">いつ・誰が・何を変えたか全て記録。いつでも過去に戻れる。</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">👥</div>
+      <h3>チーム開発</h3>
+      <p style="font-size:.95rem">複数人が同時に同じプロジェクトを編集。変更を統合できる。</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">🔀</div>
+      <h3>ブランチ</h3>
+      <p style="font-size:.95rem">本番を壊さず新機能を試せる。安全な実験場。</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">☁️</div>
+      <h3>バックアップ</h3>
+      <p style="font-size:.95rem">GitHubにコードを保存。PCが壊れても安心。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 4: 環境構築 (1/2) ==================== -->
+<div class="slide" id="slide-setup1">
+  <h2>環境構築 (1/2) — インストール</h2>
+  <div style="display:flex;flex-direction:column;gap:1.2rem;max-width:850px;width:100%">
+    <div class="card step" data-step="0">
+      <h3>1. Gitのインストール</h3>
+      <div class="cols" style="gap:1.5rem">
+        <div>
+          <p class="label">Mac</p>
+          <code style="font-size:.95rem">brew install git</code>
+          <p style="color:#666;font-size:.85rem;margin-top:.3rem">または Xcode Command Line Tools:<br><code style="font-size:.8rem">xcode-select --install</code></p>
+        </div>
+        <div>
+          <p class="label">Windows</p>
+          <code style="font-size:.95rem">winget install Git.Git</code>
+          <p style="color:#666;font-size:.85rem;margin-top:.3rem">またはgit-scm.comからDL<br>Git Bashも一緒に入る</p>
+        </div>
+        <div>
+          <p class="label">Linux</p>
+          <code style="font-size:.95rem">sudo apt install git</code>
+          <p style="color:#666;font-size:.85rem;margin-top:.3rem">Fedora: <code style="font-size:.8rem">dnf install git</code></p>
+        </div>
+      </div>
+    </div>
+    <div class="card step" data-step="1">
+      <h3>2. 初期設定（名前とメール）</h3>
+      <div style="font-family:'Fira Code',monospace;font-size:.95rem;line-height:2">
+        <span style="color:#7fdbca">$</span> git config --global user.name <span style="color:#c3e88d">"Your Name"</span><br>
+        <span style="color:#7fdbca">$</span> git config --global user.email <span style="color:#c3e88d">"you@example.com"</span>
+      </div>
+      <p style="font-size:.9rem;color:#888;margin-top:.5rem">全てのコミットにこの名前・メールが記録される。GitHubのメールと揃えるのが推奨。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 5: 環境構築 (2/2) ==================== -->
+<div class="slide" id="slide-setup2">
+  <h2>環境構築 (2/2) — GitHub接続</h2>
+  <div style="display:flex;flex-direction:column;gap:1.2rem;max-width:850px;width:100%">
+    <div class="card step" data-step="0">
+      <h3>3. GitHubアカウント作成 & SSH鍵</h3>
+      <div style="font-family:'Fira Code',monospace;font-size:.95rem;line-height:2">
+        <span style="color:#7fdbca">$</span> ssh-keygen -t ed25519 -C <span style="color:#c3e88d">"you@example.com"</span><br>
+        <span style="color:#888"># Enterを3回押す（デフォルト設定でOK）</span><br>
+        <span style="color:#7fdbca">$</span> cat ~/.ssh/id_ed25519.pub<br>
+        <span style="color:#888"># 出力された公開鍵をコピー</span>
+      </div>
+      <p style="font-size:.9rem;color:#888;margin-top:.5rem">GitHub → Settings → SSH and GPG Keys → New SSH Key に貼り付ける</p>
+    </div>
+    <div class="card step" data-step="1">
+      <h3>4. 接続確認</h3>
+      <div style="font-family:'Fira Code',monospace;font-size:.95rem;line-height:2">
+        <span style="color:#7fdbca">$</span> git --version<br>
+        <span style="color:#888">git version 2.44.0</span><br>
+        <span style="color:#7fdbca">$</span> ssh -T git@github.com<br>
+        <span style="color:#27c93f">Hi username! You've successfully authenticated</span>
+      </div>
+      <p style="font-size:.9rem;color:#27c93f;margin-top:.5rem">↑ これが出ればOK！準備完了。</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 6: Gitの3つのエリア ==================== -->
+<div class="slide" id="slide-areas">
+  <h2>Gitの3つのエリア</h2>
+  <div class="flow" style="margin-bottom:2rem" id="git-areas">
+    <div class="flow-box" id="area-wd" style="min-width:180px">
+      <p class="label">WORKING DIR</p>
+      <p style="font-size:.9rem">作業ディレクトリ</p>
+      <p style="font-size:.8rem;color:#888">ファイルを編集する場所</p>
+    </div>
+    <div class="flow-arrow">→<br><code style="font-size:.75rem;color:#7fdbca">git add</code></div>
+    <div class="flow-box" id="area-stage" style="min-width:180px">
+      <p class="label green">STAGING</p>
+      <p style="font-size:.9rem">ステージング</p>
+      <p style="font-size:.8rem;color:#888">コミットする変更を選ぶ</p>
+    </div>
+    <div class="flow-arrow">→<br><code style="font-size:.75rem;color:#7fdbca">git commit</code></div>
+    <div class="flow-box" id="area-repo" style="min-width:180px">
+      <p class="label purple">REPOSITORY</p>
+      <p style="font-size:.9rem">リポジトリ</p>
+      <p style="font-size:.8rem;color:#888">履歴として永久保存</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;text-align:center">
+    <p style="font-size:1rem;color:#bbb">
+      ① ファイルを編集 → ② <code>git add</code> で選択 → ③ <code>git commit</code> で記録<br>
+      <span style="color:#888;font-size:.9rem">この3ステップがGitの基本フロー</span>
+    </p>
+  </div>
+</div>
+
+<!-- ==================== Slide 7: 基本コマンド (DEMO) ==================== -->
+<div class="slide" id="slide-basic-demo">
+  <h2>基本コマンド — 実演</h2>
+  <div class="terminal" id="term-basic">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — git basics</span>
+    </div>
+    <div class="terminal-body" id="term-basic-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermBasic()" id="btn-basic">▶ 実行してみる</button>
+    <button onclick="resetTerm('term-basic-body');document.getElementById('btn-basic').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 8: git status / diff ==================== -->
+<div class="slide" id="slide-status">
+  <h2>変更を確認する</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label">git status</p>
+      <p style="font-size:.9rem;color:#888;margin-bottom:.8rem">今どんな変更があるか確認</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.6;background:#0a0a15;padding:1rem;border-radius:6px">
+        <span style="color:#888">On branch main</span><br>
+        <span style="color:#888">Changes not staged:</span><br>
+        <span style="color:#ff5370">&nbsp;&nbsp;modified: index.html</span><br>
+        <span style="color:#888">Untracked files:</span><br>
+        <span style="color:#ff5370">&nbsp;&nbsp;style.css</span>
+      </div>
+    </div>
+    <div class="card">
+      <p class="label green">git diff</p>
+      <p style="font-size:.9rem;color:#888;margin-bottom:.8rem">具体的に何が変わったか確認</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.6;background:#0a0a15;padding:1rem;border-radius:6px">
+        <div class="gh-diff-ctx">@@ -1,3 +1,4 @@</div>
+        <div class="gh-diff-ctx">&nbsp;&lt;body&gt;</div>
+        <div class="gh-diff-del">- &lt;h1&gt;Hello&lt;/h1&gt;</div>
+        <div class="gh-diff-add">+ &lt;h1&gt;Hello World&lt;/h1&gt;</div>
+        <div class="gh-diff-add">+ &lt;p&gt;Welcome!&lt;/p&gt;</div>
+      </div>
+    </div>
+  </div>
+  <p style="margin-top:1rem;color:#888;font-size:.9rem"><code>git status</code> で全体把握 → <code>git diff</code> で詳細確認 → <code>git add</code> → <code>git commit</code></p>
+</div>
+
+<!-- ==================== Slide 9: GitHub とは ==================== -->
+<div class="slide">
+  <h2>Git と GitHub の違い</h2>
+  <div class="cols" style="max-width:900px">
+    <div class="card" style="text-align:center">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">⚙️</div>
+      <h3>Git</h3>
+      <p style="font-size:.95rem">バージョン管理<strong style="color:#00d2ff">ツール</strong></p>
+      <p style="font-size:.85rem;color:#888;margin-top:.5rem">ローカルPC上で動く<br>コマンドラインツール<br>変更履歴を管理</p>
+    </div>
+    <div style="display:flex;align-items:center;font-size:2rem;color:#555">≠</div>
+    <div class="card" style="text-align:center;border-color:#58a6ff44">
+      <div style="font-size:2.5rem;margin-bottom:.5rem">🐙</div>
+      <h3>GitHub</h3>
+      <p style="font-size:.95rem">Gitリポジトリの<strong style="color:#58a6ff">ホスティング</strong></p>
+      <p style="font-size:.85rem;color:#888;margin-top:.5rem">クラウド上のサービス<br>コードの共有・公開<br>チーム協業の場</p>
+    </div>
+  </div>
+  <div class="card" style="max-width:700px;margin-top:1.5rem;text-align:center">
+    <p style="font-size:.95rem">Git = 手元で履歴管理 → <code>git push</code> → GitHub = クラウドに保存・共有</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 10: push / pull (DEMO) ==================== -->
+<div class="slide" id="slide-push-demo">
+  <h2>GitHub にアップロード — git push</h2>
+  <div class="terminal" id="term-push">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — push to GitHub</span>
+    </div>
+    <div class="terminal-body" id="term-push-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermPush()" id="btn-push">▶ 実行してみる</button>
+    <button onclick="resetTerm('term-push-body');document.getElementById('btn-push').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 11: GitHub UIでの反映 ==================== -->
+<div class="slide" id="slide-github-ui">
+  <h2>GitHubでの反映箇所</h2>
+  <p class="label" style="margin-bottom:1rem">push後にGitHub上で変わる場所</p>
+  <div class="github-ui" id="gh-mock">
+    <div class="github-header">
+      <span class="gh-icon">🐙</span>
+      <span class="gh-repo">username / my-project</span>
+      <span style="color:#8b949e;font-size:.8rem;margin-left:auto">main</span>
+    </div>
+    <div class="github-body" id="gh-mock-body">
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #21262d">
+        <div class="gh-commit">
+          <span class="hash" id="gh-hash">abc1234</span>
+          <span class="cm" id="gh-msg">Initial commit</span>
+        </div>
+        <span style="color:#8b949e;font-size:.8rem" id="gh-time">2 hours ago</span>
+      </div>
+      <div id="gh-files">
+        <div class="gh-file"><span class="icon">📄</span><span class="name">index.html</span><span class="msg">Initial commit</span></div>
+        <div class="gh-file"><span class="icon">📄</span><span class="name">README.md</span><span class="msg">Initial commit</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="simulatePush()" id="btn-ghpush">▶ pushをシミュレート</button>
+    <button onclick="resetGHMock()" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 12: ブランチ ==================== -->
+<div class="slide" id="slide-branch">
+  <h2>ブランチとは？</h2>
+  <div class="card" style="max-width:800px;width:100%;padding:2rem">
+    <svg viewBox="0 0 700 200" style="width:100%">
+      <line x1="50" y1="100" x2="650" y2="100" stroke="#00d2ff" stroke-width="3"/>
+      <circle cx="100" cy="100" r="10" fill="#00d2ff"/>
+      <circle cx="250" cy="100" r="10" fill="#00d2ff"/>
+      <circle cx="400" cy="100" r="10" fill="#00d2ff"/>
+      <circle cx="550" cy="100" r="10" fill="#00d2ff" id="merge-dot" style="opacity:0"/>
+      <circle cx="600" cy="100" r="10" fill="#00d2ff"/>
+      <text x="100" y="135" fill="#00d2ff" text-anchor="middle" font-size="12">C1</text>
+      <text x="250" y="135" fill="#00d2ff" text-anchor="middle" font-size="12">C2</text>
+      <text x="400" y="135" fill="#00d2ff" text-anchor="middle" font-size="12">C3</text>
+      <text x="600" y="135" fill="#00d2ff" text-anchor="middle" font-size="12">C5</text>
+      <text x="350" y="170" fill="#00d2ff" font-size="14" text-anchor="middle" font-weight="bold">main</text>
+      <path d="M250,100 Q300,40 350,50" stroke="#c792ea" stroke-width="3" fill="none"/>
+      <line x1="350" y1="50" x2="500" y2="50" stroke="#c792ea" stroke-width="3"/>
+      <path d="M500,50 Q530,70 550,100" stroke="#c792ea" stroke-width="3" fill="none" id="merge-line" style="opacity:0"/>
+      <circle cx="350" cy="50" r="10" fill="#c792ea"/>
+      <circle cx="500" cy="50" r="10" fill="#c792ea"/>
+      <text x="350" y="38" fill="#c792ea" text-anchor="middle" font-size="12">C4a</text>
+      <text x="500" y="38" fill="#c792ea" text-anchor="middle" font-size="12">C4b</text>
+      <text x="425" y="25" fill="#c792ea" font-size="14" text-anchor="middle" font-weight="bold">feature</text>
+    </svg>
+  </div>
+  <div class="cols" style="max-width:800px;margin-top:1rem">
+    <div class="card" style="text-align:center">
+      <code>git branch feature</code>
+      <p style="font-size:.85rem;color:#888;margin-top:.3rem">新しいブランチを作成</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <code>git checkout feature</code>
+      <p style="font-size:.85rem;color:#888;margin-top:.3rem">ブランチに切り替え</p>
+    </div>
+    <div class="card" style="text-align:center">
+      <code>git merge feature</code>
+      <p style="font-size:.85rem;color:#888;margin-top:.3rem">mainに統合</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 13: Pull Request ==================== -->
+<div class="slide">
+  <h2>Pull Request（PR）</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card" style="flex:1.2">
+      <p class="label green">PRとは？</p>
+      <p style="font-size:.95rem;margin-bottom:1rem">「この変更をmainに入れてください」というリクエスト。レビューしてからマージする。</p>
+      <div class="github-ui" style="max-width:100%">
+        <div class="github-header" style="padding:8px 12px">
+          <span style="color:#27c93f;font-size:.9rem">● Open</span>
+          <span style="color:#c9d1d9;font-size:.9rem;font-weight:600">Add login feature</span>
+        </div>
+        <div class="github-body" style="padding:.8rem 1rem">
+          <p style="font-size:.85rem;color:#8b949e;margin-bottom:.5rem">user wants to merge 3 commits into <code>main</code> from <code>feature/login</code></p>
+          <div style="display:flex;gap:1rem;font-size:.8rem">
+            <span style="color:#27c93f">+120 lines</span>
+            <span style="color:#ff7b72">-15 lines</span>
+            <span style="color:#8b949e">3 files changed</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="label purple">PRの流れ</p>
+      <div style="font-size:.95rem;line-height:2.2;color:#bbb">
+        1. ブランチで作業<br>
+        2. <code>git push</code> でGitHubに送る<br>
+        3. GitHub上でPRを作成<br>
+        4. チームがコードレビュー<br>
+        5. 承認後マージ ✓
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 14: 個人開発 全体像 ==================== -->
+<div class="slide">
+  <div style="text-align:center">
+    <p class="label yellow" style="font-size:1rem;padding:.4em 1em">HANDS-ON</p>
+    <h1 style="font-size:2.5rem;margin-top:1rem">個人開発プロジェクトを作ろう</h1>
+    <p style="font-size:1.2rem;color:#888;margin-top:1rem">アイデアからGitHub公開まで、一気通貫デモ</p>
+    <div style="display:flex;gap:.8rem;justify-content:center;margin-top:2rem;flex-wrap:wrap">
+      <div class="card" style="padding:.6rem 1rem;text-align:center;min-width:100px">
+        <p style="font-size:1.3rem">1️⃣</p>
+        <p style="font-size:.8rem;color:#00d2ff">リポジトリ作成</p>
+      </div>
+      <div style="display:flex;align-items:center;color:#555;font-size:1.3rem">→</div>
+      <div class="card" style="padding:.6rem 1rem;text-align:center;min-width:100px">
+        <p style="font-size:1.3rem">2️⃣</p>
+        <p style="font-size:.8rem;color:#7fdbca">開発 & コミット</p>
+      </div>
+      <div style="display:flex;align-items:center;color:#555;font-size:1.3rem">→</div>
+      <div class="card" style="padding:.6rem 1rem;text-align:center;min-width:100px">
+        <p style="font-size:1.3rem">3️⃣</p>
+        <p style="font-size:.8rem;color:#c792ea">GitHub公開</p>
+      </div>
+      <div style="display:flex;align-items:center;color:#555;font-size:1.3rem">→</div>
+      <div class="card" style="padding:.6rem 1rem;text-align:center;min-width:100px">
+        <p style="font-size:1.3rem">4️⃣</p>
+        <p style="font-size:.8rem;color:#ffcb6b">機能追加</p>
+      </div>
+      <div style="display:flex;align-items:center;color:#555;font-size:1.3rem">→</div>
+      <div class="card" style="padding:.6rem 1rem;text-align:center;min-width:100px">
+        <p style="font-size:1.3rem">5️⃣</p>
+        <p style="font-size:.8rem;color:#f78c6c">確認 & マージ</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 15: 個人開発 STEP1 — 初期化 (DEMO) ==================== -->
+<div class="slide" id="slide-project-init">
+  <h2>STEP 1 — プロジェクト初期化</h2>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Project Setup</span>
+    </div>
+    <div class="terminal-body" id="term-project-init"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runProjectInit()" id="btn-pinit">▶ プロジェクト開始</button>
+    <button onclick="resetTerm('term-project-init');document.getElementById('btn-pinit').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 16: 個人開発 STEP2 — 開発サイクル (DEMO) ==================== -->
+<div class="slide" id="slide-project-dev">
+  <h2>STEP 2 — 開発してコミットを重ねる</h2>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Development Cycle</span>
+    </div>
+    <div class="terminal-body" id="term-project-dev"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runProjectDev()" id="btn-pdev">▶ 開発サイクルを見る</button>
+    <button onclick="resetTerm('term-project-dev');document.getElementById('btn-pdev').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 17: 個人開発 STEP3 — GitHub公開 (DEMO) ==================== -->
+<div class="slide" id="slide-project-publish">
+  <h2>STEP 3 — GitHubに公開</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.3">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — Publish to GitHub</span>
+      </div>
+      <div class="terminal-body" id="term-project-pub" style="min-height:160px"></div>
+    </div>
+    <div class="github-ui" style="flex:1" id="gh-project-mock">
+      <div class="github-header">
+        <span class="gh-icon">🐙</span>
+        <span class="gh-repo" id="gh-proj-name">username / my-todo-app</span>
+      </div>
+      <div class="github-body" id="gh-project-body">
+        <p style="color:#8b949e;font-size:.9rem;text-align:center;padding:2rem 0">push後にここに反映される...</p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runProjectPublish()" id="btn-ppub">▶ GitHubに公開</button>
+    <button onclick="resetProjectPublish()" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 18: 個人開発 STEP4 — ブランチ作成 & 開発 (DEMO) ==================== -->
+<div class="slide" id="slide-project-feature">
+  <h2>STEP 4 — ブランチで新機能を開発</h2>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Feature Branch: Create & Develop</span>
+    </div>
+    <div class="terminal-body" id="term-project-feat"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runProjectFeature()" id="btn-pfeat">▶ ブランチで開発</button>
+    <button onclick="resetTerm('term-project-feat');document.getElementById('btn-pfeat').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 19: 個人開発 STEP5 — 確認 & マージ (DEMO) ==================== -->
+<div class="slide" id="slide-project-merge">
+  <h2>STEP 5 — 変更を確認してマージ</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.3">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — Review & Merge</span>
+      </div>
+      <div class="terminal-body" id="term-project-merge"></div>
+    </div>
+    <div class="github-ui" style="flex:1" id="gh-merge-mock">
+      <div class="github-header">
+        <span class="gh-icon">🐙</span>
+        <span class="gh-repo">username / my-todo-app</span>
+        <span style="color:#8b949e;font-size:.8rem;margin-left:auto" id="gh-merge-branch">main</span>
+      </div>
+      <div class="github-body" id="gh-merge-body">
+        <div style="text-align:center;padding:1.5rem 0">
+          <p style="color:#8b949e;font-size:.9rem">マージ後にここが更新される...</p>
+          <div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center">
+            <div class="gh-file" style="border:none;padding:4px 0"><span class="icon">📄</span><span class="name">index.html</span></div>
+            <div class="gh-file" style="border:none;padding:4px 0"><span class="icon">📄</span><span class="name">style.css</span></div>
+            <div class="gh-file" style="border:none;padding:4px 0"><span class="icon">📄</span><span class="name">app.js</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runProjectMerge()" id="btn-pmerge">▶ 確認 & マージ</button>
+    <button onclick="resetProjectMerge()" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 19: AI (Claude) がGitを使う理由 ==================== -->
+<div class="slide">
+  <div style="text-align:center">
+    <p class="label purple" style="font-size:1rem;padding:.4em 1em">PART 3</p>
+    <h1 style="font-size:2.5rem;margin-top:1rem">AIがGitを使うとき</h1>
+    <p style="font-size:1.3rem;color:#888;margin-top:1rem">Claude Code はなぜ・どうやってGitを使うのか</p>
+    <div class="ai-badge" style="margin-top:2rem;font-size:1rem">
+      <span>🤖</span> Claude Code × Git
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 20: なぜAIにGitが必要か ==================== -->
+<div class="slide">
+  <h2>なぜAIにGitが必要なのか？</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;max-width:900px;width:100%">
+    <div class="card" style="text-align:center;border-color:#c792ea44">
+      <div style="font-size:2rem;margin-bottom:.5rem">🔒</div>
+      <h3>安全性の担保</h3>
+      <p style="font-size:.9rem">AIが書いたコードを<code>git diff</code>で人間が確認してから反映できる</p>
+    </div>
+    <div class="card" style="text-align:center;border-color:#c792ea44">
+      <div style="font-size:2rem;margin-bottom:.5rem">⏪</div>
+      <h3>ロールバック</h3>
+      <p style="font-size:.9rem">AIの変更がまずかったら<code>git revert</code>で即座に元に戻せる</p>
+    </div>
+    <div class="card" style="text-align:center;border-color:#c792ea44">
+      <div style="font-size:2rem;margin-bottom:.5rem">📝</div>
+      <h3>変更の記録</h3>
+      <p style="font-size:.9rem">AIが何をしたか、コミットメッセージとして履歴に残る</p>
+    </div>
+    <div class="card" style="text-align:center;border-color:#c792ea44">
+      <div style="font-size:2rem;margin-bottom:.5rem">🔀</div>
+      <h3>ブランチ分離</h3>
+      <p style="font-size:.9rem">AIの作業をブランチで隔離。本番には影響しない</p>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 21: Claude のGitワークフロー ==================== -->
+<div class="slide" id="slide-ai-flow">
+  <h2>Claude Code のGitワークフロー</h2>
+  <div style="display:flex;flex-direction:column;gap:.5rem;max-width:800px;width:100%">
+    <div class="flow" style="flex-wrap:nowrap;gap:.5rem">
+      <div class="flow-box ai-step" data-ai="0" style="min-width:100px;padding:.6rem .8rem">
+        <p style="font-size:.75rem;color:#c792ea">STEP 1</p>
+        <p style="font-size:.85rem">git status<br><span style="font-size:.75rem;color:#888">現状を把握</span></p>
+      </div>
+      <div class="flow-arrow" style="font-size:1rem">→</div>
+      <div class="flow-box ai-step" data-ai="1" style="min-width:100px;padding:.6rem .8rem">
+        <p style="font-size:.75rem;color:#c792ea">STEP 2</p>
+        <p style="font-size:.85rem">git diff<br><span style="font-size:.75rem;color:#888">変更を確認</span></p>
+      </div>
+      <div class="flow-arrow" style="font-size:1rem">→</div>
+      <div class="flow-box ai-step" data-ai="2" style="min-width:100px;padding:.6rem .8rem">
+        <p style="font-size:.75rem;color:#c792ea">STEP 3</p>
+        <p style="font-size:.85rem">git log<br><span style="font-size:.75rem;color:#888">スタイル確認</span></p>
+      </div>
+      <div class="flow-arrow" style="font-size:1rem">→</div>
+      <div class="flow-box ai-step" data-ai="3" style="min-width:100px;padding:.6rem .8rem">
+        <p style="font-size:.75rem;color:#c792ea">STEP 4</p>
+        <p style="font-size:.85rem">git add<br><span style="font-size:.75rem;color:#888">ファイル選択</span></p>
+      </div>
+      <div class="flow-arrow" style="font-size:1rem">→</div>
+      <div class="flow-box ai-step" data-ai="4" style="min-width:100px;padding:.6rem .8rem">
+        <p style="font-size:.75rem;color:#c792ea">STEP 5</p>
+        <p style="font-size:.85rem">git commit<br><span style="font-size:.75rem;color:#888">メッセージ付き</span></p>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="max-width:800px;margin-top:1rem;font-size:.9rem;text-align:center">
+    <p><strong style="color:#c792ea">Claudeは慎重にGitを使う:</strong> statusで確認 → diffで変更把握 → logでコミットスタイルを読む → 適切なファイルだけadd → 意味のあるメッセージでcommit</p>
+  </div>
+</div>
+
+<!-- ==================== Slide 22: Claude のコミットプロセス (DEMO) ==================== -->
+<div class="slide" id="slide-ai-demo">
+  <h2>Claude がコミットする様子</h2>
+  <div class="terminal" id="term-ai">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Claude Code commit process</span>
+      <span class="ai-badge" style="margin-left:auto;font-size:.75rem">🤖 Claude</span>
+    </div>
+    <div class="terminal-body" id="term-ai-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermAI()" id="btn-ai">▶ Claudeのコミットを見る</button>
+    <button onclick="resetTerm('term-ai-body');document.getElementById('btn-ai').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 23: AIが絶対しないこと ==================== -->
+<div class="slide">
+  <h2>Claude がGitで守るルール</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card">
+      <p class="label green">必ずやること ✓</p>
+      <ul class="feature-list" style="margin-top:.5rem">
+        <li>コミット前に <code>git status</code> で確認</li>
+        <li><code>git diff</code> で変更内容を把握</li>
+        <li>ファイルを個別に <code>git add</code></li>
+        <li>意味のあるコミットメッセージを書く</li>
+        <li><code>Co-Authored-By</code> を付ける</li>
+        <li>コミット後に <code>git status</code> で確認</li>
+      </ul>
+    </div>
+    <div class="card">
+      <p class="label red">絶対しないこと ✗</p>
+      <ul class="feature-list" style="margin-top:.5rem">
+        <li><code>git push --force</code> 強制プッシュ</li>
+        <li><code>git reset --hard</code> 変更の破棄</li>
+        <li><code>--no-verify</code> フック無視</li>
+        <li><code>git add -A</code> 全ファイル追加</li>
+        <li>.env や credential の commit</li>
+        <li>ユーザーの許可なく push</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 24: テストとは何か ==================== -->
+<div class="slide">
+  <h2>PR前のテスト — なぜ必要？</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card" style="flex:1.2">
+      <p class="label orange">テストとは？</p>
+      <p style="font-size:.95rem;color:#bbb;margin-bottom:1rem">「書いたコードが正しく動くか」を<strong style="color:#00d2ff">自動で検証</strong>するプログラム。<br>人間が毎回手動で確認する代わりに、コンピュータが一瞬でチェックする。</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:.8rem">
+        <div style="background:#0a0a15;border-radius:6px;padding:.8rem">
+          <p style="font-size:.8rem;color:#ff5370;margin-bottom:.3rem">手動テスト</p>
+          <p style="font-size:.85rem;color:#888">ブラウザで開いて<br>ボタンを押して<br>目で確認...<br><span style="color:#ff5370">遅い・漏れる</span></p>
+        </div>
+        <div style="background:#0a0a15;border-radius:6px;padding:.8rem">
+          <p style="font-size:.8rem;color:#27c93f;margin-bottom:.3rem">自動テスト</p>
+          <p style="font-size:.85rem;color:#888">コマンド1つで<br>全機能を検証<br>数秒で完了<br><span style="color:#27c93f">速い・確実</span></p>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <p class="label green">なぜPR前に？</p>
+      <ul class="feature-list" style="margin-top:.3rem">
+        <li style="font-size:.95rem">壊れたコードをmainに入れない</li>
+        <li style="font-size:.95rem">レビュアーの負担を減らす</li>
+        <li style="font-size:.95rem">「動くことが保証済み」の安心感</li>
+        <li style="font-size:.95rem">あとで別の変更で壊れてもすぐ分かる</li>
+      </ul>
+      <div class="card" style="margin-top:.8rem;padding:.8rem;border-color:#27c93f44">
+        <p style="font-size:.85rem;color:#7fdbca;text-align:center">テストが通る = マージして大丈夫</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Slide 25: テストの種類と実行デモ ==================== -->
+<div class="slide" id="slide-test-demo">
+  <h2>テストの実行 — 何をしている？</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.3">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — Running Tests</span>
+      </div>
+      <div class="terminal-body" id="term-test-body"></div>
+    </div>
+    <div class="card" style="flex:.9;display:flex;flex-direction:column;gap:.8rem">
+      <div>
+        <p class="label" style="font-size:.75rem">単体テスト (Unit)</p>
+        <p style="font-size:.85rem;color:#888">関数1つが正しく動くか<br><code style="font-size:.8rem">addTodo("買い物") → OK?</code></p>
+      </div>
+      <div>
+        <p class="label green" style="font-size:.75rem">結合テスト (Integration)</p>
+        <p style="font-size:.85rem;color:#888">複数の機能が連携して動くか<br><code style="font-size:.8rem">追加→表示→削除 の流れ</code></p>
+      </div>
+      <div>
+        <p class="label purple" style="font-size:.75rem">Lint / Format</p>
+        <p style="font-size:.85rem;color:#888">コードの書き方が統一されているか<br><code style="font-size:.8rem">eslint, prettier</code></p>
+      </div>
+      <div>
+        <p class="label orange" style="font-size:.75rem">CI (自動実行)</p>
+        <p style="font-size:.85rem;color:#888">push時にGitHub上で自動テスト<br><code style="font-size:.8rem">GitHub Actions</code></p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTestDemo()" id="btn-test">▶ テストを実行</button>
+    <button onclick="resetTerm('term-test-body');document.getElementById('btn-test').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 26: PRを作るデモ ==================== -->
+<div class="slide" id="slide-pr-demo">
+  <h2>Claude がPRを作る流れ</h2>
+  <div class="terminal" id="term-pr">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Creating a Pull Request</span>
+      <span class="ai-badge" style="margin-left:auto;font-size:.75rem">🤖 Claude</span>
+    </div>
+    <div class="terminal-body" id="term-pr-body"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runTermPR()" id="btn-pr">▶ PR作成を見る</button>
+    <button onclick="resetTerm('term-pr-body');document.getElementById('btn-pr').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== Slide 25: コマンドまとめ ==================== -->
+<div class="slide" id="slide-summary">
+  <h2>コマンドまとめ</h2>
+  <div style="display:grid;grid-template-columns:auto 1fr 1fr;gap:.4rem 1.5rem;max-width:850px;align-items:center;font-size:.95rem">
+    <span style="color:#555;font-weight:600">カテゴリ</span><span style="color:#555;font-weight:600">コマンド</span><span style="color:#555;font-weight:600">説明</span>
+
+    <span class="label" style="font-size:.75rem;margin:0">初期化</span><code>git init</code><span style="color:#888">新しいリポジトリを作成</span>
+    <span></span><code>git clone URL</code><span style="color:#888">既存リポジトリをコピー</span>
+
+    <span class="label green" style="font-size:.75rem;margin:0">基本</span><code>git status</code><span style="color:#888">変更状況を確認</span>
+    <span></span><code>git add ファイル</code><span style="color:#888">変更をステージング</span>
+    <span></span><code>git commit -m "msg"</code><span style="color:#888">変更を記録</span>
+
+    <span class="label purple" style="font-size:.75rem;margin:0">確認</span><code>git diff</code><span style="color:#888">変更の差分を表示</span>
+    <span></span><code>git log --oneline</code><span style="color:#888">コミット履歴を表示</span>
+
+    <span class="label orange" style="font-size:.75rem;margin:0">共有</span><code>git push</code><span style="color:#888">GitHubにアップロード</span>
+    <span></span><code>git pull</code><span style="color:#888">GitHubから最新を取得</span>
+
+    <span class="label red" style="font-size:.75rem;margin:0">分岐</span><code>git branch 名前</code><span style="color:#888">ブランチを作成</span>
+    <span></span><code>git checkout 名前</code><span style="color:#888">ブランチを切り替え</span>
+    <span></span><code>git merge 名前</code><span style="color:#888">ブランチを統合</span>
+  </div>
+</div>
+
+<!-- ==================== よくある落とし穴セクション ==================== -->
+<div class="slide">
+  <div style="text-align:center;max-width:950px">
+    <p class="label red" style="font-size:1rem;padding:.4em 1em">REAL WORLD PITFALLS</p>
+    <h1 style="font-size:2.5rem;margin-top:1rem">初心者がハマるポイント</h1>
+    <p style="font-size:1.15rem;color:#888;margin-top:.8rem">本当に痛い失敗と、その乗り越え方</p>
+    <div style="display:flex;gap:.8rem;margin-top:2rem;justify-content:center">
+      <div style="flex:1;background:linear-gradient(180deg,#ff537018,#ff537003);border:1px solid #ff537033;border-radius:14px;padding:1rem .6rem .8rem;text-align:center">
+        <div style="font-size:1.6rem;margin-bottom:.4rem">💥</div>
+        <p style="font-size:.8rem;color:#ff5370;font-weight:600">コンフリクト</p>
+        <p style="font-size:.7rem;color:#555;margin-top:.2rem">同じ行の衝突で<br>マージが止まる</p>
+      </div>
+      <div style="flex:1;background:linear-gradient(180deg,#ffcb6b18,#ffcb6b03);border:1px solid #ffcb6b33;border-radius:14px;padding:1rem .6rem .8rem;text-align:center">
+        <div style="font-size:1.6rem;margin-bottom:.4rem">🚫</div>
+        <p style="font-size:.8rem;color:#ffcb6b;font-weight:600">push拒否</p>
+        <p style="font-size:.7rem;color:#555;margin-top:.2rem">リモートが先に<br>進んでいてreject</p>
+      </div>
+      <div style="flex:1;background:linear-gradient(180deg,#ff537018,#ff537003);border:1px solid #ff537033;border-radius:14px;padding:1rem .6rem .8rem;text-align:center">
+        <div style="font-size:1.6rem;margin-bottom:.4rem">💀</div>
+        <p style="font-size:.8rem;color:#ff5370;font-weight:600">reset --hard</p>
+        <p style="font-size:.7rem;color:#555;margin-top:.2rem">未保存の作業が<br>一瞬で消滅</p>
+      </div>
+      <div style="flex:1;background:linear-gradient(180deg,#f78c6c18,#f78c6c03);border:1px solid #f78c6c33;border-radius:14px;padding:1rem .6rem .8rem;text-align:center">
+        <div style="font-size:1.6rem;margin-bottom:.4rem">🔑</div>
+        <p style="font-size:.8rem;color:#f78c6c;font-weight:600">秘密情報push</p>
+        <p style="font-size:.7rem;color:#555;margin-top:.2rem">APIキーが全世界に<br>公開。botが数秒で取得</p>
+      </div>
+      <div style="flex:1;background:linear-gradient(180deg,#c792ea18,#c792ea03);border:1px solid #c792ea33;border-radius:14px;padding:1rem .6rem .8rem;text-align:center">
+        <div style="font-size:1.6rem;margin-bottom:.4rem">😤</div>
+        <p style="font-size:.8rem;color:#c792ea;font-weight:600">間違いブランチ</p>
+        <p style="font-size:.7rem;color:#555;margin-top:.2rem">数日作業した後に<br>mainだったと気づく</p>
+      </div>
+      <div style="flex:1;background:linear-gradient(180deg,#7fdbca18,#7fdbca03);border:1px solid #7fdbca33;border-radius:14px;padding:1rem .6rem .8rem;text-align:center">
+        <div style="font-size:1.6rem;margin-bottom:.4rem">🛟</div>
+        <p style="font-size:.8rem;color:#7fdbca;font-weight:600">reflog</p>
+        <p style="font-size:.7rem;color:#555;margin-top:.2rem">知らないと<br>復旧を諦めてしまう</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- コンフリクト解消デモ -->
+<div class="slide" id="slide-conflict">
+  <h2>😱 コンフリクト — 一番面倒なやつ</h2>
+  <div class="cols" style="max-width:1050px">
+    <div class="terminal" style="flex:1.3">
+      <div class="terminal-bar">
+        <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+        <span>Terminal — Conflict Resolution</span>
+      </div>
+      <div class="terminal-body" id="term-conflict"></div>
+    </div>
+    <div class="card" style="flex:.8;display:flex;flex-direction:column;justify-content:center;gap:.8rem">
+      <div>
+        <p class="label red" style="font-size:.75rem">なぜ起きる？</p>
+        <p style="font-size:.85rem;color:#888">同じファイルの同じ行を別々のブランチで編集すると発生</p>
+      </div>
+      <div>
+        <p class="label green" style="font-size:.75rem">解決手順</p>
+        <p style="font-size:.85rem;color:#888">1. ファイルを開く<br>2. <code>&lt;&lt;&lt;</code> <code>===</code> <code>&gt;&gt;&gt;</code> を探す<br>3. 残したい方を選ぶ<br>4. マーカーを消す<br>5. add → commit</p>
+      </div>
+      <div class="card" style="padding:.6rem;border-color:#7fdbca44">
+        <p style="font-size:.8rem;color:#7fdbca;text-align:center">慌てない。落ち着いて1つずつ。</p>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runConflictDemo()" id="btn-conflict">▶ コンフリクト解消を体験</button>
+    <button onclick="resetTerm('term-conflict');document.getElementById('btn-conflict').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- pushが通らないデモ -->
+<div class="slide" id="slide-rejected">
+  <h2>🤯 pushが通らない — rejected</h2>
+  <div class="terminal">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — Push Rejected & Fix</span>
+    </div>
+    <div class="terminal-body" id="term-rejected"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runRejectedDemo()" id="btn-rejected">▶ 再現 & 解決</button>
+    <button onclick="resetTerm('term-rejected');document.getElementById('btn-rejected').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- エラー思考フロー: push rejected -->
+<div class="slide" id="slide-think-push">
+  <h2>エラーが出たら — push rejected 編</h2>
+  <p style="color:#888;font-size:.9rem;margin-bottom:.8rem">エラーメッセージを読んで、候補を消去法で絞り込む</p>
+  <div class="cols" style="max-width:1050px;align-items:flex-start">
+    <div style="flex:1">
+      <div style="background:#0a0a15;border:1px solid #ff537044;border-radius:8px;padding:.8rem 1rem;font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.5;margin-bottom:1rem">
+        <span style="color:#ff5370">! [rejected]</span> <span style="color:#888">main -> main</span><br>
+        <span style="color:#ff5370">error:</span> <span style="color:#bbb">failed to push some refs</span><br>
+        <span style="color:#ffcb6b">hint:</span> <span style="color:#888">Updates were rejected because the remote contains work that you do not have locally.</span>
+      </div>
+      <div id="think-push-list" style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="think-item" data-think="0" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tp-icon-0">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">認証エラー？ SSH鍵が通ってない？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tp-verdict-0"></span>
+        </div>
+        <div class="think-item" data-think="1" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tp-icon-1">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">リモートURLが間違っている？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tp-verdict-1"></span>
+        </div>
+        <div class="think-item" data-think="2" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tp-icon-2">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">ブランチ名が違う？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tp-verdict-2"></span>
+        </div>
+        <div class="think-item" data-think="3" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tp-icon-3">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">リモートが自分より先に進んでいる？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tp-verdict-3"></span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:.8">
+      <div class="card" id="think-push-action" style="min-height:200px;display:flex;flex-direction:column;justify-content:center;opacity:.3;transition:opacity .5s">
+        <p class="label green" style="font-size:.75rem">判明した原因 & 対処</p>
+        <p style="font-size:.9rem;color:#bbb;margin-bottom:.5rem">リモートに自分が持っていない変更がある。先にpullで取り込む必要がある。</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.85rem;background:#0a0a15;padding:.8rem;border-radius:6px;line-height:1.8">
+          <span style="color:#7fdbca">$</span> git pull origin main<br>
+          <span style="color:#888">→ リモートの変更を取得・統合</span><br>
+          <span style="color:#7fdbca">$</span> git push origin main<br>
+          <span style="color:#27c93f">→ 成功！</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:.8rem">
+    <button onclick="runThinkPush()" id="btn-think-push">▶ 消去法で原因を探る</button>
+  </div>
+</div>
+
+<!-- エラー思考フロー: conflict -->
+<div class="slide" id="slide-think-conflict">
+  <h2>エラーが出たら — コンフリクト 編</h2>
+  <p style="color:#888;font-size:.9rem;margin-bottom:.8rem">merge時のエラーを読み解く思考プロセス</p>
+  <div class="cols" style="max-width:1050px;align-items:flex-start">
+    <div style="flex:1">
+      <div style="background:#0a0a15;border:1px solid #ff537044;border-radius:8px;padding:.8rem 1rem;font-family:'Fira Code',monospace;font-size:.85rem;line-height:1.5;margin-bottom:1rem">
+        <span style="color:#ff5370">CONFLICT</span> <span style="color:#888">(content): Merge conflict in</span> <span style="color:#bbb">index.html</span><br>
+        <span style="color:#ff5370">Automatic merge failed;</span> <span style="color:#888">fix conflicts and then commit the result.</span>
+      </div>
+      <div id="think-conf-list" style="display:flex;flex-direction:column;gap:.5rem">
+        <div class="think-item" data-think="0" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tc-icon-0">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">ファイルが壊れた？ データが消えた？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tc-verdict-0"></span>
+        </div>
+        <div class="think-item" data-think="1" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tc-icon-1">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">mergeコマンドの書き方を間違えた？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tc-verdict-1"></span>
+        </div>
+        <div class="think-item" data-think="2" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tc-icon-2">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">別のファイルを編集したのに衝突？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tc-verdict-2"></span>
+        </div>
+        <div class="think-item" data-think="3" style="display:flex;align-items:center;gap:.8rem;padding:.6rem .8rem;border-radius:8px;border:1px solid #2a2a4a;transition:all .5s">
+          <span style="font-size:1.1rem;width:24px;text-align:center" id="tc-icon-3">🔍</span>
+          <div style="flex:1"><p style="font-size:.9rem;color:#bbb">同じファイルの同じ行を2箇所で編集した？</p></div>
+          <span style="font-size:.8rem;color:#555" id="tc-verdict-3"></span>
+        </div>
+      </div>
+    </div>
+    <div style="flex:.8">
+      <div class="card" id="think-conf-action" style="min-height:200px;display:flex;flex-direction:column;justify-content:center;opacity:.3;transition:opacity .5s">
+        <p class="label green" style="font-size:.75rem">判明した原因 & 対処</p>
+        <p style="font-size:.9rem;color:#bbb;margin-bottom:.5rem">同じ行への変更が衝突。ファイルを開いて手動で解決する。</p>
+        <div style="font-family:'Fira Code',monospace;font-size:.85rem;background:#0a0a15;padding:.8rem;border-radius:6px;line-height:1.8">
+          <span style="color:#7fdbca">$</span> vim index.html<br>
+          <span style="color:#888">→ &lt;&lt;&lt; === &gt;&gt;&gt; を探して修正</span><br>
+          <span style="color:#7fdbca">$</span> git add index.html<br>
+          <span style="color:#7fdbca">$</span> git commit<br>
+          <span style="color:#27c93f">→ コンフリクト解消！</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="margin-top:.8rem">
+    <button onclick="runThinkConflict()" id="btn-think-conf">▶ 消去法で原因を探る</button>
+  </div>
+</div>
+
+<!-- エラー思考フロー: 汎用フローチャート -->
+<div class="slide">
+  <h2>Git エラー対処フローチャート</h2>
+  <div class="card" style="max-width:850px;width:100%;padding:2rem">
+    <div style="display:flex;flex-direction:column;gap:0;align-items:center">
+      <!-- Step 1 -->
+      <div style="background:linear-gradient(135deg,#ff537022,#ff537008);border:1px solid #ff537044;border-radius:12px;padding:.8rem 2rem;text-align:center;min-width:350px">
+        <p style="font-size:1rem;color:#ff5370;font-weight:600">エラーが出た！</p>
+      </div>
+      <div style="color:#555;font-size:1.2rem;padding:.3rem 0">↓</div>
+      <!-- Step 2 -->
+      <div style="background:linear-gradient(135deg,#ffcb6b22,#ffcb6b08);border:1px solid #ffcb6b44;border-radius:12px;padding:.8rem 2rem;text-align:center;min-width:350px">
+        <p style="font-size:.95rem;color:#ffcb6b;font-weight:600">1. エラーメッセージを読む</p>
+        <p style="font-size:.8rem;color:#888">英語でも最初の1行にキーワードがある</p>
+      </div>
+      <div style="color:#555;font-size:1.2rem;padding:.3rem 0">↓</div>
+      <!-- Step 3 -->
+      <div style="background:linear-gradient(135deg,#00d2ff22,#00d2ff08);border:1px solid #00d2ff44;border-radius:12px;padding:.8rem 2rem;text-align:center;min-width:350px">
+        <p style="font-size:.95rem;color:#00d2ff;font-weight:600">2. <code style="color:#00d2ff">git status</code> で現状確認</p>
+        <p style="font-size:.8rem;color:#888">今どのブランチ？未コミットの変更は？</p>
+      </div>
+      <div style="color:#555;font-size:1.2rem;padding:.3rem 0">↓</div>
+      <!-- Step 4 -->
+      <div style="display:flex;gap:1.5rem;align-items:flex-start">
+        <div style="background:linear-gradient(135deg,#c792ea22,#c792ea08);border:1px solid #c792ea44;border-radius:12px;padding:.8rem 1.2rem;text-align:center;flex:1">
+          <p style="font-size:.85rem;color:#c792ea;font-weight:600">rejected?</p>
+          <p style="font-size:.8rem;color:#888;margin-top:.3rem"><code>git pull</code><br>してから再push</p>
+        </div>
+        <div style="background:linear-gradient(135deg,#f78c6c22,#f78c6c08);border:1px solid #f78c6c44;border-radius:12px;padding:.8rem 1.2rem;text-align:center;flex:1">
+          <p style="font-size:.85rem;color:#f78c6c;font-weight:600">conflict?</p>
+          <p style="font-size:.8rem;color:#888;margin-top:.3rem">ファイルを開いて<br>マーカーを修正</p>
+        </div>
+        <div style="background:linear-gradient(135deg,#7fdbca22,#7fdbca08);border:1px solid #7fdbca44;border-radius:12px;padding:.8rem 1.2rem;text-align:center;flex:1">
+          <p style="font-size:.85rem;color:#7fdbca;font-weight:600">detached?</p>
+          <p style="font-size:.8rem;color:#888;margin-top:.3rem"><code>git checkout</code><br>でブランチに戻る</p>
+        </div>
+        <div style="background:linear-gradient(135deg,#ff537022,#ff537008);border:1px solid #ff537044;border-radius:12px;padding:.8rem 1.2rem;text-align:center;flex:1">
+          <p style="font-size:.85rem;color:#ff5370;font-weight:600">わからない?</p>
+          <p style="font-size:.8rem;color:#888;margin-top:.3rem">エラー文を<br>そのまま検索</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- reset --hard の恐怖 & 秘密情報push -->
+<div class="slide">
+  <h2>本当に怖いやつ</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card" style="border-color:#ff537044">
+      <p style="font-size:1.5rem;text-align:center;margin-bottom:.5rem">💀</p>
+      <p class="label red">git reset --hard で作業消滅</p>
+      <p style="font-size:.9rem;color:#bbb;margin-bottom:.8rem">StackOverflowの「解決策」を鵜呑みにして実行。<strong style="color:#ff5370">未コミットの変更が一瞬で全消去。</strong>確認ダイアログなし。Ctrl+Zなし。</p>
+      <div style="background:#0a0a15;border-radius:6px;padding:.8rem;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.7">
+        <span style="color:#ff5370">$ git reset --hard HEAD</span><br>
+        <span style="color:#888">→ 3日間の作業が消えた...</span><br><br>
+        <span style="color:#ffcb6b">防止策:</span><br>
+        <span style="color:#7fdbca">$ git stash</span> <span style="color:#888">← 危険な操作の前に退避</span><br>
+        <span style="color:#7fdbca">$ git commit -m "WIP"</span> <span style="color:#888">← 仮commitでもいい</span><br><br>
+        <span style="color:#ffcb6b">やってしまったら:</span><br>
+        <span style="color:#7fdbca">$ git fsck --dangling</span> <span style="color:#888">← stageした分は残ってるかも</span><br>
+        <span style="color:#888">IDEのLocal Historyも確認</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:#f78c6c44">
+      <p style="font-size:1.5rem;text-align:center;margin-bottom:.5rem">🔑</p>
+      <p class="label orange">APIキーをpushした</p>
+      <p style="font-size:.9rem;color:#bbb;margin-bottom:.8rem">ファイルを削除して再pushしても<strong style="color:#f78c6c">履歴に残っている。</strong>botが数秒でスキャンし、AWSキーなら数分で数千ドルの請求も。</p>
+      <div style="background:#0a0a15;border-radius:6px;padding:.8rem;font-family:'Fira Code',monospace;font-size:.82rem;line-height:1.7">
+        <span style="color:#ff5370">1. まずキーを無効化！</span><br>
+        <span style="color:#888">→ AWSコンソール等で即revoke</span><br><br>
+        <span style="color:#ffcb6b">履歴からの削除:</span><br>
+        <span style="color:#7fdbca">$ git filter-repo --path .env --invert-paths</span><br>
+        <span style="color:#888">→ 全履歴から.envを除去</span><br><br>
+        <span style="color:#ffcb6b">防止策:</span><br>
+        <span style="color:#7fdbca">.gitignore を最初に作る</span><br>
+        <span style="color:#7fdbca">pre-commit hookで検出</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 間違いブランチ & コミット粒度 -->
+<div class="slide" id="slide-branch-mistakes">
+  <h2>やりがちなワークフロー問題</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card" style="border-color:#c792ea44">
+      <p class="label purple">😤 間違いブランチで数日作業</p>
+      <p style="font-size:.9rem;color:#bbb;margin-bottom:.6rem">mainで直接3日間コード書いてた...</p>
+      <div class="terminal" style="max-width:100%">
+        <div class="terminal-bar" style="padding:5px 10px"><div class="dot r"></div><div class="dot y"></div><div class="dot g"></div></div>
+        <div class="terminal-body" id="term-wrongbranch" style="min-height:auto;max-height:none;padding:.8rem 1rem;font-size:.82rem"></div>
+      </div>
+      <div style="margin-top:.5rem">
+        <button onclick="runWrongBranch()" id="btn-wrongbranch" style="font-size:.8rem;padding:.4rem 1rem">▶ 救出する</button>
+        <button onclick="resetTerm('term-wrongbranch');document.getElementById('btn-wrongbranch').disabled=false" style="background:#2a2a4a;color:#888;font-size:.8rem;padding:.4rem 1rem">リセット</button>
+      </div>
+    </div>
+    <div class="card" style="border-color:#ffcb6b44">
+      <p class="label yellow">📦 コミットが巨大すぎる問題</p>
+      <p style="font-size:.9rem;color:#bbb;margin-bottom:.6rem">「金曜にまとめてcommit」はGitの意味がない</p>
+      <div style="display:flex;gap:.5rem;margin-bottom:.8rem">
+        <div style="flex:1;background:#ff537015;border:1px solid #ff537033;border-radius:6px;padding:.5rem;text-align:center">
+          <p style="font-size:.75rem;color:#ff5370;font-weight:600">Bad</p>
+          <p style="font-size:.7rem;color:#888;margin-top:.2rem;font-family:'Fira Code',monospace">"updated stuff"<br>+2847 lines<br>43 files</p>
+        </div>
+        <div style="flex:1;background:#27c93f15;border:1px solid #27c93f33;border-radius:6px;padding:.5rem;text-align:center">
+          <p style="font-size:.75rem;color:#27c93f;font-weight:600">Good</p>
+          <p style="font-size:.7rem;color:#888;margin-top:.2rem;font-family:'Fira Code',monospace">"add login form"<br>+45 lines<br>3 files</p>
+        </div>
+      </div>
+      <p style="font-size:.85rem;color:#bbb">なぜダメか:</p>
+      <ul style="list-style:none;font-size:.82rem;color:#888;line-height:1.8">
+        <li>▸ コードレビューが不可能</li>
+        <li>▸ バグの原因特定ができない</li>
+        <li>▸ 1つの変更だけ戻すのが不可能</li>
+        <li>▸ <code style="font-size:.75rem">git bisect</code> が使えない</li>
+      </ul>
+      <p style="font-size:.82rem;color:#7fdbca;margin-top:.5rem">→ 1機能 = 1コミット が目安</p>
+    </div>
+  </div>
+</div>
+
+<!-- git reflog — 最強の救済措置 -->
+<div class="slide" id="slide-reflog">
+  <h2>🛟 git reflog — 「全部消えた」は嘘</h2>
+  <p style="color:#888;font-size:.95rem;margin-bottom:.8rem">Gitは過去90日間のHEADの移動を全て記録している。ほぼ何でも復旧できる。</p>
+  <div class="terminal" style="max-width:900px">
+    <div class="terminal-bar">
+      <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+      <span>Terminal — git reflog: Your Safety Net</span>
+    </div>
+    <div class="terminal-body" id="term-reflog"></div>
+  </div>
+  <div style="margin-top:1rem;display:flex;gap:.8rem">
+    <button onclick="runReflogDemo()" id="btn-reflog">▶ reflogで復旧する</button>
+    <button onclick="resetTerm('term-reflog');document.getElementById('btn-reflog').disabled=false" style="background:#2a2a4a;color:#888">リセット</button>
+  </div>
+</div>
+
+<!-- ==================== .gitignore (1/2) なぜ必要か ==================== -->
+<div class="slide">
+  <h2>.gitignore — なぜ必要？</h2>
+  <div class="cols" style="max-width:1000px">
+    <div class="card" style="flex:1.2">
+      <p class="label">設定ファイル例</p>
+      <div style="font-family:'Fira Code',monospace;font-size:.9rem;line-height:1.8;background:#0a0a15;padding:1rem;border-radius:6px">
+        <span style="color:#888"># 環境変数（秘密情報）</span><br>
+        <span style="color:#ff5370">.env</span><br>
+        <span style="color:#ff5370">.env.local</span><br><br>
+        <span style="color:#888"># 依存パッケージ</span><br>
+        <span style="color:#ffcb6b">node_modules/</span><br>
+        <span style="color:#ffcb6b">venv/</span><br><br>
+        <span style="color:#888"># ビルド出力</span><br>
+        <span style="color:#c792ea">dist/</span><br>
+        <span style="color:#c792ea">build/</span><br><br>
+        <span style="color:#888"># OS生成ファイル</span><br>
+        <span style="color:#888">.DS_Store</span><br>
+        <span style="color:#888">Thumbs.db</span>
+      </div>
+    </div>
+    <div class="card" style="display:flex;flex-direction:column;justify-content:center;gap:1rem">
+      <div>
+        <p class="label red" style="font-size:.8rem">ignoreしないと何が起きる？</p>
+        <ul style="list-style:none;font-size:.9rem;color:#bbb;line-height:1.8">
+          <li><span style="color:#ff5370">▸</span> APIキーが全世界に公開される</li>
+          <li><span style="color:#ff5370">▸</span> node_modules（数万ファイル）をpush</li>
+          <li><span style="color:#ff5370">▸</span> cloneに30分かかるリポジトリ完成</li>
+          <li><span style="color:#ff5370">▸</span> 他人のPCで動かないゴミが混入</li>
+        </ul>
+      </div>
+      <div class="card" style="padding:.8rem;border-color:#27c93f44;text-align:center">
+        <p style="font-size:.9rem;color:#7fdbca">プロジェクト開始時に<strong>最初に</strong>作るファイル！</p>
+        <p style="font-size:.8rem;color:#888;margin-top:.3rem">git init → .gitignore → 最初のcommit</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== .gitignore (2/2) 各項目の意味 ==================== -->
+<div class="slide">
+  <h2>.gitignore — 各ディレクトリ・ファイルの正体</h2>
+  <div style="max-width:950px;width:100%;display:grid;grid-template-columns:auto 1fr auto 1fr;gap:.3rem .8rem;align-items:center;font-size:.9rem">
+    <!-- Header -->
+    <span style="color:#555;font-weight:600;font-size:.8rem;padding:.3rem 0;border-bottom:1px solid #2a2a4a">名前</span>
+    <span style="color:#555;font-weight:600;font-size:.8rem;padding:.3rem 0;border-bottom:1px solid #2a2a4a">何が入っている？</span>
+    <span style="color:#555;font-weight:600;font-size:.8rem;padding:.3rem 0;border-bottom:1px solid #2a2a4a">サイズ</span>
+    <span style="color:#555;font-weight:600;font-size:.8rem;padding:.3rem 0;border-bottom:1px solid #2a2a4a">なぜignore？</span>
+
+    <!-- .env -->
+    <code style="color:#ff5370">.env</code>
+    <span style="color:#bbb">APIキー、DB接続先、パスワードなどの秘密情報</span>
+    <span style="color:#888">数KB</span>
+    <span style="color:#ff5370;font-weight:600">漏洩したら事故。絶対NG</span>
+
+    <!-- node_modules -->
+    <code style="color:#ffcb6b">node_modules/</code>
+    <span style="color:#bbb"><code style="font-size:.8rem">npm install</code> でDLされるライブラリ全部</span>
+    <span style="color:#ff5370">数百MB</span>
+    <span style="color:#bbb"><code style="font-size:.8rem">npm install</code> で再生成できる</span>
+
+    <!-- venv -->
+    <code style="color:#ffcb6b">venv/</code>
+    <span style="color:#bbb">Python仮想環境。pipでDLしたライブラリ全部</span>
+    <span style="color:#ff5370">数百MB</span>
+    <span style="color:#bbb"><code style="font-size:.8rem">pip install -r requirements.txt</code> で再生成</span>
+
+    <!-- dist -->
+    <code style="color:#c792ea">dist/</code>
+    <span style="color:#bbb"><strong style="color:#c792ea">distribution</strong>の略。ビルド後の配布用ファイル（JS圧縮版等）</span>
+    <span style="color:#888">数MB</span>
+    <span style="color:#bbb"><code style="font-size:.8rem">npm run build</code> で再生成できる</span>
+
+    <!-- build -->
+    <code style="color:#c792ea">build/</code>
+    <span style="color:#bbb">コンパイル・ビルドの出力先。distと同じ役割</span>
+    <span style="color:#888">数MB</span>
+    <span style="color:#bbb">ソースから何度でも作れる</span>
+
+    <!-- .DS_Store -->
+    <code style="color:#888">.DS_Store</code>
+    <span style="color:#bbb">macOS Finderが自動生成。フォルダの表示設定を保存</span>
+    <span style="color:#888">数KB</span>
+    <span style="color:#bbb">mac固有。他のOSには無意味</span>
+
+    <!-- Thumbs.db -->
+    <code style="color:#888">Thumbs.db</code>
+    <span style="color:#bbb">Windowsが自動生成。画像サムネイルのキャッシュ</span>
+    <span style="color:#888">数KB</span>
+    <span style="color:#bbb">Windows固有。他のOSには無意味</span>
+
+    <!-- __pycache__ -->
+    <code style="color:#888">__pycache__/</code>
+    <span style="color:#bbb">Pythonが自動生成するコンパイル済みファイル (.pyc)</span>
+    <span style="color:#888">数MB</span>
+    <span style="color:#bbb">実行すれば自動で作られる</span>
+
+    <!-- .idea / .vscode -->
+    <code style="color:#888">.idea/</code>
+    <span style="color:#bbb">JetBrains IDEの設定。<code style="font-size:.8rem">.vscode/</code> はVS Codeの設定</span>
+    <span style="color:#888">数KB</span>
+    <span style="color:#bbb">個人のエディタ設定。共有不要</span>
+
+    <!-- *.log -->
+    <code style="color:#888">*.log</code>
+    <span style="color:#bbb">アプリが出力するログファイル。デバッグ情報等</span>
+    <span style="color:#888">数MB〜</span>
+    <span style="color:#bbb">実行ごとに変わる一時データ</span>
+  </div>
+  <p style="margin-top:.8rem;color:#888;font-size:.85rem;text-align:center">共通ルール: <strong style="color:#00d2ff">再生成できるもの</strong>・<strong style="color:#ff5370">秘密情報</strong>・<strong style="color:#888">個人環境固有のもの</strong> は全てignore</p>
+</div>
+
+<!-- ==================== Slide 28: まとめ ==================== -->
+<div class="slide">
+  <div style="text-align:center">
+    <h2 style="margin-bottom:2rem;font-size:2.2rem">まとめ</h2>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;max-width:900px;margin:0 auto">
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">📦</div>
+        <h3>Git = 履歴管理</h3>
+        <p style="font-size:.85rem;color:#888">変更を記録して<br>いつでも戻れる</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">🌐</div>
+        <h3>GitHub = 共有</h3>
+        <p style="font-size:.85rem;color:#888">コードをクラウドに<br>チームで協業</p>
+      </div>
+      <div class="card" style="text-align:center">
+        <div style="font-size:2.5rem;margin-bottom:.5rem">🤖</div>
+        <h3>AI × Git = 安全</h3>
+        <p style="font-size:.85rem;color:#888">AIの変更も履歴に<br>レビュー可能</p>
+      </div>
+    </div>
+    <div class="card" style="max-width:600px;margin:2rem auto 0;text-align:center">
+      <p style="font-size:1.1rem;color:#00d2ff">まずは <code>git init</code> から始めよう！</p>
+      <p style="font-size:.9rem;color:#888;margin-top:.5rem">失敗しても大丈夫。Gitがあれば戻れるから。</p>
+    </div>
+  </div>
+</div>
+
+<div class="progress"></div>
+<div class="nav-hint">← → で移動 | g: 最初 | G: 最後</div>
+
+<script>
+/* ===== Slide Navigation ===== */
+const slides=document.querySelectorAll('.slide'),prog=document.querySelector('.progress');
+let cur=0,busy=false;
+function go(i){
+  if(busy||i===cur)return;
+  var next=Math.max(0,Math.min(i,slides.length-1));
+  if(next===cur)return;
+  busy=true;
+  slides[cur].classList.remove('active');
+  slides[next].style.animation='none';slides[next].offsetHeight;slides[next].style.animation='';
+  slides[next].classList.add('active');
+  cur=next;
+  prog.textContent=(cur+1)+' / '+slides.length;
+  onSlideEnter(cur);
+  setTimeout(function(){busy=false},350);
+}
+prog.textContent='1 / '+slides.length;
+document.addEventListener('keydown',function(e){
+  if(e.target.tagName==='TEXTAREA'||e.target.tagName==='INPUT')return;
+  if(['ArrowRight','l','j','n',' '].indexOf(e.key)>=0){e.preventDefault();go(cur+1)}
+  else if(['ArrowLeft','h','k','p'].indexOf(e.key)>=0){e.preventDefault();go(cur-1)}
+  else if(e.key==='g')go(0);
+  else if(e.key==='G')go(slides.length-1);
+});
+
+/* ===== Slide Enter Hooks ===== */
+function onSlideEnter(idx){
+  var slide=slides[idx];
+  if(slide.id==='slide-setup1'||slide.id==='slide-setup2'){
+    var steps=slide.querySelectorAll('.step');
+    steps.forEach(function(s,i){
+      s.classList.remove('visible');
+      setTimeout(function(){s.classList.add('visible')},300+i*600);
+    });
+  }
+  if(slide.id==='slide-areas'){
+    var boxes=slide.querySelectorAll('.flow-box');
+    boxes.forEach(function(b,i){
+      b.classList.remove('active-box');
+      setTimeout(function(){b.classList.add('active-box')},400+i*800);
+    });
+  }
+  if(slide.id==='slide-ai-flow'){
+    var steps=slide.querySelectorAll('.ai-step');
+    steps.forEach(function(s,i){
+      s.classList.remove('active-box');
+      setTimeout(function(){s.classList.add('active-box')},300+i*700);
+    });
+  }
+}
+
+/* ===== Terminal Typing Engine (slowed down) ===== */
+function typeInTerminal(containerId, lines, btnId){
+  var container=document.getElementById(containerId);
+  container.innerHTML='';
+  if(btnId)document.getElementById(btnId).disabled=true;
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+}
+
+function resetTerm(id){
+  document.getElementById(id).innerHTML='';
+}
+
+/* ===== Demo: Basic Commands ===== */
+function runTermBasic(){
+  typeInTerminal('term-basic-body',[
+    {type:'prompt',text:'mkdir my-project',pause:0},
+    {type:'prompt',text:'cd my-project',pause:600},
+    {type:'prompt',text:'git init',pause:700},
+    {type:'output',text:'Initialized empty Git repository in /my-project/.git/',cls:'success',pause:500},
+    {type:'comment',text:'↑ .gitフォルダが作られた。ここに履歴が保存される',pause:400},
+    {type:'prompt',text:'echo "&lt;h1&gt;Hello&lt;/h1&gt;" > index.html',pause:800},
+    {type:'prompt',text:'git status',pause:700},
+    {type:'output',text:'Untracked files:',cls:'output',pause:400},
+    {type:'output',text:'  index.html',cls:'error',pause:200},
+    {type:'comment',text:'↑ 赤 = まだGitが追跡していないファイル',pause:400},
+    {type:'prompt',text:'git add index.html',pause:800},
+    {type:'comment',text:'↑ ステージングエリアに追加',pause:400},
+    {type:'prompt',text:'git commit -m "初めてのコミット"',pause:800},
+    {type:'output',text:'[main (root-commit) a1b2c3d] 初めてのコミット',cls:'success',pause:400},
+    {type:'output',text:' 1 file changed, 1 insertion(+)',cls:'output',pause:200},
+    {type:'comment',text:'↑ 履歴に記録された！ a1b2c3d がコミットID',pause:400},
+    {type:'prompt',text:'git log --oneline',pause:800},
+    {type:'output',text:'a1b2c3d 初めてのコミット',cls:'info',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ 最初のコミット完了！',cls:'success',pause:300},
+  ],'btn-basic');
+}
+
+/* ===== Demo: Push ===== */
+function runTermPush(){
+  typeInTerminal('term-push-body',[
+    {type:'comment',text:'GitHubで新しいリポジトリを作成済みとして...',pause:0},
+    {type:'prompt',text:'git remote add origin git@github.com:user/my-project.git',pause:800},
+    {type:'comment',text:'↑ GitHubのリポジトリURLを登録',pause:500},
+    {type:'prompt',text:'git push -u origin main',pause:1000},
+    {type:'output',text:'Enumerating objects: 3, done.',cls:'output',pause:500},
+    {type:'output',text:'Counting objects: 100% (3/3), done.',cls:'output',pause:400},
+    {type:'output',text:'Writing objects: 100% (3/3), 245 bytes, done.',cls:'output',pause:400},
+    {type:'output',text:'To github.com:user/my-project.git',cls:'output',pause:300},
+    {type:'output',text:' * [new branch]      main -> main',cls:'success',pause:400},
+    {type:'output',text:"Branch 'main' set up to track 'origin/main'.",cls:'info',pause:400},
+    {type:'comment',text:'↑ GitHubにアップロード完了！ブラウザで確認できる',pause:500},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ https://github.com/user/my-project で公開中！',cls:'success',pause:400},
+  ],'btn-push');
+}
+
+/* ===== Demo: Claude AI Commit ===== */
+function runTermAI(){
+  typeInTerminal('term-ai-body',[
+    {type:'comment',text:'Claude: まず現在の状態を確認します',pause:0},
+    {type:'prompt',text:'git status',pause:800},
+    {type:'output',text:'On branch main',cls:'output',pause:400},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:300},
+    {type:'output',text:'  modified:   src/app.ts',cls:'error',pause:200},
+    {type:'output',text:'  modified:   src/utils.ts',cls:'error',pause:200},
+    {type:'output',text:'Untracked files:',cls:'output',pause:200},
+    {type:'output',text:'  src/helper.ts',cls:'error',pause:200},
+    {type:'comment',text:'Claude: 変更内容を確認します',pause:700},
+    {type:'prompt',text:'git diff',pause:700},
+    {type:'output',text:'--- a/src/app.ts',cls:'output',pause:300},
+    {type:'output',text:'+++ b/src/app.ts',cls:'output',pause:200},
+    {type:'output',text:'+  const result = calculateScore(data);',cls:'success',pause:300},
+    {type:'comment',text:'Claude: コミットスタイルを確認します',pause:700},
+    {type:'prompt',text:'git log --oneline -3',pause:700},
+    {type:'output',text:'f4e5d6c feat: add user authentication',cls:'info',pause:300},
+    {type:'output',text:'a1b2c3d fix: resolve login redirect bug',cls:'info',pause:200},
+    {type:'output',text:'9z8y7x6 chore: update dependencies',cls:'info',pause:200},
+    {type:'comment',text:'Claude: Conventional Commits形式ですね。個別にaddします',pause:800},
+    {type:'prompt',text:'git add src/app.ts src/utils.ts src/helper.ts',pause:700},
+    {type:'prompt',text:'git commit -m "feat: add score calculation\\n\\nCo-Authored-By: Claude <noreply@anthropic.com>"',pause:900},
+    {type:'output',text:'[main d7e8f9a] feat: add score calculation',cls:'success',pause:500},
+    {type:'output',text:' 3 files changed, 42 insertions(+), 3 deletions(-)',cls:'output',pause:300},
+    {type:'comment',text:'Claude: コミット成功を確認します',pause:600},
+    {type:'prompt',text:'git status',pause:700},
+    {type:'output',text:'On branch main',cls:'output',pause:300},
+    {type:'output',text:'nothing to commit, working tree clean',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ コミット完了。Co-Authored-By付きで記録されました',cls:'success',pause:400},
+  ],'btn-ai');
+}
+
+/* ===== Demo: PR Creation ===== */
+/* ===== Demo: Test Execution ===== */
+function runTestDemo(){
+  typeInTerminal('term-test-body',[
+    {type:'comment',text:'PR前にテストを実行する',pause:0},
+    {type:'prompt',text:'npm test',pause:800},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'PASS  tests/todo.test.js',cls:'success',pause:600},
+    {type:'comment',text:'↑ テストファイルが見つかった',pause:400},
+    {type:'output',text:'  addTodo',cls:'output',pause:400},
+    {type:'output',text:'    ✓ 新しいToDoを追加できる (3ms)',cls:'success',pause:500},
+    {type:'output',text:'    ✓ 空文字は追加できない (1ms)',cls:'success',pause:400},
+    {type:'comment',text:'↑ addTodo関数が正しく動くことを検証',pause:500},
+    {type:'output',text:'  deleteTodo',cls:'output',pause:400},
+    {type:'output',text:'    ✓ IDを指定して削除できる (2ms)',cls:'success',pause:500},
+    {type:'output',text:'    ✓ 存在しないIDではエラーにならない (1ms)',cls:'success',pause:400},
+    {type:'comment',text:'↑ 削除機能の正常系・異常系を両方テスト',pause:500},
+    {type:'output',text:'  toggleComplete',cls:'output',pause:400},
+    {type:'output',text:'    ✓ 完了状態を切り替えられる (1ms)',cls:'success',pause:400},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'Test Suites: 1 passed, 1 total',cls:'success',pause:400},
+    {type:'output',text:'Tests:       5 passed, 5 total',cls:'success',pause:300},
+    {type:'output',text:'Time:        0.847s',cls:'output',pause:300},
+    {type:'comment',text:'次にコードスタイルも確認',pause:800},
+    {type:'prompt',text:'npm run lint',pause:700},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'✓ No ESLint warnings or errors',cls:'success',pause:500},
+    {type:'comment',text:'↑ コードの書き方に問題がないか自動チェック',pause:500},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'✓ テスト全て通過！ 安心してPRを作れる',cls:'success',pause:500},
+  ],'btn-test');
+}
+
+function runTermPR(){
+  typeInTerminal('term-pr-body',[
+    {type:'comment',text:'Claude: ブランチを作成して作業します',pause:0},
+    {type:'prompt',text:'git checkout -b feature/add-search',pause:700},
+    {type:'output',text:"Switched to a new branch 'feature/add-search'",cls:'success',pause:500},
+    {type:'comment',text:'Claude: （コードを書いてcommitした後...）',pause:900},
+    {type:'comment',text:'Claude: PR前にテストを実行して確認',pause:700},
+    {type:'prompt',text:'npm test',pause:800},
+    {type:'output',text:'Tests:       8 passed, 8 total',cls:'success',pause:500},
+    {type:'prompt',text:'npm run lint',pause:600},
+    {type:'output',text:'✓ No warnings or errors',cls:'success',pause:500},
+    {type:'comment',text:'Claude: テスト通過。pushしてPR作成します',pause:700},
+    {type:'prompt',text:'git push -u origin feature/add-search',pause:800},
+    {type:'output',text:' * [new branch]  feature/add-search -> feature/add-search',cls:'success',pause:500},
+    {type:'prompt',text:'gh pr create --title "feat: add search" --body "## Summary\\n- 検索機能を追加\\n- フィルター対応\\n\\n## Test plan\\n- [x] npm test: 8/8 passed\\n- [x] lint: no errors"',pause:1000},
+    {type:'output',text:'',cls:'output',pause:400},
+    {type:'output',text:'Creating pull request for feature/add-search into main',cls:'info',pause:600},
+    {type:'output',text:'https://github.com/user/project/pull/42',cls:'success',pause:500},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ PR #42 を作成しました。テスト済み・レビュー待ち',cls:'success',pause:400},
+  ],'btn-pr');
+}
+
+/* ===== Demo: Project Init ===== */
+function runProjectInit(){
+  typeInTerminal('term-project-init',[
+    {type:'comment',text:'ToDoアプリを作ろう！まずプロジェクトを初期化',pause:0},
+    {type:'prompt',text:'mkdir my-todo-app && cd my-todo-app',pause:700},
+    {type:'prompt',text:'git init',pause:700},
+    {type:'output',text:'Initialized empty Git repository in /my-todo-app/.git/',cls:'success',pause:500},
+    {type:'comment',text:'まず .gitignore を作る（大事！）',pause:700},
+    {type:'prompt',text:'echo "node_modules/\\n.env\\n.DS_Store" > .gitignore',pause:700},
+    {type:'comment',text:'READMEを作成',pause:500},
+    {type:'prompt',text:'echo "# My Todo App\\nシンプルなToDo管理アプリ" > README.md',pause:700},
+    {type:'comment',text:'HTMLファイルを作成',pause:500},
+    {type:'prompt',text:'cat > index.html',pause:500},
+    {type:'output',text:'&lt;!DOCTYPE html&gt;',cls:'output',pause:200},
+    {type:'output',text:'&lt;html&gt;&lt;head&gt;&lt;title&gt;My Todo&lt;/title&gt;&lt;/head&gt;',cls:'output',pause:200},
+    {type:'output',text:'&lt;body&gt;&lt;h1&gt;ToDo App&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;',cls:'output',pause:300},
+    {type:'comment',text:'初回コミット！',pause:700},
+    {type:'prompt',text:'git add .gitignore README.md index.html',pause:700},
+    {type:'prompt',text:'git commit -m "feat: initial project setup"',pause:800},
+    {type:'output',text:'[main (root-commit) 1a2b3c4] feat: initial project setup',cls:'success',pause:500},
+    {type:'output',text:' 3 files changed, 8 insertions(+)',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ プロジェクトの土台が完成！',cls:'success',pause:400},
+  ],'btn-pinit');
+}
+
+/* ===== Demo: Project Dev Cycle ===== */
+function runProjectDev(){
+  typeInTerminal('term-project-dev',[
+    {type:'comment',text:'CSSを追加してスタイリング',pause:0},
+    {type:'prompt',text:'vim style.css',pause:500},
+    {type:'output',text:'(CSSを書いて保存...)',cls:'output',pause:600},
+    {type:'prompt',text:'git add style.css index.html',pause:600},
+    {type:'prompt',text:'git commit -m "feat: add basic styling"',pause:800},
+    {type:'output',text:'[main 5d6e7f8] feat: add basic styling',cls:'success',pause:500},
+    {type:'output',text:' 2 files changed, 45 insertions(+)',cls:'output',pause:300},
+    {type:'comment',text:'JavaScriptでToDo機能を実装',pause:800},
+    {type:'prompt',text:'vim app.js',pause:500},
+    {type:'output',text:'(ToDo追加・削除のJSを書いて保存...)',cls:'output',pause:600},
+    {type:'prompt',text:'git add app.js index.html',pause:600},
+    {type:'prompt',text:'git commit -m "feat: add todo CRUD functionality"',pause:800},
+    {type:'output',text:'[main 9a0b1c2] feat: add todo CRUD functionality',cls:'success',pause:500},
+    {type:'output',text:' 2 files changed, 72 insertions(+)',cls:'output',pause:300},
+    {type:'comment',text:'ここまでの履歴を確認',pause:800},
+    {type:'prompt',text:'git log --oneline',pause:700},
+    {type:'output',text:'9a0b1c2 feat: add todo CRUD functionality',cls:'info',pause:300},
+    {type:'output',text:'5d6e7f8 feat: add basic styling',cls:'info',pause:200},
+    {type:'output',text:'1a2b3c4 feat: initial project setup',cls:'info',pause:200},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ 3つのコミットで開発を進めた！',cls:'success',pause:400},
+  ],'btn-pdev');
+}
+
+/* ===== Demo: Project Publish ===== */
+function runProjectPublish(){
+  document.getElementById('btn-ppub').disabled=true;
+  var container=document.getElementById('term-project-pub');
+  container.innerHTML='';
+  var ghBody=document.getElementById('gh-project-body');
+
+  var lines=[
+    {type:'comment',text:'GitHubにリポジトリを作成（GitHub CLI使用）',pause:0},
+    {type:'prompt',text:'gh repo create my-todo-app --public --source=.',pause:1000},
+    {type:'output',text:'✓ Created repository username/my-todo-app on GitHub',cls:'success',pause:800},
+    {type:'prompt',text:'git push -u origin main',pause:1000},
+    {type:'output',text:'Enumerating objects: 9, done.',cls:'output',pause:500},
+    {type:'output',text:'Counting objects: 100% (9/9), done.',cls:'output',pause:400},
+    {type:'output',text:'Writing objects: 100% (9/9), 1.2 KiB, done.',cls:'output',pause:400},
+    {type:'output',text:' * [new branch]  main -> main',cls:'success',pause:500},
+  ];
+
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+    },d);
+    delay+=500;
+  });
+
+  // Animate GitHub UI after push completes
+  var ghDelay=delay+800;
+  setTimeout(function(){
+    ghBody.style.transition='background .3s';
+    ghBody.style.background='#1a2332';
+    setTimeout(function(){ghBody.style.background=''},500);
+    ghBody.innerHTML='';
+
+    var commitDiv=document.createElement('div');
+    commitDiv.style.cssText='padding:8px 0;border-bottom:1px solid #21262d;display:flex;justify-content:space-between;align-items:center';
+    commitDiv.innerHTML='<div class="gh-commit"><span class="hash">9a0b1c2</span><span class="cm">feat: add todo CRUD functionality</span></div><span style="color:#8b949e;font-size:.8rem">just now</span>';
+    ghBody.appendChild(commitDiv);
+
+    var files=[
+      {name:'.gitignore',msg:'feat: initial project setup'},
+      {name:'README.md',msg:'feat: initial project setup'},
+      {name:'index.html',msg:'feat: add todo CRUD functionality'},
+      {name:'style.css',msg:'feat: add basic styling'},
+      {name:'app.js',msg:'feat: add todo CRUD functionality'}
+    ];
+    files.forEach(function(f,i){
+      setTimeout(function(){
+        var d=document.createElement('div');
+        d.className='gh-file';
+        d.style.cssText='opacity:0;transition:all .4s';
+        d.innerHTML='<span class="icon">📄</span><span class="name">'+f.name+'</span><span class="msg">'+f.msg+'</span>';
+        ghBody.appendChild(d);
+        requestAnimationFrame(function(){d.style.opacity='1'});
+      },i*300);
+    });
+  },ghDelay);
+}
+
+function resetProjectPublish(){
+  document.getElementById('term-project-pub').innerHTML='';
+  document.getElementById('gh-project-body').innerHTML='<p style="color:#8b949e;font-size:.9rem;text-align:center;padding:2rem 0">push後にここに反映される...</p>';
+  document.getElementById('btn-ppub').disabled=false;
+}
+
+/* ===== Demo: Project Feature Branch ===== */
+function runProjectFeature(){
+  typeInTerminal('term-project-feat',[
+    {type:'comment',text:'ダークモードを追加したい。まずブランチを切る',pause:0},
+    {type:'prompt',text:'git branch',pause:600},
+    {type:'output',text:'* main',cls:'info',pause:400},
+    {type:'comment',text:'今はmainブランチにいる。新しいブランチを作って切り替え',pause:700},
+    {type:'prompt',text:'git checkout -b feature/dark-mode',pause:800},
+    {type:'output',text:"Switched to a new branch 'feature/dark-mode'",cls:'success',pause:500},
+    {type:'comment',text:'↑ mainを汚さず安全に開発できる',pause:600},
+    {type:'comment',text:'ダークモードのCSSを追加',pause:800},
+    {type:'prompt',text:'vim style.css',pause:500},
+    {type:'output',text:'(body.dark { background: #1a1a2e; color: #e0e0e0; } ...)',cls:'output',pause:600},
+    {type:'comment',text:'トグルボタンのJSを追加',pause:700},
+    {type:'prompt',text:'vim app.js',pause:500},
+    {type:'output',text:'(document.getElementById("theme-toggle").addEventListener(...) ...)',cls:'output',pause:600},
+    {type:'comment',text:'HTMLにボタンを追加',pause:600},
+    {type:'prompt',text:'vim index.html',pause:500},
+    {type:'output',text:'(&lt;button id="theme-toggle"&gt;🌙 Dark Mode&lt;/button&gt; ...)',cls:'output',pause:600},
+    {type:'comment',text:'変更を確認してコミット',pause:700},
+    {type:'prompt',text:'git status',pause:700},
+    {type:'output',text:'On branch feature/dark-mode',cls:'info',pause:300},
+    {type:'output',text:'Changes not staged for commit:',cls:'output',pause:200},
+    {type:'output',text:'  modified:   style.css',cls:'error',pause:200},
+    {type:'output',text:'  modified:   app.js',cls:'error',pause:200},
+    {type:'output',text:'  modified:   index.html',cls:'error',pause:200},
+    {type:'prompt',text:'git add style.css app.js index.html',pause:700},
+    {type:'prompt',text:'git commit -m "feat: add dark mode toggle"',pause:800},
+    {type:'output',text:'[feature/dark-mode d3e4f5a] feat: add dark mode toggle',cls:'success',pause:500},
+    {type:'output',text:' 3 files changed, 38 insertions(+), 2 deletions(-)',cls:'output',pause:300},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ featureブランチでの開発完了！次は確認してマージ →',cls:'success',pause:400},
+  ],'btn-pfeat');
+}
+
+/* ===== Demo: Project Merge ===== */
+function runProjectMerge(){
+  document.getElementById('btn-pmerge').disabled=true;
+  var container=document.getElementById('term-project-merge');
+  container.innerHTML='';
+  var ghBody=document.getElementById('gh-merge-body');
+  var ghBranch=document.getElementById('gh-merge-branch');
+
+  var lines=[
+    {type:'comment',text:'まずdiffで何が変わったか確認',pause:0},
+    {type:'prompt',text:'git diff main..feature/dark-mode --stat',pause:800},
+    {type:'output',text:' style.css  | 22 +++++++++++++++++++',cls:'success',pause:400},
+    {type:'output',text:' app.js     | 12 +++++++++++',cls:'success',pause:300},
+    {type:'output',text:' index.html |  4 +++-',cls:'success',pause:300},
+    {type:'output',text:' 3 files changed, 38 insertions(+), 2 deletions(-)',cls:'output',pause:400},
+    {type:'comment',text:'具体的な差分も確認',pause:800},
+    {type:'prompt',text:'git diff main..feature/dark-mode -- style.css',pause:800},
+    {type:'output',text:'+ body.dark {',cls:'success',pause:300},
+    {type:'output',text:'+   background: #1a1a2e;',cls:'success',pause:200},
+    {type:'output',text:'+   color: #e0e0e0;',cls:'success',pause:200},
+    {type:'output',text:'+ }',cls:'success',pause:200},
+    {type:'output',text:'+ .dark .todo-item { border-color: #2a2a4a; }',cls:'success',pause:300},
+    {type:'comment',text:'OK！問題なし。mainに切り替えてマージ',pause:900},
+    {type:'prompt',text:'git checkout main',pause:700},
+    {type:'output',text:"Switched to branch 'main'",cls:'success',pause:500},
+    {type:'prompt',text:'git merge feature/dark-mode',pause:900},
+    {type:'output',text:'Updating 9a0b1c2..d3e4f5a',cls:'output',pause:500},
+    {type:'output',text:'Fast-forward',cls:'info',pause:400},
+    {type:'output',text:' style.css  | 22 +++++++++++++++++++',cls:'output',pause:300},
+    {type:'output',text:' app.js     | 12 +++++++++++',cls:'output',pause:200},
+    {type:'output',text:' index.html |  4 +++-',cls:'output',pause:200},
+    {type:'output',text:' 3 files changed, 38 insertions(+), 2 deletions(-)',cls:'output',pause:400},
+    {type:'comment',text:'マージ成功！不要になったブランチを削除',pause:800},
+    {type:'prompt',text:'git branch -d feature/dark-mode',pause:700},
+    {type:'output',text:"Deleted branch feature/dark-mode (was d3e4f5a).",cls:'info',pause:500},
+    {type:'comment',text:'GitHubにpush',pause:700},
+    {type:'prompt',text:'git push origin main',pause:900},
+    {type:'output',text:'To github.com:username/my-todo-app.git',cls:'output',pause:400},
+    {type:'output',text:'   9a0b1c2..d3e4f5a  main -> main',cls:'success',pause:500},
+    {type:'comment',text:'最終的な履歴を確認',pause:700},
+    {type:'prompt',text:'git log --oneline',pause:700},
+    {type:'output',text:'d3e4f5a feat: add dark mode toggle',cls:'info',pause:300},
+    {type:'output',text:'9a0b1c2 feat: add todo CRUD functionality',cls:'info',pause:200},
+    {type:'output',text:'5d6e7f8 feat: add basic styling',cls:'info',pause:200},
+    {type:'output',text:'1a2b3c4 feat: initial project setup',cls:'info',pause:200},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ 個人開発プロジェクト完成！ GitHubで公開中！',cls:'success',pause:400},
+  ];
+
+  var delay=0;
+  lines.forEach(function(line){
+    delay+=line.pause||0;
+    var d=delay;
+    setTimeout(function(){
+      var div=document.createElement('div');
+      div.style.cssText='opacity:0;transform:translateX(-8px);transition:all .4s;margin:3px 0';
+      if(line.type==='prompt'){
+        div.innerHTML='<span class="prompt">$ </span><span class="cmd">'+line.text+'</span>';
+      } else if(line.type==='comment'){
+        div.innerHTML='<span style="color:#c792ea;font-size:.85rem">  # '+line.text+'</span>';
+      } else {
+        div.innerHTML='<span class="'+line.cls+'">'+line.text+'</span>';
+      }
+      container.appendChild(div);
+      requestAnimationFrame(function(){div.style.opacity='1';div.style.transform='translateX(0)'});
+      container.scrollTop=container.scrollHeight;
+    },d);
+    delay+=500;
+  });
+
+  // Animate GitHub UI after merge + push
+  var ghDelay=delay+600;
+
+  // Show diff review state first
+  setTimeout(function(){
+    ghBranch.textContent='feature/dark-mode';
+    ghBranch.style.color='#c792ea';
+    ghBody.innerHTML='';
+    var prDiv=document.createElement('div');
+    prDiv.style.cssText='padding:10px 0;border-bottom:1px solid #21262d;opacity:0;transition:all .5s';
+    prDiv.innerHTML='<div style="display:flex;align-items:center;gap:8px"><span style="color:#c792ea;font-size:.85rem">● Comparing</span><span style="color:#c9d1d9;font-size:.85rem">feature/dark-mode → main</span></div><div style="margin-top:6px;display:flex;gap:1rem;font-size:.8rem"><span style="color:#27c93f">+38 lines</span><span style="color:#ff7b72">-2 lines</span><span style="color:#8b949e">3 files</span></div>';
+    ghBody.appendChild(prDiv);
+    requestAnimationFrame(function(){prDiv.style.opacity='1'});
+  }, delay*0.35);
+
+  // Show merged state
+  setTimeout(function(){
+    ghBranch.textContent='main';
+    ghBranch.style.color='#8b949e';
+    ghBody.style.transition='background .3s';
+    ghBody.style.background='#1a2332';
+    setTimeout(function(){ghBody.style.background=''},500);
+
+    ghBody.innerHTML='';
+    var commitDiv=document.createElement('div');
+    commitDiv.style.cssText='padding:8px 0;border-bottom:1px solid #21262d';
+    commitDiv.innerHTML='<div class="gh-commit"><span class="hash">d3e4f5a</span><span class="cm">feat: add dark mode toggle</span></div><div style="font-size:.8rem;color:#27c93f;margin-top:4px">Merged via fast-forward</div>';
+    ghBody.appendChild(commitDiv);
+
+    var files=[
+      {name:'index.html',msg:'feat: add dark mode toggle',icon:'📄'},
+      {name:'style.css',msg:'feat: add dark mode toggle',icon:'🎨'},
+      {name:'app.js',msg:'feat: add dark mode toggle',icon:'⚡'},
+      {name:'README.md',msg:'feat: initial project setup',icon:'📄'},
+      {name:'.gitignore',msg:'feat: initial project setup',icon:'📄'}
+    ];
+    files.forEach(function(f,i){
+      setTimeout(function(){
+        var d=document.createElement('div');
+        d.className='gh-file';
+        d.style.cssText='opacity:0;transition:all .4s';
+        d.innerHTML='<span class="icon">'+f.icon+'</span><span class="name">'+f.name+'</span><span class="msg">'+f.msg+'</span>';
+        ghBody.appendChild(d);
+        requestAnimationFrame(function(){d.style.opacity='1'});
+      },i*250);
+    });
+  },ghDelay);
+}
+
+function resetProjectMerge(){
+  document.getElementById('term-project-merge').innerHTML='';
+  document.getElementById('gh-merge-branch').textContent='main';
+  document.getElementById('gh-merge-branch').style.color='#8b949e';
+  document.getElementById('gh-merge-body').innerHTML='<div style="text-align:center;padding:1.5rem 0"><p style="color:#8b949e;font-size:.9rem">マージ後にここが更新される...</p><div style="margin-top:1rem;display:flex;gap:.5rem;justify-content:center"><div class="gh-file" style="border:none;padding:4px 0"><span class="icon">📄</span><span class="name">index.html</span></div><div class="gh-file" style="border:none;padding:4px 0"><span class="icon">📄</span><span class="name">style.css</span></div><div class="gh-file" style="border:none;padding:4px 0"><span class="icon">📄</span><span class="name">app.js</span></div></div></div>';
+  document.getElementById('btn-pmerge').disabled=false;
+}
+
+/* ===== GitHub UI Simulation ===== */
+/* ===== Demo: Conflict Resolution ===== */
+/* ===== Think-through: Push Rejected ===== */
+function runThinkPush(){
+  document.getElementById('btn-think-push').disabled=true;
+  var steps=[
+    {idx:0, icon:'❌', verdict:'→ 「rejected」であって「permission denied」ではない', color:'#ff5370', bg:'#ff537011'},
+    {idx:1, icon:'❌', verdict:'→ URLは通っている（refsのpushに失敗と書いてある）', color:'#ff5370', bg:'#ff537011'},
+    {idx:2, icon:'❌', verdict:'→ main -> main と表示。ブランチ名は合ってる', color:'#ff5370', bg:'#ff537011'},
+    {idx:3, icon:'✅', verdict:'→ 「remote contains work you do not have」← これだ！', color:'#27c93f', bg:'#27c93f15'},
+  ];
+  steps.forEach(function(s,i){
+    setTimeout(function(){
+      var el=document.querySelector('#think-push-list .think-item[data-think="'+s.idx+'"]');
+      document.getElementById('tp-icon-'+s.idx).textContent=s.icon;
+      document.getElementById('tp-verdict-'+s.idx).textContent=s.verdict;
+      document.getElementById('tp-verdict-'+s.idx).style.color=s.color;
+      el.style.background=s.bg;
+      el.style.borderColor=s.color+'44';
+      if(s.idx===3){
+        setTimeout(function(){
+          document.getElementById('think-push-action').style.opacity='1';
+        },600);
+      }
+    },800+i*1200);
+  });
+}
+
+/* ===== Think-through: Conflict ===== */
+function runThinkConflict(){
+  document.getElementById('btn-think-conf').disabled=true;
+  var steps=[
+    {idx:0, icon:'❌', verdict:'→ 「壊れた」のではなく「自動マージできなかった」', color:'#ff5370', bg:'#ff537011'},
+    {idx:1, icon:'❌', verdict:'→ コマンドは正しい。Gitが正常にconflictを報告している', color:'#ff5370', bg:'#ff537011'},
+    {idx:2, icon:'❌', verdict:'→ 「index.html」と具体的にファイル名が出ている', color:'#ff5370', bg:'#ff537011'},
+    {idx:3, icon:'✅', verdict:'→ 「content conflict」= 内容の衝突。これだ！', color:'#27c93f', bg:'#27c93f15'},
+  ];
+  steps.forEach(function(s,i){
+    setTimeout(function(){
+      var el=document.querySelector('#think-conf-list .think-item[data-think="'+s.idx+'"]');
+      document.getElementById('tc-icon-'+s.idx).textContent=s.icon;
+      document.getElementById('tc-verdict-'+s.idx).textContent=s.verdict;
+      document.getElementById('tc-verdict-'+s.idx).style.color=s.color;
+      el.style.background=s.bg;
+      el.style.borderColor=s.color+'44';
+      if(s.idx===3){
+        setTimeout(function(){
+          document.getElementById('think-conf-action').style.opacity='1';
+        },600);
+      }
+    },800+i*1200);
+  });
+}
+
+function runConflictDemo(){
+  typeInTerminal('term-conflict',[
+    {type:'comment',text:'featureブランチをmainにマージしようとすると...',pause:0},
+    {type:'prompt',text:'git merge feature/update-header',pause:800},
+    {type:'output',text:'Auto-merging index.html',cls:'output',pause:500},
+    {type:'output',text:'CONFLICT (content): Merge conflict in index.html',cls:'error',pause:600},
+    {type:'output',text:'Automatic merge failed; fix conflicts and then commit.',cls:'error',pause:500},
+    {type:'comment',text:'↑ 自動マージ失敗！ 同じ行を両方で編集したのが原因',pause:800},
+    {type:'prompt',text:'git status',pause:700},
+    {type:'output',text:'Unmerged paths:',cls:'output',pause:300},
+    {type:'output',text:'  both modified:   index.html',cls:'error',pause:300},
+    {type:'comment',text:'ファイルを開くとこうなっている:',pause:800},
+    {type:'prompt',text:'cat index.html',pause:600},
+    {type:'output',text:'&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD',cls:'error',pause:500},
+    {type:'output',text:'&lt;h1&gt;My Todo App&lt;/h1&gt;',cls:'info',pause:400},
+    {type:'output',text:'=======',cls:'warn',pause:400},
+    {type:'output',text:'&lt;h1&gt;Todo Manager&lt;/h1&gt;',cls:'info',pause:400},
+    {type:'output',text:'&gt;&gt;&gt;&gt;&gt;&gt;&gt; feature/update-header',cls:'error',pause:500},
+    {type:'comment',text:'↑ HEAD(main)の変更 と feature の変更が並んでいる',pause:800},
+    {type:'comment',text:'残したい方を選んでマーカーを全部消す:',pause:700},
+    {type:'prompt',text:'vim index.html',pause:500},
+    {type:'output',text:'(マーカーを消して「Todo Manager」を採用...)',cls:'output',pause:800},
+    {type:'output',text:'→ &lt;h1&gt;Todo Manager&lt;/h1&gt;',cls:'success',pause:500},
+    {type:'comment',text:'修正後、addしてcommitすれば解決！',pause:700},
+    {type:'prompt',text:'git add index.html',pause:600},
+    {type:'prompt',text:'git commit -m "fix: resolve merge conflict in header"',pause:800},
+    {type:'output',text:'[main e5f6a7b] fix: resolve merge conflict in header',cls:'success',pause:500},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ コンフリクト解消完了！ 落ち着いてやれば大丈夫',cls:'success',pause:400},
+  ],'btn-conflict');
+}
+
+/* ===== Demo: Push Rejected ===== */
+function runRejectedDemo(){
+  typeInTerminal('term-rejected',[
+    {type:'comment',text:'普通にpushしたら...',pause:0},
+    {type:'prompt',text:'git push origin main',pause:800},
+    {type:'output',text:'To github.com:username/my-todo-app.git',cls:'output',pause:400},
+    {type:'output',text:' ! [rejected]   main -> main (fetch first)',cls:'error',pause:600},
+    {type:'output',text:"error: failed to push some refs to 'github.com:username/my-todo-app.git'",cls:'error',pause:500},
+    {type:'output',text:'hint: Updates were rejected because the remote contains work that you do not',cls:'warn',pause:400},
+    {type:'output',text:'hint: have locally.',cls:'warn',pause:300},
+    {type:'comment',text:'↑ 誰か（または自分の別PCから）pushしていて、リモートが先に進んでいる',pause:1000},
+    {type:'comment',text:'解決: まずpullで最新を取得する',pause:800},
+    {type:'prompt',text:'git pull origin main',pause:900},
+    {type:'output',text:'remote: Enumerating objects: 5, done.',cls:'output',pause:400},
+    {type:'output',text:'remote: Counting objects: 100% (5/5), done.',cls:'output',pause:300},
+    {type:'output',text:'Merge made by the \'ort\' strategy.',cls:'info',pause:500},
+    {type:'output',text:' README.md | 2 ++',cls:'output',pause:300},
+    {type:'output',text:' 1 file changed, 2 insertions(+)',cls:'output',pause:300},
+    {type:'comment',text:'リモートの変更を取り込めた。もう一度push',pause:800},
+    {type:'prompt',text:'git push origin main',pause:800},
+    {type:'output',text:'Enumerating objects: 8, done.',cls:'output',pause:400},
+    {type:'output',text:'To github.com:username/my-todo-app.git',cls:'output',pause:300},
+    {type:'output',text:'   a1b2c3d..f8g9h0i  main -> main',cls:'success',pause:500},
+    {type:'output',text:'',cls:'output',pause:200},
+    {type:'output',text:'✓ push成功！ rejected = まず pull すれば解決',cls:'success',pause:400},
+  ],'btn-rejected');
+}
+
+/* ===== Demo: Wrong Branch Recovery ===== */
+function runWrongBranch(){
+  typeInTerminal('term-wrongbranch',[
+    {type:'comment',text:'mainに3つのcommitがある...移動する',pause:0},
+    {type:'prompt',text:'git branch feature/my-work',pause:600},
+    {type:'comment',text:'↑ 今のcommitを指すブランチを作成',pause:400},
+    {type:'prompt',text:'git reset --hard HEAD~3',pause:600},
+    {type:'comment',text:'↑ mainを3つ前に戻す',pause:400},
+    {type:'prompt',text:'git checkout feature/my-work',pause:500},
+    {type:'output',text:'✓ 作業がfeatureブランチに移動！',cls:'success',pause:300},
+  ],'btn-wrongbranch');
+}
+
+/* ===== Demo: Reflog Recovery ===== */
+function runReflogDemo(){
+  typeInTerminal('term-reflog',[
+    {type:'comment',text:'間違えてresetしてcommitが消えた！',pause:0},
+    {type:'prompt',text:'git reset --hard HEAD~3',pause:800},
+    {type:'output',text:'HEAD is now at 1a2b3c4 feat: initial setup',cls:'warn',pause:600},
+    {type:'comment',text:'3つ分のcommitが見えなくなった...',pause:800},
+    {type:'prompt',text:'git log --oneline',pause:700},
+    {type:'output',text:'1a2b3c4 feat: initial setup',cls:'info',pause:300},
+    {type:'output',text:'(他のcommitが消えた...)',cls:'error',pause:400},
+    {type:'comment',text:'でも慌てない。reflogを確認する',pause:1000},
+    {type:'prompt',text:'git reflog',pause:800},
+    {type:'output',text:'1a2b3c4 HEAD@{0}: reset: moving to HEAD~3',cls:'output',pause:400},
+    {type:'output',text:'d3e4f5a HEAD@{1}: commit: feat: add dark mode',cls:'info',pause:300},
+    {type:'output',text:'9a0b1c2 HEAD@{2}: commit: feat: add CRUD',cls:'info',pause:300},
+    {type:'output',text:'5d6e7f8 HEAD@{3}: commit: feat: add styling',cls:'info',pause:300},
+    {type:'output',text:'1a2b3c4 HEAD@{4}: commit (initial): feat: initial setup',cls:'info',pause:400},
+    {type:'comment',text:'↑ 全部残っている！ reset前のd3e4f5aに戻ればいい',pause:1000},
+    {type:'prompt',text:'git reset --hard d3e4f5a',pause:800},
+    {type:'output',text:'HEAD is now at d3e4f5a feat: add dark mode',cls:'success',pause:600},
+    {type:'prompt',text:'git log --oneline',pause:700},
+    {type:'output',text:'d3e4f5a feat: add dark mode',cls:'info',pause:300},
+    {type:'output',text:'9a0b1c2 feat: add CRUD',cls:'info',pause:200},
+    {type:'output',text:'5d6e7f8 feat: add styling',cls:'info',pause:200},
+    {type:'output',text:'1a2b3c4 feat: initial setup',cls:'info',pause:200},
+    {type:'output',text:'',cls:'output',pause:300},
+    {type:'output',text:'✓ 全てのcommitが復活！ reflogは90日間記録されている',cls:'success',pause:500},
+  ],'btn-reflog');
+}
+
+function simulatePush(){
+  document.getElementById('btn-ghpush').disabled=true;
+  var hash=document.getElementById('gh-hash');
+  var msg=document.getElementById('gh-msg');
+  var time=document.getElementById('gh-time');
+  var files=document.getElementById('gh-files');
+
+  var body=document.getElementById('gh-mock-body');
+  body.style.transition='background .3s';
+  body.style.background='#1a2332';
+  setTimeout(function(){body.style.background=''},500);
+
+  setTimeout(function(){
+    hash.textContent='d7e8f9a';
+    hash.style.transition='color .3s';
+    hash.style.color='#f0e68c';
+    setTimeout(function(){hash.style.color='#58a6ff'},1200);
+    msg.textContent='feat: add score calculation';
+    msg.style.transition='color .3s';
+    msg.style.color='#f0e68c';
+    setTimeout(function(){msg.style.color='#c9d1d9'},1200);
+    time.textContent='just now';
+  },500);
+
+  setTimeout(function(){
+    var newFile=document.createElement('div');
+    newFile.className='gh-file';
+    newFile.style.cssText='opacity:0;background:#1a472133;transition:all .5s';
+    newFile.innerHTML='<span class="icon">📄</span><span class="name">src/helper.ts</span><span class="msg" style="color:#27c93f">feat: add score calculation</span>';
+    files.appendChild(newFile);
+    requestAnimationFrame(function(){newFile.style.opacity='1'});
+
+    var existingFiles=files.querySelectorAll('.gh-file .msg');
+    existingFiles[0].textContent='feat: add score calculation';
+    existingFiles[0].style.color='#27c93f';
+    setTimeout(function(){existingFiles[0].style.color='#8b949e'},2000);
+  },1200);
+}
+
+function resetGHMock(){
+  document.getElementById('gh-hash').textContent='abc1234';
+  document.getElementById('gh-msg').textContent='Initial commit';
+  document.getElementById('gh-time').textContent='2 hours ago';
+  var files=document.getElementById('gh-files');
+  files.innerHTML='<div class="gh-file"><span class="icon">📄</span><span class="name">index.html</span><span class="msg">Initial commit</span></div><div class="gh-file"><span class="icon">📄</span><span class="name">README.md</span><span class="msg">Initial commit</span></div>';
+  document.getElementById('btn-ghpush').disabled=false;
+}
+
+/* ===== Init ===== */
+onSlideEnter(0);
+</script>
+</body></html>
