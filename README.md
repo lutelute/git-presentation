@@ -2,6 +2,8 @@
 
 AIと一緒に学ぶバージョン管理 — インタラクティブなスライド集
 
+👉 **[スライドを見る（GitHub Pages）](https://lutelute.github.io/git-presentation/)**
+
 ![demo](assets/demo.gif)
 
 ## スライド一覧
